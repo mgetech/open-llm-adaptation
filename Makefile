@@ -1,11 +1,17 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup lint format test requirements
+PLATFORM ?= tax-booking
+SEED ?= 0
+
+.PHONY: help setup data lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 setup:  ## Create the virtual environment and install dependencies
 	uv sync
+
+data:  ## Generate the data splits, samples and manifest (PLATFORM=, SEED=)
+	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED)
 
 lint:  ## Check style and formatting
 	uv run ruff check .
