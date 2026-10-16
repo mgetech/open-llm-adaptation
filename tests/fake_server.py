@@ -108,7 +108,7 @@ class FakeServer:
                     self.send_header("Content-Length", str(len(data)))
                     self.end_headers()
                     self.wfile.write(data)
-                except (BrokenPipeError, ConnectionResetError):
+                except OSError:
                     pass  # the client gave up waiting
 
             def log_message(self, format: str, *args: Any) -> None:
@@ -134,6 +134,12 @@ class FakeServer:
         with self._lock:
             self._replies.append(Reply(drop=True))
         return self
+
+    def reset(self) -> None:
+        """Forget queued replies and recorded requests."""
+        with self._lock:
+            self._replies.clear()
+            self.requests.clear()
 
     def wait_for_requests(self, count: int, timeout: float = 5.0) -> None:
         """Wait until `count` requests have arrived. A client that timed out may be ahead."""
