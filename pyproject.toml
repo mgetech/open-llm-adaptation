@@ -1,0 +1,59 @@
+[project]
+name = "open-llm-adaptation"
+version = "0.1.0"
+description = "Fine-tune an open-source LLM for invoice booking, evaluate it, and serve it with vLLM."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Majid Ghorbanieftekhar" }]
+requires-python = "==3.12.*"
+dependencies = [
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "huggingface-hub>=0.26",
+    "jinja2>=3.1",
+    "matplotlib>=3.9",
+    "numpy>=2.0",
+    "prometheus-client>=0.21",
+    "pydantic>=2.9",
+    "pyyaml>=6.0",
+    "scipy>=1.14",
+    "uvicorn>=0.32",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+# Training only. Imported lazily, so the CPU path never needs it.
+gpu = [
+    "accelerate>=1.0",
+    "bitsandbytes>=0.44",
+    "datasets>=3.0",
+    "peft>=0.13",
+    "torch>=2.4",
+    "transformers>=4.51",
+    "trl>=0.12",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/adapt"]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
