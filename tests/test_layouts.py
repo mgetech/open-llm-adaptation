@@ -158,7 +158,7 @@ def test_receipts_show_included_vat(rendered):
 def test_letter_invoice_is_prose(rendered):
     for invoice, text in by_layout(rendered, "letter_invoice"):
         assert text.startswith(("Dear Sir or Madam,", "Hello,"))
-        assert text.rstrip().endswith(invoice.supplier.name)
+        assert f"Kind regards\n{invoice.supplier.name}" in text
 
 
 def test_same_rng_gives_same_text(invoices):

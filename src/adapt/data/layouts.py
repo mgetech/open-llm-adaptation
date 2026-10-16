@@ -43,6 +43,8 @@ TOTAL_LABELS = ("Total", "Total amount", "Grand total", "Total due")
 CREDIT_TOTAL_LABELS = ("Credit total", "Total credit", "Total credit amount")
 NET_TOTAL_LABELS = ("Total", "Total net", "Total net amount")
 REVERSE_CHARGE_NOTE = "Reverse charge: tax liability of the recipient"
+IDENTIFIER_SHARE = 0.3  # share of documents that carry a line of fake identifiers
+IDENTIFIER_LABELS = ("IBAN", "Tax ID", "Tax number", "Email", "Phone", "Tel.")
 
 CENT = Decimal("0.01")
 
@@ -222,6 +224,41 @@ _LAYOUTS: dict[str, Callable[[_Writer], str]] = {
 }
 
 
+def _digits(rng: random.Random, count: int) -> str:
+    return "".join(rng.choice("0123456789") for _ in range(count))
+
+
+def _identifier_line(w: _Writer) -> str:
+    """A line of fake identifiers. The email domain and phone numbers are reserved for examples."""
+    rng = w.rng
+    iban = (
+        f"DE{_digits(rng, 2)} "
+        + " ".join(_digits(rng, 4) for _ in range(4))
+        + f" {_digits(rng, 2)}"
+    )
+    tax_id = rng.choice("123456789") + _digits(rng, 10)
+    if rng.random() < 0.5:
+        tax_id = f"{tax_id[:2]} {tax_id[2:5]} {tax_id[5:8]} {tax_id[8:]}"
+    domain = w.invoice.supplier.name.split()[0].lower()
+    email = f"{rng.choice(('info', 'office', 'billing'))}@{domain}.example"
+    phone = rng.choice(("+49 30 23125 ", "030 23125 ")) + _digits(rng, 3)
+    parts = [
+        f"IBAN {iban}",
+        f"{rng.choice(('Tax ID', 'Tax number'))} {tax_id}",
+        f"Email {email}",
+        f"{rng.choice(('Phone', 'Tel.'))} {phone}",
+    ]
+    chosen = [part for part in parts if rng.random() < 0.6] or [parts[0]]
+    return rng.choice((" | ", "  ", "\n")).join(chosen)
+
+
 def render_document(invoice: Invoice, rng: random.Random) -> str:
-    """Render the invoice in its own layout. All variation comes from `rng`."""
-    return _LAYOUTS[invoice.layout](_Writer(invoice, rng))
+    """Render the invoice in its own layout. All variation comes from `rng`.
+
+    Some documents end with a line of fake identifiers (IBAN, tax ID, email, phone).
+    """
+    writer = _Writer(invoice, rng)
+    text = _LAYOUTS[invoice.layout](writer)
+    if rng.random() < IDENTIFIER_SHARE:
+        text = writer.join([text, _identifier_line(writer)])
+    return text
