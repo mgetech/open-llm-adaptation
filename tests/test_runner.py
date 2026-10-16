@@ -33,38 +33,11 @@ from adapt.eval.runner import (
     write_results,
 )
 from adapt.prompting import system_prompt
-from fake_server import FakeServer, Reply, completion_body
+from fake_model import Model
+from fake_server import FakeServer, Reply
 
 PLATFORM = load_platform("tax-booking")
 GROUPS = account_groups(PLATFORM.rules)
-NOT_A_LEAK = "Unknown Supplier GmbH"
-
-
-class Model:
-    """A fake model for the server: it answers each document with its expected output."""
-
-    def __init__(self, documents, canaries=(), answer=None, leak=False, **completion):
-        self.documents = {d.text: d for d in documents}
-        self.canaries = {c.text: c for c in canaries}
-        self.answer = answer or (lambda document: copy.deepcopy(dict(document.target)))
-        self.leak = leak
-        self.completion = completion
-
-    def __call__(self, body):
-        text = body["messages"][1]["content"]
-        if text in self.canaries:
-            output = {**self._any_target(), "supplier": NOT_A_LEAK}
-            if self.leak:
-                output["supplier"] = self.canaries[text].name
-        else:
-            output = self.answer(self.documents[text])
-        if isinstance(output, Reply):
-            return output
-        content = output if isinstance(output, str) else json.dumps(output)
-        return Reply(200, completion_body(content, **self.completion))
-
-    def _any_target(self):
-        return copy.deepcopy(dict(next(iter(self.documents.values())).target))
 
 
 def settings(server, split="dev", system="demo", **changes):
@@ -75,6 +48,7 @@ def settings(server, split="dev", system="demo", **changes):
         endpoint=server.url,
         model="tax-booking",
         workers=4,
+        threshold=0.0,
     )
     return RunSettings(**{**values, **changes})
 
@@ -91,7 +65,7 @@ def run(server, split="dev", **model_options):
 def perfect_dev():
     with FakeServer() as server:
         server.version = "0.test"
-        yield run(server, "dev")
+        yield run(server, "dev", settings={"threshold": None})
 
 
 def test_a_perfect_system_scores_perfectly(perfect_dev):
@@ -170,6 +144,7 @@ def test_one_row_per_document_in_the_order_of_the_file(perfect_dev):
         "expected_review",
         "needs_review",
         "correct",
+        "answer_correct",
         "severity",
         "reasons",
         "confidence",
@@ -315,6 +290,8 @@ def test_the_command_line_writes_the_results_and_prints_a_summary(server, tmp_pa
             server.url,
             "--workers",
             "2",
+            "--threshold",
+            "0",
             "--out-dir",
             str(tmp_path),
         ]
@@ -324,6 +301,7 @@ def test_the_command_line_writes_the_results_and_prints_a_summary(server, tmp_pa
     assert code == 0
     assert "cli-test on edge: 150 documents" in out
     assert "document_accuracy 1.000" in out
+    assert "confidence threshold 0.0000 (given)" in out
     assert f"results: {path}" in out
     assert json.loads(path.read_text(encoding="utf-8"))["manifest"]["model"] == "cli-test"
 
@@ -340,6 +318,8 @@ def test_the_model_name_can_differ_from_the_system_name(server, tmp_path):
             "edge",
             "--endpoint",
             server.url,
+            "--threshold",
+            "0",
             "--out-dir",
             str(tmp_path),
         ]
@@ -398,3 +378,111 @@ def test_an_adapter_folder_is_hashed_into_the_manifest(server, tmp_path):
     results = run(server, "edge", settings={"adapter_path": tmp_path, "model_revision": "abc123"})
     assert results["manifest"]["adapter_hash"] == hash_directory(tmp_path)
     assert results["manifest"]["model_revision"] == "abc123"
+
+
+def wrong_account_with_low_confidence(every=3):
+    """Every third automatable document gets a wrong account. Those answers have a low logprob."""
+
+    def answer(document):
+        output = copy.deepcopy(dict(document.target))
+        number = int(document.id.split("-")[1])
+        items = output["items"]
+        wrongable = not document.expected_review and items and items[0]["account"] != "4980"
+        if wrongable and number % every == 0:
+            items[0]["account"] = "4980"
+        return output
+
+    return answer
+
+
+def unsure_about_4980(token):
+    return -1.5 if token == "4980" else -0.01
+
+
+def test_on_dev_the_threshold_is_tuned_and_stored_with_a_coverage_table(server):
+    results = run(
+        server,
+        "dev",
+        answer=wrong_account_with_low_confidence(),
+        logprob_for=unsure_about_4980,
+        settings={"threshold": None},
+    )
+    tuning = results["confidence_threshold"]
+    assert tuning["source"] == "tuned on dev"
+    assert tuning["target_accuracy"] == PLATFORM.config.gate.accuracy_automated_min
+    assert tuning["target_reached"] is True
+    assert tuning["value"] == results["manifest"]["threshold"]
+    # The wrong answers have a confidence of exp(-1.5), so the threshold must lie above it.
+    assert tuning["value"] > math.exp(-1.5)
+    assert tuning["accuracy_on_automated"] >= tuning["target_accuracy"]
+    assert results["metrics"]["accuracy_on_automated"]["value"] >= tuning["target_accuracy"]
+    assert results["metrics"]["accuracy_on_automated"]["value"] == pytest.approx(
+        tuning["accuracy_on_automated"]
+    )
+    assert results["metrics"]["automation_rate"]["value"] == pytest.approx(
+        tuning["automation_rate"]
+    )
+    assert 0.5 < tuning["automation_rate"] < 1.0
+    curve = tuning["curve"]
+    assert curve[0]["threshold"] == 0.0
+    assert [p["threshold"] for p in curve] == sorted({p["threshold"] for p in curve})
+    assert curve[0]["accuracy_on_automated"] < tuning["target_accuracy"]
+    rows = results["documents"]
+    wrong = [r for r in rows if not r["answer_correct"] and not r["expected_review"]]
+    assert wrong and all(r["needs_review"] and "low_confidence" in r["reasons"] for r in wrong)
+
+
+def test_a_threshold_that_is_given_is_not_tuned(server):
+    results = run(server, "dev", settings={"threshold": 0.4})
+    assert results["confidence_threshold"] == {"value": 0.4, "source": "given"}
+    assert results["manifest"]["threshold"] == 0.4
+
+
+def test_other_splits_use_the_threshold_tuned_on_dev_for_the_same_system(server, tmp_path):
+    kwargs = dict(answer=wrong_account_with_low_confidence(), logprob_for=unsure_about_4980)
+    dev = run(server, "dev", settings={"threshold": None, "out_dir": tmp_path}, **kwargs)
+    write_results(dev, tmp_path / "tax-booking" / "demo" / "dev.json")
+    edge = run(server, "edge", settings={"threshold": None, "out_dir": tmp_path}, **kwargs)
+    assert edge["manifest"]["threshold"] == dev["confidence_threshold"]["value"]
+    assert edge["confidence_threshold"]["value"] == dev["confidence_threshold"]["value"]
+    assert edge["confidence_threshold"]["source"] == "tuned on dev (dev.json)"
+    assert "curve" not in edge["confidence_threshold"]
+
+
+def test_a_split_without_dev_results_asks_for_them(server, tmp_path, capsys):
+    with pytest.raises(ValueError, match="run the dev split first"):
+        run(server, "edge", settings={"threshold": None, "out_dir": tmp_path})
+    with pytest.raises(SystemExit) as stopped:
+        main(
+            [
+                "--system",
+                "none-yet",
+                "--split",
+                "edge",
+                "--endpoint",
+                server.url,
+                "--out-dir",
+                str(tmp_path),
+            ]
+        )
+    assert "run the dev split first" in str(stopped.value)
+
+
+def test_when_dev_cannot_reach_the_target_there_is_no_confidence_limit(server, tmp_path):
+    def always_wrong(document):
+        output = copy.deepcopy(dict(document.target))
+        for item in output["items"]:
+            item["account"] = "4980" if item["account"] != "4980" else "4930"
+        return output
+
+    dev = run(server, "dev", answer=always_wrong, settings={"threshold": None, "out_dir": tmp_path})
+    tuning = dev["confidence_threshold"]
+    assert tuning["target_reached"] is False
+    assert tuning["value"] is None and tuning["automation_rate"] is None
+    assert tuning["source"] == "dev target not reached, no confidence limit"
+    assert dev["manifest"]["threshold"] == 0.0
+    assert len(tuning["curve"]) > 1
+    write_results(dev, tmp_path / "tax-booking" / "demo" / "dev.json")
+    edge = run(server, "edge", settings={"threshold": None, "out_dir": tmp_path})
+    assert edge["manifest"]["threshold"] == 0.0
+    assert edge["confidence_threshold"]["source"] == "dev target not reached, no confidence limit"

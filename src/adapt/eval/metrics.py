@@ -96,14 +96,8 @@ def _match_exact(predicted: list[Item], expected: list[Item]) -> tuple[int, list
     return matched, left_predicted, left_expected
 
 
-def document_correct(case: Case) -> bool:
-    """The items and reverse-charge flag match, and the review outcome is the expected one.
-
-    A document that should be reviewed is correct when it is sent to review. A document that
-    should not be reviewed is correct when it is automated with matching items.
-    """
-    if case.needs_review or case.expected_review:
-        return case.needs_review and case.expected_review
+def answer_correct(case: Case) -> bool:
+    """The items and the reverse-charge flag match, whatever happened to the review flag."""
     _, left_predicted, left_expected = _match_exact(
         _as_items(case.items), _as_items(case.target["items"])
     )
@@ -112,6 +106,17 @@ def document_correct(case: Case) -> bool:
         and not left_expected
         and case.reverse_charge == case.target["reverse_charge"]
     )
+
+
+def document_correct(case: Case) -> bool:
+    """The answer is right and the review outcome is the expected one.
+
+    A document that should be reviewed is correct when it is sent to review. A document that
+    should not be reviewed is correct when it is automated with matching items.
+    """
+    if case.needs_review or case.expected_review:
+        return case.needs_review and case.expected_review
+    return answer_correct(case)
 
 
 def _account_class(account: str, groups: Mapping[str, str]) -> str:

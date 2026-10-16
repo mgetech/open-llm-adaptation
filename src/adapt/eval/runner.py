@@ -16,7 +16,7 @@ import sys
 import time
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -36,6 +36,12 @@ from adapt.eval.scoring import (
     score,
 )
 from adapt.eval.stats import SEED
+from adapt.eval.threshold import (
+    apply_threshold,
+    read_threshold,
+    tune_threshold,
+    tuning_record,
+)
 from adapt.pipeline import Pipeline, Result
 from adapt.prompting import system_prompt
 
@@ -204,17 +210,40 @@ class RunSettings:
     split: str
     endpoint: str
     model: str
-    threshold: float = 0.0
+    threshold: float | None = None
     workers: int = 8
     model_revision: str | None = None
     adapter_path: Path | None = None
     data_dir: Path = DATA_DIR
+    out_dir: Path = RESULTS_DIR
+
+
+def resolve_threshold(settings: RunSettings) -> tuple[float | None, str]:
+    """The confidence threshold for a run, and where it came from.
+
+    A threshold that is given is used. On dev with none given, it is tuned after the run, so
+    None is returned. On any other split it is read from the dev results of the same system.
+    """
+    if settings.threshold is not None:
+        return settings.threshold, "given"
+    if settings.split == "dev":
+        return None, "tuned on dev"
+    dev_file = results_path(replace(settings, split="dev"), settings.out_dir)
+    if not dev_file.exists():
+        raise ValueError(
+            f"no threshold for {settings.system}: run the dev split first or give a threshold"
+        )
+    value = read_threshold(dev_file)
+    if value is None:
+        return 0.0, "dev target not reached, no confidence limit"
+    return value, f"tuned on dev ({dev_file.name})"
 
 
 def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[str, Any]:
     """Run the split and return the results as a dictionary."""
     if not SYSTEM_NAME.match(settings.system):
         raise ValueError(f"system name {settings.system!r} has characters that are not allowed")
+    threshold, source = resolve_threshold(settings)
     platform = platform or load_platform(settings.platform)
     documents = load_documents(settings.platform, settings.split, settings.data_dir)
     canaries = load_canaries(settings.platform, settings.data_dir)
@@ -222,15 +251,26 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
     groups = account_groups(platform.rules)
 
     with ModelClient(settings.endpoint) as client:
+        # When the threshold is still to be tuned, run without one and apply it afterwards.
         pipeline = Pipeline(
             platform,
             client,
             adapter=settings.model,
-            threshold=settings.threshold,
+            threshold=0.0 if threshold is None else threshold,
             adapter_version=adapter_hash,
         )
         results, latencies, wall = run_documents(pipeline, documents, settings.workers)
         pairs = canary_pairs(pipeline, canaries)
+
+    confidence_threshold: dict[str, Any] = {"value": threshold, "source": source}
+    if threshold is None:
+        target = platform.config.gate.accuracy_automated_min
+        tuned = tune_threshold(document_rows(score(documents, results, groups)), target)
+        threshold = tuned.threshold if tuned.threshold is not None else 0.0
+        if tuned.threshold is None:
+            confidence_threshold["source"] = "dev target not reached, no confidence limit"
+        confidence_threshold |= tuning_record(tuned)
+        results = [apply_threshold(result, threshold) for result in results]
 
     scored = score(documents, results, groups)
     data_file = split_path(settings.platform, settings.split, settings.data_dir)
@@ -252,9 +292,10 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
             "git_commit": commit,
             "git_dirty": dirty,
             "seed": SEED,
-            "threshold": settings.threshold,
+            "threshold": threshold,
             "documents": len(documents),
         },
+        "confidence_threshold": confidence_threshold,
         "performance": {
             "workers": settings.workers,
             "wall_seconds": wall,
@@ -283,10 +324,14 @@ def _summary(results: Mapping[str, Any]) -> str:
         value = results["metrics"][name]["value"]
         return f"{name} {'not defined' if value is None else f'{value:.3f}'}"
 
-    return "\n".join(
+    lines = [
         f"  {show(name)}"
         for name in ("document_accuracy", "automation_rate", "accuracy_on_automated")
-    )
+    ]
+    threshold = results["manifest"]["threshold"]
+    source = results["confidence_threshold"]["source"]
+    lines.append(f"  confidence threshold {threshold:.4f} ({source})")
+    return "\n".join(lines)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -296,7 +341,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--split", default="dev", choices=SPLITS)
     parser.add_argument("--endpoint", default="http://localhost:8000/v1")
     parser.add_argument("--model", help="model or adapter name on the server (default: system)")
-    parser.add_argument("--threshold", type=float, default=0.0, help="confidence threshold")
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        help="confidence threshold (default: tuned on dev, or read from the dev results)",
+    )
     parser.add_argument("--workers", type=int, default=8, help="requests in flight")
     parser.add_argument("--model-revision", help="revision of the base model, for the manifest")
     parser.add_argument("--adapter-path", type=Path, help="adapter folder, hashed for the manifest")
@@ -313,8 +362,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.workers,
         args.model_revision,
         args.adapter_path,
+        out_dir=args.out_dir,
     )
-    results = evaluate(settings)
+    try:
+        results = evaluate(settings)
+    except ValueError as error:
+        sys.exit(f"error: {error}")
     path = results_path(settings, args.out_dir)
     write_results(results, path)
     print(f"{args.system} on {args.split}: {len(results['documents'])} documents")

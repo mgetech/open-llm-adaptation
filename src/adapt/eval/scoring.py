@@ -11,6 +11,7 @@ from adapt.eval.metrics import (
     Case,
     Severity,
     accuracy_on_automated,
+    answer_correct,
     automation_rate,
     canary_leak_rate,
     document_accuracy,
@@ -56,6 +57,7 @@ class Scored:
     result: Result
     case: Case
     correct: bool
+    answer_correct: bool
     severity: Severity | None
     true_positives: int
     false_positives: int
@@ -75,6 +77,7 @@ def score(
                 result,
                 case,
                 document_correct(case),
+                answer_correct(case),
                 error_severity(case, groups),
                 items.true_positives,
                 items.false_positives,
@@ -194,6 +197,7 @@ def document_rows(scored: Sequence[Scored]) -> list[dict[str, Any]]:
             "expected_review": s.document.expected_review,
             "needs_review": s.result.needs_review,
             "correct": s.correct,
+            "answer_correct": s.answer_correct,
             "severity": s.severity,
             "reasons": list(s.result.reasons),
             "confidence": s.result.confidence,

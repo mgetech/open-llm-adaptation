@@ -6,6 +6,7 @@ from adapt.eval.metrics import (
     Case,
     account_groups,
     accuracy_on_automated,
+    answer_correct,
     automation_rate,
     canary_leak_rate,
     critical_error_rate,
@@ -297,3 +298,19 @@ def test_a_system_that_automates_everything_has_no_review_recall_and_critical_er
     assert automation_rate(cases) == 1.0
     assert review_recall(cases) == 0.0
     assert critical_error_rate(cases, GROUPS) > 0.0
+
+
+def test_the_answer_can_be_right_while_the_review_outcome_is_wrong():
+    items = [("4930", "19", 10.0)]
+    flagged_by_mistake = case(items, needs_review=True)
+    assert answer_correct(flagged_by_mistake)
+    assert not document_correct(flagged_by_mistake)
+    automated_by_mistake = case(items, expected_review=True)
+    assert answer_correct(automated_by_mistake)
+    assert not document_correct(automated_by_mistake)
+
+
+def test_a_wrong_item_or_reverse_charge_flag_makes_the_answer_wrong():
+    assert not answer_correct(case([("4930", "19", 10.0)], [("4930", "7", 10.0)]))
+    assert not answer_correct(case([("4930", "19", 10.0)], []))
+    assert not answer_correct(case([("4964", "19", 8.0)], reverse=True, predicted_reverse=False))
