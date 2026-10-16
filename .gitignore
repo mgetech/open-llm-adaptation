@@ -22,10 +22,6 @@ configs/keys.yaml
 # Local files
 .idea/
 
-# Generated data: only the samples are committed
-data/*
-!data/samples/
-
 # Model files
 adapters/
 weights/

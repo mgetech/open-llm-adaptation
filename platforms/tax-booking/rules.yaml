@@ -1,0 +1,387 @@
+# Booking rules for the synthetic data. The chart is an illustrative subset of
+# SKR03 and the supplier types are made up. This is not tax advice.
+#
+# Item prices are the amount printed on the document, in EUR. For suppliers in
+# the EU and outside the EU the document is a reverse-charge invoice and the
+# price is net. Expense prices stay well below the asset limit and asset prices
+# well above it, so the near-limit check only fires on purpose.
+
+chart: SKR03
+
+accounts:
+  - {number: "0410", name: Business equipment, group: asset, asset: true}
+  - {number: "0480", name: Low-value assets, group: asset, asset: true}
+  - {number: "0650", name: Office furniture, group: asset, asset: true}
+  - {number: "1800", name: Private withdrawals, group: private}
+  - {number: "2100", name: Interest expense, group: financial}
+  - {number: "3300", name: Goods for resale (reduced rate), group: goods}
+  - {number: "3400", name: Goods for resale (standard rate), group: goods}
+  - {number: "4210", name: Rent, group: operating_expense}
+  - {number: "4240", name: "Electricity, gas and water", group: operating_expense}
+  - {number: "4250", name: Cleaning, group: operating_expense}
+  - {number: "4360", name: Insurance, group: operating_expense}
+  - {number: "4530", name: Vehicle running costs, group: operating_expense}
+  - {number: "4610", name: Advertising, group: operating_expense}
+  - {number: "4650", name: Business hospitality, group: travel_hospitality}
+  - {number: "4654", name: Non-deductible hospitality, group: travel_hospitality}
+  - {number: "4660", name: Travel costs of employees, group: travel_hospitality}
+  - {number: "4670", name: Travel costs of the owner, group: travel_hospitality}
+  - {number: "4805", name: Repairs and maintenance, group: operating_expense}
+  - {number: "4910", name: Postage and shipping, group: operating_expense}
+  - {number: "4920", name: Telephone and internet, group: operating_expense}
+  - {number: "4930", name: Office supplies, group: operating_expense}
+  - {number: "4940", name: Books and journals, group: operating_expense}
+  - {number: "4945", name: Training and courses, group: operating_expense}
+  - {number: "4950", name: Legal and consulting fees, group: operating_expense}
+  - {number: "4964", name: Software licences, group: operating_expense}
+  - {number: "4970", name: Bank fees, group: financial}
+  - {number: "4980", name: Operating supplies, group: operating_expense}
+
+# Fictional supplier names: two or three syllables plus a legal form that fits
+# the supplier's country.
+supplier_names:
+  syllables: [ba, ber, cal, dan, dur, eks, fal, fin, gor, gro, hal, hin, jor, kas, ko,
+              lar, lon, mel, mir, nik, nor, pen, pra, ri, sol, ten, tu, vel, vor, zan]
+  suffixes:
+    DE: [GmbH, AG, KG, "GmbH & Co. KG", e.K., UG]
+    EU: [B.V., S.A., s.r.o., sp. z o.o., S.L., S.r.l.]
+    non-EU: [Inc., LLC, Ltd, Corp.]
+
+supplier_types:
+  - key: stationery_store
+    country: DE
+    layouts: [table_invoice, till_receipt, credit_note]
+    items:
+      - {description: Printer paper A4, account: "4930", vat_rate: "19", price: [4.5, 60]}
+      - {description: Ballpoint pens, account: "4930", vat_rate: "19", price: [2, 25]}
+      - {description: Ring binders, account: "4930", vat_rate: "19", price: [3, 40]}
+      - {description: Tax handbook 2026, account: "4940", vat_rate: "7", price: [15, 90]}
+      - {description: Business law textbook, account: "4940", vat_rate: "7", price: [20, 120]}
+
+  - key: bookshop
+    country: DE
+    layouts: [till_receipt, table_invoice]
+    items:
+      - {description: Specialist book, account: "4940", vat_rate: "7", price: [12, 110]}
+      - {description: Professional journal, account: "4940", vat_rate: "7", price: [6, 30]}
+      - {description: Pocket calendar, account: "4930", vat_rate: "19", price: [5, 25]}
+      - {description: Notebook, account: "4930", vat_rate: "19", price: [3, 20]}
+
+  - key: office_wholesaler
+    country: DE
+    layouts: [table_invoice, credit_note, letter_invoice]
+    items:
+      - {description: Toner cartridge, account: "4930", vat_rate: "19", price: [30, 220]}
+      - {description: Copy paper 5 reams, account: "4930", vat_rate: "19", price: [18, 70]}
+      - {description: Stapler and staples, account: "4930", vat_rate: "19", price: [4, 30]}
+      - {description: Coffee beans 1 kg, account: "4980", vat_rate: "7", price: [9, 30]}
+      - {description: Tea assortment, account: "4980", vat_rate: "7", price: [5, 20]}
+      - {description: Hand soap and cleaner, account: "4980", vat_rate: "19", price: [4, 35]}
+
+  - key: electronics_retailer
+    country: DE
+    layouts: [table_invoice, till_receipt, credit_note]
+    items:
+      - {description: Business laptop, account: "0410", vat_rate: "19", price: [1100, 2600]}
+      - {description: Workstation PC, account: "0410", vat_rate: "19", price: [1200, 3200]}
+      - {description: Monitor 27 inch, account: "0480", vat_rate: "19", price: [150, 650]}
+      - {description: Wireless keyboard and mouse, account: "0480", vat_rate: "19", price: [20, 150]}
+      - {description: Docking station, account: "0480", vat_rate: "19", price: [60, 280]}
+      - {description: USB cable and adapter, account: "4930", vat_rate: "19", price: [4, 40]}
+
+  - key: furniture_store
+    country: DE
+    layouts: [table_invoice, credit_note]
+    items:
+      - {description: Height-adjustable desk, account: "0650", vat_rate: "19", price: [1100, 2300]}
+      - {description: Conference table, account: "0650", vat_rate: "19", price: [1300, 3000]}
+      - {description: Office chair, account: "0480", vat_rate: "19", price: [180, 700]}
+      - {description: Shelf unit, account: "0480", vat_rate: "19", price: [60, 500]}
+      - {description: Desk lamp, account: "4930", vat_rate: "19", price: [15, 90]}
+
+  - key: office_landlord
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Office rent, account: "4210", vat_rate: "0", price: [300, 700]}
+      - {description: Storage room rent, account: "4210", vat_rate: "0", price: [40, 200]}
+      - {description: Parking space rent, account: "4210", vat_rate: "19", price: [40, 150]}
+
+  - key: insurance_company
+    country: DE
+    layouts: [letter_invoice, table_invoice]
+    items:
+      - {description: Business liability insurance, account: "4360", vat_rate: "0", price: [60, 700]}
+      - {description: Legal expenses insurance, account: "4360", vat_rate: "0", price: [30, 400]}
+      - {description: Office contents insurance, account: "4360", vat_rate: "0", price: [40, 350]}
+      - {description: Vehicle insurance, account: "4360", vat_rate: "0", price: [80, 700]}
+
+  - key: bank
+    country: DE
+    layouts: [table_invoice, short_receipt]
+    items:
+      - {description: Account fee, account: "4970", vat_rate: "0", price: [3, 40]}
+      - {description: Card fee, account: "4970", vat_rate: "0", price: [2, 30]}
+      - {description: Transfer fees, account: "4970", vat_rate: "0", price: [1, 25]}
+      - {description: Loan interest, account: "2100", vat_rate: "0", price: [30, 600]}
+
+  - key: telecom_provider
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Mobile contract, account: "4920", vat_rate: "19", price: [15, 90]}
+      - {description: Landline and internet, account: "4920", vat_rate: "19", price: [20, 70]}
+      - {description: Extra data package, account: "4920", vat_rate: "19", price: [5, 40]}
+
+  - key: utility_provider
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Electricity, account: "4240", vat_rate: "19", price: [40, 600]}
+      - {description: Gas, account: "4240", vat_rate: "19", price: [30, 500]}
+      - {description: Water supply, account: "4240", vat_rate: "7", price: [10, 150]}
+
+  - key: cleaning_service
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Office cleaning, account: "4250", vat_rate: "19", price: [60, 600]}
+      - {description: Window cleaning, account: "4250", vat_rate: "19", price: [30, 300]}
+      - {description: Carpet cleaning, account: "4250", vat_rate: "19", price: [40, 350]}
+
+  - key: ad_agency
+    country: DE
+    layouts: [table_invoice, letter_invoice, credit_note]
+    items:
+      - {description: Online advertising campaign, account: "4610", vat_rate: "19", price: [50, 700]}
+      - {description: Logo design, account: "4610", vat_rate: "19", price: [150, 700]}
+      - {description: Flyer layout, account: "4610", vat_rate: "19", price: [60, 400]}
+      - {description: Social media posts, account: "4610", vat_rate: "19", price: [80, 500]}
+
+  - key: print_shop
+    country: DE
+    layouts: [till_receipt, table_invoice, credit_note]
+    items:
+      - {description: Business cards 500 pcs, account: "4610", vat_rate: "19", price: [15, 90]}
+      - {description: Flyers 1000 pcs, account: "4610", vat_rate: "19", price: [40, 300]}
+      - {description: Poster A1, account: "4610", vat_rate: "19", price: [8, 60]}
+      - {description: Copies and binding, account: "4930", vat_rate: "19", price: [3, 50]}
+
+  - key: law_firm
+    country: DE
+    layouts: [letter_invoice, table_invoice]
+    items:
+      - {description: Legal consultation, account: "4950", vat_rate: "19", price: [100, 700]}
+      - {description: Contract review, account: "4950", vat_rate: "19", price: [150, 700]}
+      - {description: Letter of demand, account: "4950", vat_rate: "19", price: [60, 300]}
+
+  - key: accounting_service
+    country: DE
+    layouts: [letter_invoice, table_invoice]
+    items:
+      - {description: Bookkeeping for one month, account: "4950", vat_rate: "19", price: [80, 600]}
+      - {description: Payroll accounting, account: "4950", vat_rate: "19", price: [30, 300]}
+      - {description: Annual financial statements, account: "4950", vat_rate: "19", price: [300, 700]}
+
+  - key: it_service_provider
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: IT support per hour, account: "4805", vat_rate: "19", price: [60, 500]}
+      - {description: Network maintenance, account: "4805", vat_rate: "19", price: [80, 700]}
+      - {description: Data backup service, account: "4964", vat_rate: "19", price: [10, 150]}
+
+  - key: software_vendor
+    country: DE
+    layouts: [table_invoice]
+    items:
+      - {description: Accounting software licence, account: "4964", vat_rate: "19", price: [20, 600]}
+      - {description: Office suite subscription, account: "4964", vat_rate: "19", price: [8, 150]}
+      - {description: Virus protection licence, account: "4964", vat_rate: "19", price: [15, 90]}
+
+  - key: craftsman
+    country: DE
+    layouts: [letter_invoice, table_invoice]
+    items:
+      - {description: Repair work, account: "4805", vat_rate: "19", price: [80, 700]}
+      - {description: Material, account: "4805", vat_rate: "19", price: [10, 300]}
+      - {description: Call-out fee, account: "4805", vat_rate: "19", price: [25, 90]}
+
+  - key: car_workshop
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Oil change, account: "4530", vat_rate: "19", price: [60, 250]}
+      - {description: Tyre change, account: "4530", vat_rate: "19", price: [40, 200]}
+      - {description: Brake pads, account: "4530", vat_rate: "19", price: [90, 600]}
+      - {description: Vehicle inspection, account: "4530", vat_rate: "19", price: [80, 220]}
+
+  - key: fuel_station
+    country: DE
+    layouts: [short_receipt, till_receipt]
+    items:
+      - {description: Diesel, account: "4530", vat_rate: "19", price: [30, 120]}
+      - {description: Petrol, account: "4530", vat_rate: "19", price: [30, 120]}
+      - {description: Car wash, account: "4530", vat_rate: "19", price: [5, 20]}
+
+  - key: taxi_company
+    country: DE
+    layouts: [short_receipt]
+    items:
+      - {description: Taxi ride, account: "4670", vat_rate: "7", price: [8, 80]}
+      - {description: Airport transfer, account: "4670", vat_rate: "7", price: [25, 90]}
+
+  - key: parking_operator
+    country: DE
+    layouts: [short_receipt]
+    items:
+      - {description: Parking fee, account: "4670", vat_rate: "19", price: [2, 40]}
+      - {description: Day parking, account: "4670", vat_rate: "19", price: [8, 35]}
+
+  - key: rail_operator
+    country: DE
+    layouts: [short_receipt, table_invoice]
+    items:
+      - {description: Train ticket, account: "4670", vat_rate: "7", price: [15, 180]}
+      - {description: Local transport day pass, account: "4660", vat_rate: "7", price: [5, 30]}
+
+  - key: hotel
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Accommodation per night, account: "4670", vat_rate: "7", price: [60, 400]}
+      - {description: Breakfast, account: "4670", vat_rate: "19", price: [8, 60]}
+      - {description: Hotel parking, account: "4670", vat_rate: "19", price: [10, 30]}
+
+  - key: restaurant
+    country: DE
+    layouts: [till_receipt]
+    items:
+      - {description: Business lunch food, account: "4650", vat_rate: "7", price: [25, 300]}
+      - {description: Dinner with client, account: "4650", vat_rate: "7", price: [40, 400]}
+      - {description: Drinks, account: "4650", vat_rate: "19", price: [8, 120]}
+
+  - key: caterer
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Catering buffet, account: "4650", vat_rate: "7", price: [80, 700]}
+      - {description: Sandwich platter, account: "4650", vat_rate: "7", price: [30, 250]}
+      - {description: Beverage package, account: "4650", vat_rate: "19", price: [20, 200]}
+
+  - key: food_wholesaler
+    country: DE
+    layouts: [table_invoice, credit_note]
+    items:
+      - {description: Flour 25 kg, account: "3300", vat_rate: "7", price: [15, 90]}
+      - {description: Cheese selection, account: "3300", vat_rate: "7", price: [30, 300]}
+      - {description: Fresh vegetables, account: "3300", vat_rate: "7", price: [20, 250]}
+      - {description: Soft drinks crate, account: "3400", vat_rate: "19", price: [10, 80]}
+      - {description: Cleaning supplies, account: "3400", vat_rate: "19", price: [10, 100]}
+
+  - key: general_wholesaler
+    country: DE
+    layouts: [table_invoice, credit_note, letter_invoice]
+    items:
+      - {description: Craft materials, account: "3400", vat_rate: "19", price: [20, 400]}
+      - {description: Hardware goods, account: "3400", vat_rate: "19", price: [15, 500]}
+      - {description: Gift articles, account: "3400", vat_rate: "19", price: [10, 300]}
+      - {description: Cookbooks for resale, account: "3300", vat_rate: "7", price: [30, 400]}
+
+  - key: packaging_supplier
+    country: DE
+    layouts: [table_invoice, credit_note]
+    items:
+      - {description: Shipping boxes, account: "3400", vat_rate: "19", price: [20, 300]}
+      - {description: Packing tape, account: "3400", vat_rate: "19", price: [5, 60]}
+      - {description: Bubble wrap roll, account: "3400", vat_rate: "19", price: [10, 90]}
+
+  - key: flower_shop
+    country: DE
+    layouts: [till_receipt, table_invoice, credit_note]
+    items:
+      - {description: Cut flowers, account: "3300", vat_rate: "7", price: [10, 200]}
+      - {description: Potted plants, account: "3300", vat_rate: "7", price: [8, 150]}
+      - {description: Vases, account: "3400", vat_rate: "19", price: [8, 90]}
+
+  - key: supermarket
+    country: DE
+    layouts: [till_receipt]
+    items:
+      - {description: Groceries, account: "1800", vat_rate: "7", price: [5, 120]}
+      - {description: Household goods, account: "1800", vat_rate: "19", price: [3, 80]}
+
+  - key: training_provider
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Seminar fee, account: "4945", vat_rate: "19", price: [90, 700]}
+      - {description: Online course, account: "4945", vat_rate: "19", price: [20, 400]}
+      - {description: Exam fee, account: "4945", vat_rate: "0", price: [50, 300]}
+
+  - key: postal_service
+    country: DE
+    layouts: [short_receipt, till_receipt]
+    items:
+      - {description: Postage stamps, account: "4910", vat_rate: "0", price: [1, 40]}
+      - {description: Registered letter, account: "4910", vat_rate: "0", price: [3, 12]}
+      - {description: Parcel shipping, account: "4910", vat_rate: "19", price: [5, 40]}
+
+  - key: courier_service
+    country: DE
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Express delivery, account: "4910", vat_rate: "19", price: [15, 200]}
+      - {description: Pallet shipping, account: "4910", vat_rate: "19", price: [40, 500]}
+
+  - key: eu_cloud_hosting
+    country: EU
+    layouts: [eu_invoice]
+    items:
+      - {description: Cloud server hosting, account: "4964", vat_rate: "19", price: [5, 400]}
+      - {description: Domain registration, account: "4964", vat_rate: "19", price: [8, 40]}
+      - {description: Managed database, account: "4964", vat_rate: "19", price: [15, 300]}
+
+  - key: eu_ad_platform
+    country: EU
+    layouts: [eu_invoice]
+    items:
+      - {description: Online advertising spend, account: "4610", vat_rate: "19", price: [30, 700]}
+      - {description: Sponsored listing, account: "4610", vat_rate: "19", price: [20, 300]}
+
+  - key: eu_flower_wholesaler
+    country: EU
+    layouts: [eu_invoice]
+    items:
+      - {description: Tulips 200 stems, account: "3300", vat_rate: "7", price: [40, 400]}
+      - {description: Garden plants, account: "3300", vat_rate: "7", price: [30, 500]}
+      - {description: Ceramic pots, account: "3400", vat_rate: "19", price: [25, 350]}
+
+  - key: eu_component_supplier
+    country: EU
+    layouts: [eu_invoice]
+    items:
+      - {description: Electronic components, account: "3400", vat_rate: "19", price: [20, 600]}
+      - {description: Cable assortment, account: "3400", vat_rate: "19", price: [10, 250]}
+      - {description: Circuit boards, account: "3400", vat_rate: "19", price: [30, 700]}
+
+  - key: eu_translation_agency
+    country: EU
+    layouts: [eu_invoice]
+    items:
+      - {description: Document translation, account: "4950", vat_rate: "19", price: [60, 700]}
+      - {description: Proofreading, account: "4950", vat_rate: "19", price: [30, 300]}
+
+  - key: us_software_subscription
+    country: non-EU
+    layouts: [eu_invoice]
+    items:
+      - {description: Team subscription, account: "4964", vat_rate: "19", price: [10, 500]}
+      - {description: Extra user seats, account: "4964", vat_rate: "19", price: [5, 200]}
+
+  - key: non_eu_design_freelancer
+    country: non-EU
+    layouts: [eu_invoice]
+    items:
+      - {description: Brand design, account: "4610", vat_rate: "19", price: [100, 700]}
+      - {description: Stock images licence, account: "4610", vat_rate: "19", price: [10, 150]}
