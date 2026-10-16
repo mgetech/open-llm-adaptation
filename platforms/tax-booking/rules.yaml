@@ -14,8 +14,8 @@ accounts:
   - {number: "0650", name: Office furniture, group: asset, asset: true}
   - {number: "1800", name: Private withdrawals, group: private}
   - {number: "2100", name: Interest expense, group: financial}
-  - {number: "3300", name: Goods purchased at 7% VAT, group: goods}
-  - {number: "3400", name: Goods purchased at 19% VAT, group: goods}
+  - {number: "3300", name: Goods for resale (reduced rate), group: goods}
+  - {number: "3400", name: Goods for resale (standard rate), group: goods}
   - {number: "4210", name: Rent, group: operating_expense}
   - {number: "4240", name: "Electricity, gas and water", group: operating_expense}
   - {number: "4250", name: Cleaning, group: operating_expense}
@@ -36,6 +36,16 @@ accounts:
   - {number: "4964", name: Software licences, group: operating_expense}
   - {number: "4970", name: Bank fees, group: financial}
   - {number: "4980", name: Operating supplies, group: operating_expense}
+
+# Fictional supplier names: two or three syllables plus a legal form that fits
+# the supplier's country.
+supplier_names:
+  syllables: [ba, ber, cal, dan, dur, eks, fal, fin, gor, gro, hal, hin, jor, kas, ko,
+              lar, lon, mel, mir, nik, nor, pen, pra, ri, sol, ten, tu, vel, vor, zan]
+  suffixes:
+    DE: [GmbH, AG, KG, "GmbH & Co. KG", e.K., UG]
+    EU: [B.V., S.A., s.r.o., sp. z o.o., S.L., S.r.l.]
+    non-EU: [Inc., LLC, Ltd, Corp.]
 
 supplier_types:
   - key: stationery_store

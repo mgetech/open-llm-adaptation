@@ -1,7 +1,7 @@
 """Load and validate the platform config and the booking rules."""
 
 from pathlib import Path
-from typing import Literal, Self
+from typing import Literal, Self, get_args
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -86,9 +86,24 @@ class SupplierType(_Model):
         return self
 
 
+class SupplierNames(_Model):
+    syllables: list[str] = Field(min_length=20)
+    suffixes: dict[Country, list[str]]
+
+    @model_validator(mode="after")
+    def check_parts(self) -> Self:
+        if len(set(self.syllables)) != len(self.syllables):
+            raise ValueError("duplicate syllable")
+        for country in get_args(Country):
+            if not self.suffixes.get(country):
+                raise ValueError(f"no name suffix for country {country}")
+        return self
+
+
 class Rules(_Model):
     chart: str
     accounts: list[Account] = Field(min_length=1)
+    supplier_names: SupplierNames
     supplier_types: list[SupplierType] = Field(min_length=1)
 
     @model_validator(mode="after")

@@ -150,3 +150,21 @@ def test_rules_reject_unknown_field(rules_data):
     rules_data["accounts"][0]["colour"] = "red"
     with pytest.raises(ValidationError):
         Rules.model_validate(rules_data)
+
+
+def test_supplier_names_reject_duplicate_syllable(rules_data):
+    rules_data["supplier_names"]["syllables"][1] = rules_data["supplier_names"]["syllables"][0]
+    with pytest.raises(ValidationError, match="duplicate syllable"):
+        Rules.model_validate(rules_data)
+
+
+def test_supplier_names_reject_missing_suffixes(rules_data):
+    del rules_data["supplier_names"]["suffixes"]["EU"]
+    with pytest.raises(ValidationError, match="no name suffix for country EU"):
+        Rules.model_validate(rules_data)
+
+
+def test_supplier_names_reject_too_few_syllables(rules_data):
+    rules_data["supplier_names"]["syllables"] = rules_data["supplier_names"]["syllables"][:5]
+    with pytest.raises(ValidationError):
+        Rules.model_validate(rules_data)
