@@ -94,51 +94,81 @@ def generate_invoices(
     if mixed_share > 0 and not mixable:
         raise ValueError("no supplier can have mixed VAT rates")
     return [
-        _generate_one(rules, types, usable, mixable, allowed, seed, index, mixed_share)
+        _generate_one(rules, usable, mixable, allowed, seed, index, mixed_share)
         for index in range(count)
     ]
 
 
 def _generate_one(
     rules: Rules,
-    types: dict[str, SupplierType],
     usable: list[Supplier],
     mixable: list[Supplier],
-    allowed: set[str],
+    allowed: Collection[str],
     seed: int,
     index: int,
     mixed_share: float,
 ) -> Invoice:
     rng = random.Random(f"{seed}/invoice/{index}")
     mixed = rng.random() < mixed_share
-    supplier = rng.choice(mixable if mixed else usable)
+    return draw_invoice(rules, mixable if mixed else usable, allowed, rng, mixed=mixed)
+
+
+def draw_invoice(
+    rules: Rules,
+    suppliers: Sequence[Supplier],
+    allowed: Collection[str],
+    rng: random.Random,
+    *,
+    mixed: bool = False,
+) -> Invoice:
+    """Draw one invoice for one of `suppliers`. Every supplier needs an allowed layout.
+
+    With `mixed` the items have more than one VAT rate, so every supplier needs several rates.
+    """
+    types = {t.key: t for t in rules.supplier_types}
+    supplier = rng.choice(suppliers)
     supplier_type = types[supplier.type_key]
     layout = rng.choice([x for x in supplier_type.layouts if x in allowed])
 
     sign = -1 if layout == CREDIT_NOTE_LAYOUT else 1
     items = tuple(
-        Item(item.description, sign * _amount(rng, item.price), item.account, item.vat_rate)
+        Item(item.description, sign * draw_amount(rng, item.price), item.account, item.vat_rate)
         for item in _pick_items(rng, supplier_type, mixed)
     )
-    if layout == CREDIT_NOTE_LAYOUT:
-        document_type = "credit_note"
-    elif layout in RECEIPT_LAYOUTS:
-        document_type = "receipt"
-    else:
-        document_type = "invoice"
     invoice_date = date(YEAR, 1, 1) + timedelta(days=rng.randrange(365))
+    return make_invoice(rules, supplier, layout, invoice_date, rng.randint(1, 9999), items)
+
+
+def document_type(layout: str) -> str:
+    if layout == CREDIT_NOTE_LAYOUT:
+        return "credit_note"
+    if layout in RECEIPT_LAYOUTS:
+        return "receipt"
+    return "invoice"
+
+
+def make_invoice(
+    rules: Rules,
+    supplier: Supplier,
+    layout: str,
+    invoice_date: date,
+    number: int,
+    items: tuple[Item, ...],
+) -> Invoice:
+    """Build an invoice from its items. Total, reverse charge and target follow from them."""
+    doc_type = document_type(layout)
     reverse_charge = layout == REVERSE_CHARGE_LAYOUT
     total = sum((item.amount for item in items), Decimal(0))
     return Invoice(
         supplier=supplier,
         layout=layout,
         date=invoice_date,
-        number=rng.randint(1, 9999),
-        document_type=document_type,
+        number=number,
+        document_type=doc_type,
         items=items,
         total=total,
         reverse_charge=reverse_charge,
-        target=_target(rules, supplier, invoice_date, document_type, items, total, reverse_charge),
+        target=_target(rules, supplier, invoice_date, doc_type, items, total, reverse_charge),
     )
 
 
@@ -161,7 +191,7 @@ def _pick_items(rng: random.Random, supplier_type: SupplierType, mixed: bool) ->
     return picked
 
 
-def _amount(rng: random.Random, price: tuple[float, float]) -> Decimal:
+def draw_amount(rng: random.Random, price: tuple[float, float]) -> Decimal:
     cents = rng.randint(round(price[0] * 100), round(price[1] * 100))
     return Decimal(cents).scaleb(-2)
 
