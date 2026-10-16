@@ -10,7 +10,7 @@ help:  ## Show the available targets
 setup:  ## Create the virtual environment and install dependencies
 	uv sync
 
-data:  ## Generate the data splits, samples and manifest (PLATFORM=, SEED=)
+data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED)
 
 lint:  ## Check style and formatting

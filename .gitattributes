@@ -1,0 +1,2 @@
+# The data files are hashed byte for byte, so they keep Unix line endings on every system.
+*.jsonl text eol=lf

@@ -38,7 +38,6 @@ ALL_LAYOUTS = frozenset(get_args(Layout))
 TRAIN_LAYOUTS = ALL_LAYOUTS - {HELD_OUT_LAYOUT}
 EDGE_SHARE_DIVISOR = 100  # a split of N documents holds N // 100 edge documents per category
 NOISE_LEVELS = (("none", 0.5), ("low", 0.2), ("medium", 0.2), ("high", 0.1))
-SAMPLES_PER_SPLIT = 10
 CANARY_NAMES = ("Xyloquandt", "Qvarnsted", "Zephyrkloft", "Jhuvendrake", "Wrexlindor")
 
 
@@ -275,19 +274,15 @@ def write_data(
     data_dir: Path,
     manifest_path: Path,
 ) -> dict[str, Any]:
-    """Write the split files, the samples and the manifest. Return the manifest."""
+    """Write the split files and the manifest. Return the manifest."""
     out_dir = data_dir / platform
-    sample_dir = data_dir / "samples" / platform
     out_dir.mkdir(parents=True, exist_ok=True)
-    sample_dir.mkdir(parents=True, exist_ok=True)
     manifest: dict[str, Any] = {"platform": platform, "seed": seed, "splits": {}}
     for split, records in splits.items():
-        file_hash = _write_jsonl(out_dir / f"{split}.jsonl", records)
-        _write_jsonl(sample_dir / f"{split}.jsonl", records[:SAMPLES_PER_SPLIT])
         manifest["splits"][split] = {
             "file": f"{platform}/{split}.jsonl",
             "count": len(records),
-            "sha256": file_hash,
+            "sha256": _write_jsonl(out_dir / f"{split}.jsonl", records),
         }
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     with manifest_path.open("w", encoding="utf-8", newline="\n") as file:
@@ -303,7 +298,7 @@ def _write_jsonl(path: Path, records: Sequence[Mapping[str, Any]]) -> str:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Generate the data splits, samples and manifest.")
+    parser = argparse.ArgumentParser(description="Generate the data splits and the manifest.")
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=Path, default=Path("data"))

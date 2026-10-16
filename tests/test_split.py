@@ -264,9 +264,6 @@ def test_same_seed_gives_identical_files_and_hashes(tmp_path):
         a = (first / "data" / "tax-booking" / f"{split}.jsonl").read_bytes()
         b = (second / "data" / "tax-booking" / f"{split}.jsonl").read_bytes()
         assert a == b
-        sample_a = (first / "data" / "samples" / "tax-booking" / f"{split}.jsonl").read_bytes()
-        sample_b = (second / "data" / "samples" / "tax-booking" / f"{split}.jsonl").read_bytes()
-        assert sample_a == sample_b
     manifest_a = (first / "results" / "data_manifest.json").read_text(encoding="utf-8")
     manifest_b = (second / "results" / "data_manifest.json").read_text(encoding="utf-8")
     assert manifest_a == manifest_b
@@ -307,11 +304,10 @@ def test_files_use_unix_line_endings_and_valid_json(tmp_path):
         assert all(json.loads(line)["split"] == path.stem for line in lines)
 
 
-def test_samples_are_the_first_ten_documents_of_each_split(tmp_path):
+def test_only_the_split_files_and_the_manifest_are_written(tmp_path):
     run(tmp_path)
-    for split in SPLIT_SIZES:
-        full = (tmp_path / "data" / "tax-booking" / f"{split}.jsonl").read_text(encoding="utf-8")
-        sample = (tmp_path / "data" / "samples" / "tax-booking" / f"{split}.jsonl").read_text(
-            encoding="utf-8"
-        )
-        assert sample.splitlines() == full.splitlines()[:10]
+    assert sorted(p.name for p in (tmp_path / "data").iterdir()) == ["tax-booking"]
+    assert sorted(p.name for p in (tmp_path / "data" / "tax-booking").iterdir()) == sorted(
+        f"{split}.jsonl" for split in SPLIT_SIZES
+    )
+    assert [p.name for p in (tmp_path / "results").iterdir()] == ["data_manifest.json"]
