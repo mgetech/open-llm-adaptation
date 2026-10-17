@@ -33,7 +33,7 @@ from adapt.eval.runner import (
     write_results,
 )
 from adapt.prompting import system_prompt
-from fake_model import Model
+from fake_model import Model, unsure_about_4980, wrong_account_with_low_confidence
 from fake_server import FakeServer, Reply
 
 PLATFORM = load_platform("tax-booking")
@@ -378,25 +378,6 @@ def test_an_adapter_folder_is_hashed_into_the_manifest(server, tmp_path):
     results = run(server, "edge", settings={"adapter_path": tmp_path, "model_revision": "abc123"})
     assert results["manifest"]["adapter_hash"] == hash_directory(tmp_path)
     assert results["manifest"]["model_revision"] == "abc123"
-
-
-def wrong_account_with_low_confidence(every=3):
-    """Every third automatable document gets a wrong account. Those answers have a low logprob."""
-
-    def answer(document):
-        output = copy.deepcopy(dict(document.target))
-        number = int(document.id.split("-")[1])
-        items = output["items"]
-        wrongable = not document.expected_review and items and items[0]["account"] != "4980"
-        if wrongable and number % every == 0:
-            items[0]["account"] = "4980"
-        return output
-
-    return answer
-
-
-def unsure_about_4980(token):
-    return -1.5 if token == "4980" else -0.01
 
 
 def test_on_dev_the_threshold_is_tuned_and_stored_with_a_coverage_table(server):

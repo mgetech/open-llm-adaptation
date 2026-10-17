@@ -33,3 +33,22 @@ class Model:
 
     def _any_target(self):
         return copy.deepcopy(dict(next(iter(self.documents.values())).target))
+
+
+def wrong_account_with_low_confidence(every=3):
+    """Every third automatable document gets a wrong account. Those answers have a low logprob."""
+
+    def answer(document):
+        output = copy.deepcopy(dict(document.target))
+        number = int(document.id.split("-")[1])
+        items = output["items"]
+        wrongable = not document.expected_review and items and items[0]["account"] != "4980"
+        if wrongable and number % every == 0:
+            items[0]["account"] = "4980"
+        return output
+
+    return answer
+
+
+def unsure_about_4980(token):
+    return -1.5 if token == "4980" else -0.01

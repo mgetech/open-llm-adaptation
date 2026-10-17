@@ -309,8 +309,12 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
     }
 
 
+def results_file(out_dir: Path, platform: str, system: str, split: str) -> Path:
+    return out_dir / platform / system / f"{split}.json"
+
+
 def results_path(settings: RunSettings, out_dir: Path = RESULTS_DIR) -> Path:
-    return out_dir / settings.platform / settings.system / f"{settings.split}.json"
+    return results_file(out_dir, settings.platform, settings.system, settings.split)
 
 
 def write_results(results: Mapping[str, Any], path: Path) -> None:
