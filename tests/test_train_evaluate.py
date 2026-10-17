@@ -100,11 +100,6 @@ def test_a_missing_adapter_is_refused_before_any_server_starts(registry, tmp_pat
     assert not (tmp_path / "eval").exists()
 
 
-def test_the_reference_model_is_refused(registry, tmp_path):
-    with pytest.raises(ValueError, match="qwen3-8b is a reference model"):
-        evaluate_adapter(registry, "qwen3-8b", 0, tmp_path, adapters_dir=tmp_path)
-
-
 def test_a_model_that_fails_a_gate_is_refused_before_any_server_starts(tmp_path, monkeypatch):
     data = yaml.safe_load(MODELS_FILE.read_text(encoding="utf-8"))
     data["models"]["qwen3-4b"]["licence"] = "gpl-3.0"

@@ -1,4 +1,4 @@
-# Candidate and reference models, and the checks they must pass before I spend any GPU time.
+# Candidate models, and the checks they must pass before I spend any GPU time.
 # `make models-check` checks the gates and compares this file with the Hugging Face Hub.
 
 gates:
@@ -23,7 +23,6 @@ gates:
     lora_architectures: [Qwen3ForCausalLM]
 
 # `parameters` is the total tensor count the Hub reports for the pinned revision.
-# `candidate` models are fine-tuned. A `reference` model is only used few-shot.
 models:
   qwen3-1.7b:
     hf_id: Qwen/Qwen3-1.7B
@@ -31,7 +30,6 @@ models:
     licence: apache-2.0
     parameters: 2031739904
     architecture: Qwen3ForCausalLM
-    role: candidate
     chat_template:
       enable_thinking: false
 
@@ -41,16 +39,5 @@ models:
     licence: apache-2.0
     parameters: 4022468096
     architecture: Qwen3ForCausalLM
-    role: candidate
-    chat_template:
-      enable_thinking: false
-
-  qwen3-8b:
-    hf_id: Qwen/Qwen3-8B
-    revision: b968826d9c46dd6066d109eabc6255188de91218
-    licence: apache-2.0
-    parameters: 8190735360
-    architecture: Qwen3ForCausalLM
-    role: reference
     chat_template:
       enable_thinking: false

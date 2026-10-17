@@ -106,12 +106,11 @@ def test_every_make_target_the_notebook_calls_exists(code):
     assert called <= declared
 
 
-def test_the_model_is_a_candidate_and_the_check_uses_the_smallest_candidate(code):
+def test_the_model_is_in_the_registry_and_the_check_uses_the_smallest_model(code):
     settings = settings_of(code[0])
-    registry = load_registry()
-    candidates = {k: e for k, e in registry.models.items() if e.role == "candidate"}
-    assert settings["MODEL"] in candidates
-    assert settings["CHECK_MODEL"] == min(candidates, key=lambda k: candidates[k].parameters)
+    models = load_registry().models
+    assert settings["MODEL"] in models
+    assert settings["CHECK_MODEL"] == min(models, key=lambda k: models[k].parameters)
 
 
 def test_the_short_check_is_short(code):

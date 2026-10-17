@@ -37,11 +37,6 @@ def test_a_candidate_may_be_fine_tuned(registry):
     assert trainable_entry(registry, "qwen3-1.7b").hf_id == "Qwen/Qwen3-1.7B"
 
 
-def test_the_reference_model_is_not_fine_tuned(registry):
-    with pytest.raises(ValueError, match="qwen3-8b is a reference model"):
-        trainable_entry(registry, "qwen3-8b")
-
-
 def test_an_unknown_model_is_refused(registry):
     with pytest.raises(ValueError, match="unknown model 'gpt-9'.*qwen3-1.7b"):
         trainable_entry(registry, "gpt-9")
@@ -61,12 +56,6 @@ def test_the_command_needs_a_model_unless_it_is_a_smoke_run():
     with pytest.raises(SystemExit) as stop:
         main([])
     assert stop.value.code == 2
-
-
-def test_the_command_refuses_the_reference_model(tmp_path):
-    with pytest.raises(SystemExit) as stop:
-        main(["--model", "qwen3-8b", "--adapters-dir", str(tmp_path)])
-    assert "only candidates are fine-tuned" in str(stop.value)
 
 
 def test_the_latest_checkpoint_is_the_one_with_the_highest_step(tmp_path):

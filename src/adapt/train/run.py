@@ -62,8 +62,6 @@ def trainable_entry(registry: Registry, key: str) -> ModelEntry:
     if key not in registry.models:
         raise ValueError(f"unknown model {key!r}, expected one of {', '.join(registry.models)}")
     entry = registry.models[key]
-    if entry.role != "candidate":
-        raise ValueError(f"{key} is a {entry.role} model, only candidates are fine-tuned")
     failed = [r.name for r in check_model(entry, registry.gates) if not r.passed]
     if failed:
         raise ValueError(f"{key} fails the model gates: " + ", ".join(failed))
