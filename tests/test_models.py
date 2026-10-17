@@ -363,6 +363,11 @@ def test_the_command_pins_and_then_checks(tmp_path, monkeypatch, capsys):
     assert path.read_text(encoding="utf-8") == MODELS_FILE.read_text(encoding="utf-8")
 
 
+def test_the_command_prints_the_pinned_vllm_version(capsys, registry):
+    assert models.main(["--vllm-version"]) == 0
+    assert capsys.readouterr().out.strip() == registry.gates.vllm.version
+
+
 def test_pinning_cannot_be_combined_with_offline(capsys):
     with pytest.raises(SystemExit) as stop:
         models.main(["--pin", "--offline"])

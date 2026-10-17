@@ -221,7 +221,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--file", type=Path, default=MODELS_FILE)
     parser.add_argument("--offline", action="store_true", help="do not ask the Hub")
     parser.add_argument("--pin", action="store_true", help="pin revisions that are not SHAs")
+    parser.add_argument("--vllm-version", action="store_true", help="print the pinned vLLM version")
     args = parser.parse_args(argv)
+
+    if args.vllm_version:
+        print(load_registry(args.file).gates.vllm.version)
+        return 0
 
     try:
         if args.pin:
