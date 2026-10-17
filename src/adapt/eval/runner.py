@@ -123,11 +123,15 @@ def hash_file(path: Path) -> str:
 
 
 def hash_directory(path: Path) -> str:
-    """One hash for all files below `path`, from their relative names and contents."""
+    """One hash for all files below `path`, from their relative names and contents.
+
+    The files are sorted by the text of their names. Sorting the paths themselves is not the
+    same on every system: Windows ignores case, so "README.md" would come last."""
     if not path.is_dir():
         raise ValueError(f"{path} is not a directory")
     digest = hashlib.sha256()
-    for file in sorted(p for p in path.rglob("*") if p.is_file()):
+    files = [p for p in path.rglob("*") if p.is_file()]
+    for file in sorted(files, key=lambda p: p.relative_to(path).parts):
         digest.update(file.relative_to(path).as_posix().encode() + b"\0")
         digest.update(hash_file(file).encode() + b"\n")
     return digest.hexdigest()

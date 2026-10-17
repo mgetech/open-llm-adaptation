@@ -391,6 +391,17 @@ def test_a_hash_of_a_folder_changes_with_its_files(tmp_path: Path):
         hash_directory(tmp_path / "missing")
 
 
+def test_the_hash_of_a_folder_does_not_depend_on_the_system(tmp_path: Path):
+    """Files are taken in the order of their names as text, so capital letters come first."""
+    (tmp_path / "adapter_config.json").write_bytes(b"config")
+    (tmp_path / "README.md").write_bytes(b"readme")
+    digest = hashlib.sha256()
+    for name, content in (("README.md", b"readme"), ("adapter_config.json", b"config")):
+        digest.update(name.encode() + b"\0")
+        digest.update(hashlib.sha256(content).hexdigest().encode() + b"\n")
+    assert hash_directory(tmp_path) == digest.hexdigest()
+
+
 def test_an_adapter_folder_is_hashed_into_the_manifest(server, tmp_path):
     (tmp_path / "adapter_model.bin").write_bytes(b"weights")
     results = run(server, "edge", settings={"adapter_path": tmp_path, "model_revision": "abc123"})
