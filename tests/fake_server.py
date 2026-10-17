@@ -82,7 +82,7 @@ class _Server(ThreadingHTTPServer):
 
 
 class FakeServer:
-    def __init__(self) -> None:
+    def __init__(self, port: int = 0) -> None:
         self.requests: list[Request] = []
         self.handler: Callable[[dict[str, Any]], Reply] | None = None
         self.version: str | None = None
@@ -132,7 +132,7 @@ class FakeServer:
             def log_message(self, format: str, *args: Any) -> None:
                 pass
 
-        self._server = _Server(("127.0.0.1", 0), Handler)
+        self._server = _Server(("127.0.0.1", port), Handler)
         self._thread = threading.Thread(
             target=self._server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True
         )

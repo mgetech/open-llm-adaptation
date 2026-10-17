@@ -1,12 +1,12 @@
 import copy
 from itertools import chain
 
-import jinja2
 import pytest
 import yaml
 from pydantic import ValidationError
 
 from adapt.config import PLATFORMS_DIR, Platform, Rules, load_platform
+from adapt.prompting import system_prompt
 
 LAYOUTS = {
     "table_invoice",
@@ -83,10 +83,7 @@ def test_prices_stay_clear_of_the_asset_limit(platform):
 
 
 def test_prompt_template_renders(platform):
-    template = (PLATFORMS_DIR / "tax-booking" / "prompt.jinja").read_text(encoding="utf-8")
-    text = jinja2.Template(template, undefined=jinja2.StrictUndefined).render(
-        chart=platform.rules.chart, accounts=platform.rules.accounts
-    )
+    text = system_prompt("tax-booking", platform.rules.chart, platform.rules)
     assert "SKR03" in text
     for account in platform.rules.accounts:
         assert f"- {account.number} {account.name}\n" in text

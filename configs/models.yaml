@@ -1,0 +1,56 @@
+# Candidate and reference models, and the checks they must pass before I spend any GPU time.
+# `make models-check` checks the gates and compares this file with the Hugging Face Hub.
+
+gates:
+  # Licences a model may have. The Hub spelling, lower case.
+  licences: [apache-2.0, mit]
+
+  # QLoRA fits one T4 at the training length. This is an estimate from the parameter count.
+  # I confirm it with the first training run on Kaggle and change the numbers if it is off.
+  qlora:
+    gpu_memory_gb: 16
+    usable_fraction: 0.9          # the CUDA context and fragmentation take the rest
+    sequence_length: 1024
+    bytes_per_weight: 0.6         # 4-bit NF4 with double quantisation, plus the fp16 embeddings
+    trainable_fraction: 0.02      # LoRA r=16 on all linear layers is below this
+    bytes_per_trainable: 10       # fp32 weight, fp32 gradient and an 8-bit optimizer state
+    activation_gb_per_1k_tokens: 5.0   # logits and checkpointed activations at batch size 4
+
+  # The pinned vLLM version serves these architectures with LoRA adapters.
+  # I read the list from the supported models page of that version.
+  vllm:
+    version: "0.30.0"
+    lora_architectures: [Qwen3ForCausalLM]
+
+# `parameters` is the total tensor count the Hub reports for the pinned revision.
+# `candidate` models are fine-tuned. A `reference` model is only used few-shot.
+models:
+  qwen3-1.7b:
+    hf_id: Qwen/Qwen3-1.7B
+    revision: 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
+    licence: apache-2.0
+    parameters: 2031739904
+    architecture: Qwen3ForCausalLM
+    role: candidate
+    chat_template:
+      enable_thinking: false
+
+  qwen3-4b:
+    hf_id: Qwen/Qwen3-4B
+    revision: 1cfa9a7208912126459214e8b04321603b3df60c
+    licence: apache-2.0
+    parameters: 4022468096
+    architecture: Qwen3ForCausalLM
+    role: candidate
+    chat_template:
+      enable_thinking: false
+
+  qwen3-8b:
+    hf_id: Qwen/Qwen3-8B
+    revision: b968826d9c46dd6066d109eabc6255188de91218
+    licence: apache-2.0
+    parameters: 8190735360
+    architecture: Qwen3ForCausalLM
+    role: reference
+    chat_template:
+      enable_thinking: false

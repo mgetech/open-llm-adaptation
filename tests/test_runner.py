@@ -221,6 +221,24 @@ def test_a_model_that_is_down_sends_everything_to_review(server):
     assert "model_unavailable" in reasons
 
 
+def test_requests_wait_longer_than_the_gateway_does(server, monkeypatch):
+    """A busy server on a small GPU answers late. A timeout must not count as a model error."""
+    from adapt.client import TIMEOUT_SECONDS, ModelClient
+    from adapt.eval import runner
+
+    seen = []
+
+    class Recording(ModelClient):
+        def __init__(self, *args, **kwargs):
+            seen.append(kwargs.get("timeout"))
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(runner, "ModelClient", Recording)
+    run(server, "gold")
+    assert seen == [runner.REQUEST_TIMEOUT_SECONDS]
+    assert runner.REQUEST_TIMEOUT_SECONDS > 2 * TIMEOUT_SECONDS
+
+
 def test_answers_that_are_not_json_count_as_invalid(server):
     results = run(server, "edge", answer=lambda document: "not json")
     rows = results["documents"]
