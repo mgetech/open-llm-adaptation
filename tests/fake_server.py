@@ -2,6 +2,10 @@
 
 Queue replies with `server.reply(...)`. Each request takes the next reply in the queue; when
 the queue is empty the server answers 500. Requests are kept in `server.requests`.
+
+For tests that send many requests at once, set `server.handler` instead. It is called with the
+request body and returns the `Reply`, so the answer does not depend on the order of requests.
+Set `server.version` to make `GET /version` answer like vLLM does.
 """
 
 import json
@@ -80,6 +84,8 @@ class _Server(ThreadingHTTPServer):
 class FakeServer:
     def __init__(self) -> None:
         self.requests: list[Request] = []
+        self.handler: Callable[[dict[str, Any]], Reply] | None = None
+        self.version: str | None = None
         self._replies: list[Reply] = []
         self._lock = threading.Lock()
         outer = self
@@ -92,7 +98,10 @@ class FakeServer:
                     outer.requests.append(
                         Request(self.path, {k.lower(): v for k, v in self.headers.items()}, body)
                     )
-                    reply = outer._replies.pop(0) if outer._replies else Reply(status=500)
+                    if outer.handler:
+                        reply = outer.handler(body)
+                    else:
+                        reply = outer._replies.pop(0) if outer._replies else Reply(status=500)
                 time.sleep(reply.delay)
                 if reply.drop:
                     self.close_connection = True
@@ -110,6 +119,15 @@ class FakeServer:
                     self.wfile.write(data)
                 except OSError:
                     pass  # the client gave up waiting
+
+            def do_GET(self) -> None:
+                found = self.path == "/version" and outer.version is not None
+                data = json.dumps({"version": outer.version} if found else {}).encode()
+                self.send_response(200 if found else 404)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
 
             def log_message(self, format: str, *args: Any) -> None:
                 pass

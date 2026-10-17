@@ -41,7 +41,7 @@ class ModelError(Exception):
 
 
 @cache
-def _ssl_context() -> ssl.SSLContext:
+def ssl_context() -> ssl.SSLContext:
     """Loading the certificate bundle takes about half a second, so it is done once."""
     return httpx.create_ssl_context()
 
@@ -57,7 +57,7 @@ class ModelClient:
     ) -> None:
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
         self._http = httpx.Client(
-            base_url=base_url.rstrip("/") + "/", headers=headers, verify=_ssl_context()
+            base_url=base_url.rstrip("/") + "/", headers=headers, verify=ssl_context()
         )
         if retries < 0:
             raise ValueError("retries must not be negative")
