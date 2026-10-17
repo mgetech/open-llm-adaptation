@@ -282,6 +282,18 @@ def test_pinning_does_nothing_when_all_revisions_are_shas(tmp_path):
     assert hub.calls == [] and path.read_text(encoding="utf-8") == before
 
 
+def test_pinning_keeps_unix_line_endings(tmp_path):
+    text = MODELS_FILE.read_text(encoding="utf-8").replace(
+        "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e", "main"
+    )
+    path = tmp_path / "models.yaml"
+    path.write_bytes(text.replace("\r\n", "\n").encode("utf-8"))
+    pin_revisions(path, fake_hub(HubInfo(SHA, "apache-2.0", 1)))
+    raw = path.read_bytes()
+    assert b"\r" not in raw
+    assert f"revision: {SHA}\n".encode() in raw
+
+
 def test_pinning_keeps_windows_line_endings(tmp_path):
     text = MODELS_FILE.read_text(encoding="utf-8").replace(
         "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e", "main"

@@ -180,7 +180,8 @@ def pin_revisions(path: Path, hub: Hub) -> dict[str, str]:
     if not pinned:
         return pinned
 
-    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    # Bytes, not text mode, so that the line endings of the file are kept on every system.
+    lines = path.read_bytes().decode("utf-8").splitlines(keepends=True)
     current = None
     for number, line in enumerate(lines):
         entry_start = re.match(r"^  ([\w.-]+):\s*$", line)
@@ -189,7 +190,7 @@ def pin_revisions(path: Path, hub: Hub) -> dict[str, str]:
         elif current in pinned and re.match(r"^    revision:", line):
             ending = line[len(line.rstrip("\r\n")) :]
             lines[number] = f"    revision: {pinned[current]}{ending}"
-    path.write_text("".join(lines), encoding="utf-8")
+    path.write_bytes("".join(lines).encode("utf-8"))
     return pinned
 
 
