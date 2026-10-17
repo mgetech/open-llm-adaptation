@@ -2,6 +2,7 @@ import hashlib
 import json
 import socket
 import subprocess
+import sys
 
 import httpx
 import pytest
@@ -54,8 +55,15 @@ class Process:
 def test_the_server_command_pins_the_model_and_its_revision(registry):
     entry = registry.models["qwen3-4b"]
     command = serve_command(registry, "qwen3-4b", 8123)
-    assert command[:3] == ["vllm", "serve", "Qwen/Qwen3-4B"]
-    pairs = dict(zip(command[3::2], command[4::2], strict=True))
+    # The interpreter of this process, so the vLLM of this environment is used, not one on the PATH.
+    assert command[:5] == [
+        sys.executable,
+        "-m",
+        "vllm.entrypoints.cli.main",
+        "serve",
+        "Qwen/Qwen3-4B",
+    ]
+    pairs = dict(zip(command[5::2], command[6::2], strict=True))
     assert pairs == {
         "--revision": entry.revision,
         "--served-model-name": "qwen3-4b",

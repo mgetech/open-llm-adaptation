@@ -13,7 +13,7 @@ setup:  ## Create the virtual environment and install dependencies
 	uv sync
 
 install-vllm:  ## Install the vLLM version pinned in configs/models.yaml (Linux GPU machines)
-	uv pip install "vllm==$$(uv run python -m adapt.models --vllm-version)"
+	uv pip install --python .venv/bin/python "vllm==$$(uv run python -m adapt.models --vllm-version)"
 
 data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED)

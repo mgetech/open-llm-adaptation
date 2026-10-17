@@ -40,10 +40,15 @@ def system_name(key: str) -> str:
 
 
 def serve_command(registry: Registry, key: str, port: int) -> list[str]:
-    """The vLLM command for a base model. A T4 has no bf16, so the weights are fp16."""
+    """The vLLM command for a base model. A T4 has no bf16, so the weights are fp16.
+
+    It runs with the Python of this process, so it uses the vLLM installed next to this
+    project and never another `vllm` that is on the PATH."""
     entry = registry.models[key]
     return [
-        "vllm",
+        sys.executable,
+        "-m",
+        "vllm.entrypoints.cli.main",
         "serve",
         entry.hf_id,
         "--revision",
