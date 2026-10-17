@@ -3,6 +3,7 @@ import hashlib
 import json
 import math
 import re
+from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
@@ -304,7 +305,7 @@ def test_the_command_line_writes_the_results_and_prints_a_summary(server, tmp_pa
             "cli-test",
             "--split",
             "edge",
-            "--endpoint",
+            "--endpoints",
             server.url,
             "--workers",
             "2",
@@ -334,7 +335,7 @@ def test_the_model_name_can_differ_from_the_system_name(server, tmp_path):
             "adapter-a",
             "--split",
             "edge",
-            "--endpoint",
+            "--endpoints",
             server.url,
             "--threshold",
             "0",
@@ -469,7 +470,7 @@ def test_a_split_without_dev_results_asks_for_them(server, tmp_path, capsys):
                 "none-yet",
                 "--split",
                 "edge",
-                "--endpoint",
+                "--endpoints",
                 server.url,
                 "--out-dir",
                 str(tmp_path),
@@ -496,3 +497,113 @@ def test_when_dev_cannot_reach_the_target_there_is_no_confidence_limit(server, t
     edge = run(server, "edge", settings={"threshold": None, "out_dir": tmp_path})
     assert edge["manifest"]["threshold"] == 0.0
     assert edge["confidence_threshold"]["source"] == "dev target not reached, no confidence limit"
+
+
+def serve_edge(count, answer=None, delays=None):
+    """`count` fake servers that answer the edge split the same way. Returns them in a stack."""
+    stack = ExitStack()
+    servers = []
+    for index in range(count):
+        server = stack.enter_context(FakeServer())
+        server.version = "0.test"
+        model = Model(
+            load_documents("tax-booking", "edge"), load_canaries("tax-booking"), answer=answer
+        )
+        delay = (delays or {}).get(index, 0.0)
+
+        def handler(body, model=model, delay=delay):
+            reply = model(body)
+            reply.delay = delay
+            return reply
+
+        server.handler = handler
+        servers.append(server)
+    return stack, servers
+
+
+def evaluate_edge(servers):
+    endpoints = tuple(server.url for server in servers)
+    return evaluate(settings(servers[0], "edge", endpoint=endpoints, workers=3))
+
+
+@pytest.mark.parametrize("count", [2, 3, 4])
+def test_several_servers_give_the_results_of_one_server(count):
+    answer = wrong_account_with_low_confidence()
+    stack, servers = serve_edge(count, answer)
+    with stack:
+        merged = evaluate_edge(servers)
+        single = evaluate_edge(servers[:1])
+    assert merged["documents"] == single["documents"]
+    assert merged["metrics"] == single["metrics"]
+    assert merged["slices"] == single["slices"]
+    assert {**merged["manifest"], "servers": 1} == single["manifest"]
+    assert merged["manifest"]["servers"] == count and single["manifest"]["servers"] == 1
+
+
+@pytest.mark.parametrize("count", [2, 3, 4])
+def test_the_documents_are_shared_round_robin_by_index(count):
+    """Some edge documents are refused before they reach a model, so the requests of one server
+    are compared with its share, and all of them with the requests of a single server."""
+    documents = load_documents("tax-booking", "edge")
+    canaries = {c.text for c in load_canaries("tax-booking")}
+    stack, servers = serve_edge(count + 1)
+    with stack:
+        evaluate_edge(servers[:count])
+        evaluate_edge(servers[count:])
+
+    def asked(server):
+        return {r.body["messages"][1]["content"] for r in server.requests} - canaries
+
+    for index, server in enumerate(servers[:count]):
+        assert asked(server) <= {d.text for d in documents[index::count]}
+    assert set().union(*(asked(server) for server in servers[:count])) == asked(servers[count])
+    assert all(asked(server) for server in servers[:count])
+
+
+def test_the_results_stay_in_document_order_when_one_server_is_slower():
+    documents = load_documents("tax-booking", "edge")
+    stack, servers = serve_edge(2, delays={0: 0.03})
+    with stack:
+        results = evaluate_edge(servers)
+    assert [row["id"] for row in results["documents"]] == [d.id for d in documents]
+
+
+def test_each_server_has_its_own_requests_in_flight():
+    stack, servers = serve_edge(2, delays={0: 0.02, 1: 0.02})
+    with stack:
+        results = evaluate_edge(servers)
+    assert results["performance"]["workers"] == 3
+    assert all(len(server.requests) > 50 for server in servers)
+
+
+def test_servers_with_different_vllm_versions_are_refused_before_any_request():
+    stack, servers = serve_edge(2)
+    servers[1].version = "0.other"
+    with stack, pytest.raises(ValueError, match="do not run the same vllm version"):
+        evaluate_edge(servers)
+    assert all(server.requests == [] for server in servers)
+
+
+def test_a_run_needs_at_least_one_server():
+    with pytest.raises(ValueError, match="at least one endpoint"):
+        RunSettings("tax-booking", "demo", "dev", (), "m")
+
+
+def test_one_endpoint_may_be_given_as_text_or_as_a_tuple():
+    one = RunSettings("tax-booking", "demo", "dev", "http://a/v1", "m")
+    many = RunSettings("tax-booking", "demo", "dev", ("http://a/v1", "http://b/v1"), "m")
+    assert one.endpoints == ("http://a/v1",)
+    assert many.endpoints == ("http://a/v1", "http://b/v1")
+
+
+def test_the_command_line_takes_several_endpoints(tmp_path, capsys):
+    stack, servers = serve_edge(2)
+    with stack:
+        code = main(
+            ["--system", "two", "--split", "edge", "--endpoints", servers[0].url, servers[1].url]
+            + ["--threshold", "0", "--out-dir", str(tmp_path)]
+        )
+    assert code == 0
+    saved = json.loads((tmp_path / "tax-booking" / "two" / "edge.json").read_text(encoding="utf-8"))
+    assert saved["manifest"]["servers"] == 2
+    assert len(servers[0].requests) > 0 and len(servers[1].requests) > 0

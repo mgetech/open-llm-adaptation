@@ -1,9 +1,13 @@
 """Run a system on one split and write the results file.
 
-Run with `make eval PLATFORM=... SYSTEM=... SPLIT=... ENDPOINT=...`. Every document goes
+Run with `make eval PLATFORM=... SYSTEM=... SPLIT=... ENDPOINTS=...`. Every document goes
 through the same pipeline the gateway uses. The results go to
 `results/eval/<platform>/<system>/<split>.json` and hold the metrics with confidence
 intervals, the slices, one row per document, and a manifest of what was run.
+
+`ENDPOINTS` can name several servers that hold the same model and adapter. Document `i` of the
+split goes to server `i % n`, each server gets its own share of the requests in flight, and the
+results are put back in document order. At temperature 0 this gives the results of one server.
 """
 
 import argparse
@@ -16,6 +20,7 @@ import sys
 import time
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
@@ -180,24 +185,50 @@ def server_version(endpoint: str) -> str | None:
         return None
 
 
-def run_documents(
-    pipeline: Pipeline, documents: Sequence[EvalDocument], workers: int
-) -> tuple[list[Result], list[float], float]:
-    """Process the documents. Returns the results, the time per document and the wall time."""
+def run_shard(
+    pipeline: Pipeline, documents: Sequence[EvalDocument], workers: int, label: str = ""
+) -> tuple[list[Result], list[float]]:
+    """Process the documents on one server. Returns the results and the time per document."""
 
     def one(document: EvalDocument) -> tuple[Result, float]:
         start = time.perf_counter()
         result = pipeline.process(document.text, document.chart)
         return result, time.perf_counter() - start
 
-    started = time.perf_counter()
     results, latencies = [], []
     with ThreadPoolExecutor(max_workers=workers) as pool:
         for done, (result, latency) in enumerate(pool.map(one, documents), start=1):
             results.append(result)
             latencies.append(latency)
             if done % 100 == 0:
-                print(f"{done}/{len(documents)} documents", file=sys.stderr)
+                print(f"{label}{done}/{len(documents)} documents", file=sys.stderr)
+    return results, latencies
+
+
+def run_documents(
+    pipelines: Sequence[Pipeline], documents: Sequence[EvalDocument], workers: int
+) -> tuple[list[Result], list[float], float]:
+    """Process the documents, one pipeline per server. Document `i` goes to server `i % n`.
+
+    Each server works on its share at the same time with `workers` requests in flight. Returns the
+    results and the time per document, both in document order, and the wall time."""
+    count = len(pipelines)
+    started = time.perf_counter()
+    if count == 1:
+        results, latencies = run_shard(pipelines[0], documents, workers)
+        return results, latencies, time.perf_counter() - started
+
+    def shard(index: int) -> tuple[list[Result], list[float]]:
+        label = f"server {index + 1}: "
+        return run_shard(pipelines[index], documents[index::count], workers, label)
+
+    with ThreadPoolExecutor(max_workers=count) as servers:
+        shards = list(servers.map(shard, range(count)))
+    results: list[Any] = [None] * len(documents)
+    latencies = [0.0] * len(documents)
+    for index, (shard_results, shard_latencies) in enumerate(shards):
+        results[index::count] = shard_results
+        latencies[index::count] = shard_latencies
     return results, latencies, time.perf_counter() - started
 
 
@@ -215,7 +246,7 @@ class RunSettings:
     platform: str
     system: str
     split: str
-    endpoint: str
+    endpoint: str | tuple[str, ...]  # one server, or several that hold the same model and adapter
     model: str
     threshold: float | None = None
     workers: int = 8
@@ -224,6 +255,14 @@ class RunSettings:
     few_shot: bool = False
     data_dir: Path = DATA_DIR
     out_dir: Path = RESULTS_DIR
+
+    def __post_init__(self) -> None:
+        if not self.endpoints:
+            raise ValueError("at least one endpoint is needed")
+
+    @property
+    def endpoints(self) -> tuple[str, ...]:
+        return (self.endpoint,) if isinstance(self.endpoint, str) else tuple(self.endpoint)
 
 
 def resolve_threshold(settings: RunSettings) -> tuple[float | None, str]:
@@ -257,19 +296,29 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
     canaries = load_canaries(settings.platform, settings.data_dir)
     adapter_hash = hash_directory(settings.adapter_path) if settings.adapter_path else None
     groups = account_groups(platform.rules)
+    versions = [server_version(endpoint) for endpoint in settings.endpoints]
+    if len(set(versions)) > 1:
+        raise ValueError(f"the servers do not run the same vllm version: {versions}")
 
-    with ModelClient(settings.endpoint, timeout=REQUEST_TIMEOUT_SECONDS) as client:
+    with ExitStack() as stack:
+        clients = [
+            stack.enter_context(ModelClient(endpoint, timeout=REQUEST_TIMEOUT_SECONDS))
+            for endpoint in settings.endpoints
+        ]
         # When the threshold is still to be tuned, run without one and apply it afterwards.
-        pipeline = Pipeline(
-            platform,
-            client,
-            adapter=settings.model,
-            threshold=0.0 if threshold is None else threshold,
-            adapter_version=adapter_hash,
-            few_shot=settings.few_shot,
-        )
-        results, latencies, wall = run_documents(pipeline, documents, settings.workers)
-        pairs = canary_pairs(pipeline, canaries)
+        pipelines = [
+            Pipeline(
+                platform,
+                client,
+                adapter=settings.model,
+                threshold=0.0 if threshold is None else threshold,
+                adapter_version=adapter_hash,
+                few_shot=settings.few_shot,
+            )
+            for client in clients
+        ]
+        results, latencies, wall = run_documents(pipelines, documents, settings.workers)
+        pairs = canary_pairs(pipelines[0], canaries)
 
     confidence_threshold: dict[str, Any] = {"value": threshold, "source": source}
     if threshold is None:
@@ -296,7 +345,8 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
             "model": settings.model,
             "model_revision": settings.model_revision,
             "adapter_hash": adapter_hash,
-            "vllm_version": server_version(settings.endpoint),
+            "vllm_version": versions[0],
+            "servers": len(settings.endpoints),
             "gpu": gpu_name(),
             "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
             "few_shot": settings.few_shot,
@@ -355,7 +405,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument("--system", required=True, help="name for the results folder")
     parser.add_argument("--split", default="dev", choices=SPLITS)
-    parser.add_argument("--endpoint", default="http://localhost:8000/v1")
+    parser.add_argument(
+        "--endpoints",
+        nargs="+",
+        default=["http://localhost:8000/v1"],
+        help="one or more servers with the same model and adapter",
+    )
     parser.add_argument("--model", help="model or adapter name on the server (default: system)")
     parser.add_argument(
         "--threshold",
@@ -373,7 +428,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.platform,
         args.system,
         args.split,
-        args.endpoint,
+        tuple(args.endpoints),
         args.model or args.system,
         args.threshold,
         args.workers,

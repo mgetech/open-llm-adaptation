@@ -100,6 +100,13 @@ def test_the_notebook_trains_on_two_gpus_but_a_dry_run_has_no_gpu(code):
     assert "*GPUS" in short_check_evaluation  # it needs the GPU count to find the adapter
 
 
+def test_the_evaluation_starts_one_server_per_gpu_and_a_dry_run_does_too(code):
+    assert settings_of(code[0])["SERVERS"] == 2
+    calls = [s for s in code if '"eval-sft"' in s]
+    assert len(calls) == 2  # the short check and the real run
+    assert all('f"SERVERS={SERVERS}"' in call for call in calls)
+
+
 def test_a_dry_run_writes_to_temporary_folders_and_a_real_run_inside_the_repository(code):
     cell = next(source for source in code if "def make" in source)
     dry, _, real = cell.partition("else:\n    REPO = ")

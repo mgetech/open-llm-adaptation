@@ -4,12 +4,17 @@ The server loads the base model in fp16 and the adapter as a LoRA module. The re
 the adapter by its system name, with the zero-shot prompt it was trained on. The results go to
 `<out-dir>/<platform>/<system>/<split>.json`, where `make gate` reads them.
 
+`--servers N` starts N servers, one per GPU (`CUDA_VISIBLE_DEVICES` 0 to N-1, on consecutive
+ports), each with the same base model and adapter. The documents of a split are shared between
+them and the results are merged in document order.
+
 `--dry-run` starts the fake server from the tests instead of vLLM. `--smoke` selects the adapter
 of a smoke run, which is random, so it can only be used with `--dry-run`. Results from either
 come from a fake model and are never real results.
 """
 
 import argparse
+import os
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -74,13 +79,19 @@ def evaluate_adapter(
     splits: Sequence[str] = SPLITS,
     smoke: bool = False,
     port: int = 8000,
+    servers: int = 1,
     dry_run: bool = False,
     workers: int = 8,
     timeout: float = START_TIMEOUT_SECONDS,
 ) -> list[Path]:
-    """Evaluate the adapter of a run on `splits`. Returns the results files."""
+    """Evaluate the adapter of a run on `splits`. Returns the results files.
+
+    `servers` servers are started, on `port` and the ports after it. A dry run takes a free
+    port for each of the others, so that it never meets a port that is in use."""
     if smoke and not dry_run:
         raise ValueError("the adapter of a smoke run is random, evaluate it with --dry-run")
+    if servers < 1:
+        raise ValueError(f"the number of servers must be at least 1, not {servers}")
     unknown = [split for split in splits if split not in SPLITS]
     if unknown:
         raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(SPLITS)}")
@@ -95,26 +106,37 @@ def evaluate_adapter(
     system = system_name(key, seed, smoke=smoke, max_steps=max_steps)
 
     if dry_run:
-        command = fake_command(port)
+        ports = [port, *(free_port() for _ in range(servers - 1))]
     else:
-        rank = load_train_config().lora.r
-        command = lora_command(registry, key or "", port, system, adapter_dir, rank)
-    base_url = f"http://127.0.0.1:{port}"
-    process = subprocess.Popen(command)
+        ports = [port + index for index in range(servers)]
+    rank = load_train_config().lora.r
+    processes: list[subprocess.Popen] = []
     written = []
     try:
-        wait_until_ready(base_url, process, timeout)
-        endpoint = f"{base_url}/v1"
-        version = server_version(endpoint)
-        pinned = registry.gates.vllm.version
-        if not dry_run and version != pinned:
-            raise ValueError(f"the server runs vllm {version}, the registry pins {pinned}")
+        for index, server_port in enumerate(ports):
+            if dry_run:
+                command = fake_command(server_port)
+            else:
+                command = lora_command(registry, key or "", server_port, system, adapter_dir, rank)
+            # With several servers, each one has a GPU of its own.
+            env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(index)} if servers > 1 else None
+            processes.append(subprocess.Popen(command, env=env))
+        endpoints = []
+        for process, server_port in zip(processes, ports, strict=True):
+            base_url = f"http://127.0.0.1:{server_port}"
+            wait_until_ready(base_url, process, timeout)
+            endpoint = f"{base_url}/v1"
+            version = server_version(endpoint)
+            pinned = registry.gates.vllm.version
+            if not dry_run and version != pinned:
+                raise ValueError(f"the server runs vllm {version}, the registry pins {pinned}")
+            endpoints.append(endpoint)
         for split in splits:
             settings = RunSettings(
                 platform,
                 system,
                 split,
-                endpoint,
+                tuple(endpoints),
                 system,
                 workers=workers,
                 model_revision=entry.revision if entry else None,
@@ -127,7 +149,8 @@ def evaluate_adapter(
             written.append(path)
             print(f"{system} on {split}: {len(results['documents'])} documents, results in {path}")
     finally:
-        stop(process)
+        for process in processes:
+            stop(process)
     return written
 
 
@@ -148,6 +171,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--port", type=int, help="port of the server (default: 8000, or a free one)"
     )
+    parser.add_argument("--servers", type=int, default=1, help="servers, one per GPU")
     parser.add_argument("--dry-run", action="store_true", help="use the fake server, not vLLM")
     args = parser.parse_args(argv)
     if not args.smoke and not args.model:
@@ -167,6 +191,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             splits=args.splits,
             smoke=args.smoke,
             port=port,
+            servers=args.servers,
             dry_run=args.dry_run,
             workers=args.workers,
         )

@@ -130,6 +130,71 @@ def test_a_server_with_another_vllm_version_is_refused_and_stopped(
     assert not (tmp_path / "eval").exists()
 
 
+def start_and_refuse(registry, server, tmp_path, monkeypatch, **options):
+    """Start the servers of an evaluation against a server of the wrong version, and return what
+    was started. The run stops at the version check, after every server has been started."""
+    server.version = "0.0.1"
+    make_adapter(tmp_path, "qwen3-4b-0")
+    started = []
+
+    def popen(command, **kwargs):
+        process = Process()
+        started.append((command, kwargs.get("env"), process))
+        return process
+
+    monkeypatch.setattr(subprocess, "Popen", popen)
+    port = int(server.url.rsplit(":", 1)[1].split("/")[0])
+    with pytest.raises(ValueError, match="runs vllm 0.0.1"):
+        evaluate_adapter(
+            registry, "qwen3-4b", 0, tmp_path / "eval", adapters_dir=tmp_path, port=port, **options
+        )
+    return port, started
+
+
+def test_two_servers_have_the_next_port_and_one_gpu_each(registry, server, tmp_path, monkeypatch):
+    port, started = start_and_refuse(registry, server, tmp_path, monkeypatch, servers=2)
+    ports = [command[command.index("--port") + 1] for command, _, _ in started]
+    assert ports == [str(port), str(port + 1)]
+    assert [env["CUDA_VISIBLE_DEVICES"] for _, env, _ in started] == ["0", "1"]
+    assert all(process.stopped for _, _, process in started)
+
+
+def test_one_server_keeps_the_gpu_choice_of_the_environment(
+    registry, server, tmp_path, monkeypatch
+):
+    _, started = start_and_refuse(registry, server, tmp_path, monkeypatch)
+    assert len(started) == 1 and started[0][1] is None
+
+
+def test_no_server_is_not_a_valid_number_of_servers(registry, tmp_path):
+    make_adapter(tmp_path, "qwen3-4b-0")
+    with pytest.raises(ValueError, match="at least 1, not 0"):
+        evaluate_adapter(
+            registry, "qwen3-4b", 0, tmp_path / "eval", adapters_dir=tmp_path, servers=0
+        )
+
+
+def test_a_dry_run_on_two_servers_gives_the_results_of_one_server(tmp_path):
+    make_adapter(tmp_path, "qwen3-1.7b-0")
+    base = [
+        "--model",
+        "qwen3-1.7b",
+        "--dry-run",
+        "--splits",
+        "dev",
+        "--adapters-dir",
+        str(tmp_path),
+    ]
+    assert main([*base, "--out-dir", str(tmp_path / "one")]) == 0
+    assert main([*base, "--servers", "2", "--out-dir", str(tmp_path / "two")]) == 0
+    path = ("tax-booking", "qwen3-1.7b-sft-0", "dev")
+    one = json.loads(results_file(tmp_path / "one", *path).read_text(encoding="utf-8"))
+    two = json.loads(results_file(tmp_path / "two", *path).read_text(encoding="utf-8"))
+    assert one["manifest"]["servers"] == 1 and two["manifest"]["servers"] == 2
+    assert two["documents"] == one["documents"] and two["metrics"] == one["metrics"]
+    assert two["confidence_threshold"] == one["confidence_threshold"]
+
+
 @pytest.fixture(scope="module")
 def dry_run(tmp_path_factory, registry):
     root = tmp_path_factory.mktemp("sft")
