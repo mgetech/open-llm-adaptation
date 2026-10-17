@@ -118,6 +118,7 @@ class Pipeline:
         adapter: str,
         threshold: float,
         adapter_version: str | None = None,
+        few_shot: bool = False,
     ) -> None:
         self.platform = platform
         self.client = client
@@ -125,7 +126,9 @@ class Pipeline:
         self.adapter_version = adapter_version
         self.threshold = threshold
         self._schema = build_output_schema(platform.rules)
-        self._system = system_prompt(platform.config.name, platform.rules.chart, platform.rules)
+        self._system = system_prompt(
+            platform.config.name, platform.rules.chart, platform.rules, few_shot=few_shot
+        )
 
     def process(self, document_text: str, chart: str, request_id: str | None = None) -> Result:
         request_id = request_id or uuid.uuid4().hex

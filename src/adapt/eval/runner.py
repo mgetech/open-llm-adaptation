@@ -214,6 +214,7 @@ class RunSettings:
     workers: int = 8
     model_revision: str | None = None
     adapter_path: Path | None = None
+    few_shot: bool = False
     data_dir: Path = DATA_DIR
     out_dir: Path = RESULTS_DIR
 
@@ -258,6 +259,7 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
             adapter=settings.model,
             threshold=0.0 if threshold is None else threshold,
             adapter_version=adapter_hash,
+            few_shot=settings.few_shot,
         )
         results, latencies, wall = run_documents(pipeline, documents, settings.workers)
         pairs = canary_pairs(pipeline, canaries)
@@ -275,7 +277,9 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
     scored = score(documents, results, groups)
     data_file = split_path(settings.platform, settings.split, settings.data_dir)
     commit, dirty = git_state()
-    prompt = system_prompt(settings.platform, platform.rules.chart, platform.rules)
+    prompt = system_prompt(
+        settings.platform, platform.rules.chart, platform.rules, few_shot=settings.few_shot
+    )
     p50, p95 = np.percentile(latencies, [50, 95]) if latencies else (None, None)
     return {
         "platform": settings.platform,
@@ -288,6 +292,7 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
             "vllm_version": server_version(settings.endpoint),
             "gpu": gpu_name(),
             "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
+            "few_shot": settings.few_shot,
             "data_sha256": hash_file(data_file),
             "git_commit": commit,
             "git_dirty": dirty,
@@ -353,6 +358,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--workers", type=int, default=8, help="requests in flight")
     parser.add_argument("--model-revision", help="revision of the base model, for the manifest")
     parser.add_argument("--adapter-path", type=Path, help="adapter folder, hashed for the manifest")
+    parser.add_argument("--few-shot", action="store_true", help="add the examples to the prompt")
     parser.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args(argv)
 
@@ -366,6 +372,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.workers,
         args.model_revision,
         args.adapter_path,
+        few_shot=args.few_shot,
         out_dir=args.out_dir,
     )
     try:

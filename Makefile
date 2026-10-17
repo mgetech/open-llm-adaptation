@@ -21,12 +21,12 @@ validate-gold:  ## Check the gold file: schema, amounts and accounts (PLATFORM=)
 models-check:  ## Check the model gates and compare the pinned revisions with the Hub (OFFLINE=1, PIN=1)
 	uv run python -m adapt.models $(if $(OFFLINE),--offline) $(if $(PIN),--pin)
 
-eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINT=; optional MODEL=, THRESHOLD=)
+eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINT=; optional MODEL=, THRESHOLD=, FEW_SHOT=1)
 	uv run python -m adapt.eval.runner --platform $(PLATFORM) --split $(SPLIT) --endpoint $(ENDPOINT) \
 		$(if $(SYSTEM),--system $(SYSTEM)) $(if $(MODEL),--model $(MODEL)) \
 		$(if $(THRESHOLD),--threshold $(THRESHOLD)) $(if $(WORKERS),--workers $(WORKERS)) \
 		$(if $(MODEL_REVISION),--model-revision $(MODEL_REVISION)) \
-		$(if $(ADAPTER_PATH),--adapter-path $(ADAPTER_PATH))
+		$(if $(ADAPTER_PATH),--adapter-path $(ADAPTER_PATH)) $(if $(FEW_SHOT),--few-shot)
 
 gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=)
 	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE))
