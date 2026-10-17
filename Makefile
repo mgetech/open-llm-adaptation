@@ -4,7 +4,7 @@ SEED ?= 0
 SPLIT ?= dev
 ENDPOINT ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data validate-gold models-check baseline eval gate lint format test requirements
+.PHONY: help setup install-vllm data validate-gold models-check baseline train eval gate lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -23,6 +23,11 @@ validate-gold:  ## Check the gold file: schema, amounts and accounts (PLATFORM=)
 
 models-check:  ## Check the model gates and compare the pinned revisions with the Hub (OFFLINE=1, PIN=1)
 	uv run python -m adapt.models $(if $(OFFLINE),--offline) $(if $(PIN),--pin)
+
+train:  ## QLoRA fine-tuning of one model (MODEL=, SEED=; optional SMOKE=1, RESUME=1, MAX_STEPS=)
+	uv run --group gpu python -m adapt.train --platform $(PLATFORM) --seed $(SEED) \
+		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(RESUME),--resume) \
+		$(if $(MAX_STEPS),--max-steps $(MAX_STEPS))
 
 eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINT=; optional MODEL=, THRESHOLD=, FEW_SHOT=1, OUT_DIR=)
 	uv run python -m adapt.eval.runner --platform $(PLATFORM) --split $(SPLIT) --endpoint $(ENDPOINT) \
