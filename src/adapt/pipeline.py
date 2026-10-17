@@ -85,10 +85,18 @@ def account_confidences(
 ) -> list[float] | None:
     """The probability of each item's account value, from the log-probabilities of its tokens.
 
-    The characters of the answer are matched to tokens by joining the token texts. Returns None
-    when that does not line up, because then the confidence cannot be trusted.
+    The characters of the answer are matched to tokens by joining the token texts. A server may
+    list the end-of-text token after the last character, so the tokens after the point where
+    the text is complete are ignored. Returns None when the text does not line up, because then
+    the confidence cannot be trusted.
     """
-    if not tokens or "".join(t.token for t in tokens) != content:
+    text = ""
+    for count, t in enumerate(tokens):
+        if len(text) >= len(content):
+            tokens = tokens[:count]
+            break
+        text += t.token
+    if not tokens or text != content:
         return None
     spans = [match.span(1) for match in _ACCOUNT_VALUE.finditer(content)]
     if len(spans) != item_count:

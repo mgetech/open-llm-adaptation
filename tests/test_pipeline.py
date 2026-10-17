@@ -361,6 +361,23 @@ def test_account_confidence_gives_none_when_it_cannot_be_matched():
     assert account_confidences(content, [TokenLogprob("other", -0.1)], 1) is None
 
 
+def test_tokens_after_the_end_of_the_text_are_ignored():
+    """vLLM can list the end-of-text token after the last character of the answer."""
+    content = '{"account":"4930"}'
+    pieces = ['{"account":"', "4930", '"}']
+    tokens = [TokenLogprob(p, -0.5) for p in pieces]
+    plain = account_confidences(content, tokens, 1)
+    for end in ["<|im_end|>", ""]:
+        with_end = account_confidences(content, [*tokens, TokenLogprob(end, -0.01)], 1)
+        assert with_end == plain == [pytest.approx(math.exp(-0.5))]
+
+
+def test_account_confidence_gives_none_when_the_text_is_longer_than_the_tokens():
+    content = '{"account":"4930"}'
+    tokens = [TokenLogprob('{"account":"', -0.5), TokenLogprob("4930", -0.5)]
+    assert account_confidences(content, tokens, 1) is None
+
+
 def test_an_account_named_inside_a_description_is_not_counted():
     content = json.dumps({"items": [{"description": 'say "account": "1"', "account": "4930"}]})
     tokens = [TokenLogprob(content, -0.1)]
