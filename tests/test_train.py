@@ -185,6 +185,20 @@ def test_a_real_run_uses_the_first_gpu_only_unless_told_otherwise(tmp_path, monk
     assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
 
 
+def test_a_run_on_two_gpus_makes_both_visible(tmp_path, monkeypatch):
+    import torch
+
+    if torch.cuda.is_available():
+        pytest.skip("this machine has a GPU")
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "")
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES")
+    monkeypatch.setenv("WORLD_SIZE", "2")
+    arguments = ["--model", "qwen3-1.7b", "--num-gpus", "2", "--adapters-dir", str(tmp_path)]
+    with pytest.raises(SystemExit):
+        main(arguments)
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "0,1"
+
+
 def test_a_choice_of_gpu_is_kept(tmp_path, monkeypatch):
     import torch
 
@@ -235,6 +249,9 @@ def test_the_manifest_records_what_was_run(smoke):
     assert isinstance(manifest["git_dirty"], bool | type(None))
     assert manifest["gpu"] is None and manifest["gpu_count"] == 0 and manifest["gpu_hours"] == 0
     assert manifest["wall_seconds"] > 0
+    assert manifest["num_gpus"] == 1 and manifest["peak_gpu_memory_gib"] is None
+    assert manifest["per_device_batch_size"] == 2 and manifest["gradient_accumulation_steps"] == 1
+    assert manifest["effective_batch_size"] == 2
     assert {"python", "torch", "transformers", "trl", "peft"} <= set(manifest["versions"])
     assert manifest["trainable_parameters"] > 0
 

@@ -1,14 +1,22 @@
 """The parts of a training run that need no GPU library: names, refusals and folders."""
 
+import shutil
+import subprocess
+
 import pytest
 import yaml
 
+from adapt.eval.runner import ROOT
 from adapt.models import MODELS_FILE, Registry, load_registry
+from adapt.train.config import load_train_config
 from adapt.train.run import (
     TrainSettings,
+    accumulation_steps,
+    check_processes,
     find_checkpoint,
     main,
     prepare_output,
+    process_ranks,
     run,
     run_name,
     trainable_entry,
@@ -26,7 +34,19 @@ def test_the_run_name_has_the_model_and_the_seed():
 
 def test_a_short_check_has_its_own_name_so_it_never_replaces_a_full_run():
     settings = TrainSettings("tax-booking", 0, model="qwen3-4b", max_steps=3)
-    assert run_name(settings) == "qwen3-4b-0-steps3"
+    assert run_name(settings) == "qwen3-4b-0-steps3-gpus1"
+
+
+def test_a_short_run_on_one_gpu_does_not_replace_the_same_run_on_two():
+    one = TrainSettings("tax-booking", 0, model="qwen3-1.7b", max_steps=50, num_gpus=1)
+    two = TrainSettings("tax-booking", 0, model="qwen3-1.7b", max_steps=50, num_gpus=2)
+    assert run_name(one) == "qwen3-1.7b-0-steps50-gpus1"
+    assert run_name(two) == "qwen3-1.7b-0-steps50-gpus2"
+
+
+def test_a_full_run_has_the_same_name_on_any_number_of_gpus():
+    two = TrainSettings("tax-booking", 1, model="qwen3-4b", num_gpus=2)
+    assert run_name(two) == "qwen3-4b-1"
 
 
 def test_a_smoke_run_has_its_own_name():
@@ -110,3 +130,91 @@ def test_a_smoke_run_replaces_the_files_of_the_last_smoke_run(folders):
     (checkpoints / "checkpoint-1").mkdir(parents=True)
     prepare_output(adapter, checkpoints, resume=False, smoke=True)
     assert not adapter.exists() and not checkpoints.exists()
+
+
+def test_a_run_started_without_the_launcher_is_one_process(monkeypatch):
+    monkeypatch.delenv("LOCAL_RANK", raising=False)
+    monkeypatch.delenv("WORLD_SIZE", raising=False)
+    assert process_ranks() == (0, 1)
+
+
+def test_the_ranks_come_from_the_launcher(monkeypatch):
+    monkeypatch.setenv("LOCAL_RANK", "1")
+    monkeypatch.setenv("WORLD_SIZE", "2")
+    assert process_ranks() == (1, 2)
+
+
+def test_the_number_of_processes_must_match_the_number_of_gpus(monkeypatch):
+    monkeypatch.delenv("LOCAL_RANK", raising=False)
+    monkeypatch.setenv("WORLD_SIZE", "2")
+    check_processes(2)
+    with pytest.raises(ValueError, match="2 processes were started for 1 GPUs.*NUM_GPUS"):
+        check_processes(1)
+
+
+def test_two_gpus_asked_for_without_the_launcher_stop_the_run_before_any_work(
+    tmp_path, monkeypatch
+):
+    monkeypatch.delenv("WORLD_SIZE", raising=False)
+    with pytest.raises(SystemExit) as stop:
+        main(["--model", "qwen3-4b", "--num-gpus", "2", "--adapters-dir", str(tmp_path)])
+    assert "1 processes were started for 2 GPUs" in str(stop.value)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_no_gpu_is_not_a_valid_number_of_gpus(monkeypatch):
+    monkeypatch.delenv("WORLD_SIZE", raising=False)
+    with pytest.raises(ValueError, match="at least 1"):
+        check_processes(0)
+
+
+@pytest.mark.parametrize("num_gpus", [1, 2, 4])
+def test_the_effective_batch_size_is_the_same_on_any_number_of_gpus(num_gpus):
+    optimiser = load_train_config().optimiser
+    accumulation = accumulation_steps(optimiser.gradient_accumulation_steps, num_gpus)
+    assert optimiser.batch_size * accumulation * num_gpus == 16
+
+
+@pytest.mark.parametrize("num_gpus", [3, 8])
+def test_a_number_of_gpus_that_would_change_the_batch_size_is_refused(num_gpus):
+    total = load_train_config().optimiser.gradient_accumulation_steps
+    with pytest.raises(ValueError, match="effective batch size"):
+        accumulation_steps(total, num_gpus)
+
+
+needs_make = pytest.mark.skipif(shutil.which("make") is None, reason="make is not installed")
+
+
+def planned(*variables: str) -> str:
+    """What `make train` would run, without running it."""
+    result = subprocess.run(
+        ["make", "--dry-run", "train", *variables],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return " ".join(result.stdout.replace("\\\n", " ").split())
+
+
+@needs_make
+def test_two_gpus_are_started_with_the_launcher_and_two_processes():
+    command = planned("MODEL=qwen3-4b", "NUM_GPUS=2")
+    assert (
+        "accelerate launch --multi_gpu --num_processes 2 -m adapt.train "
+        "--platform tax-booking --seed 0 --num-gpus 2 --model qwen3-4b" in command
+    )
+
+
+@needs_make
+def test_one_gpu_is_the_default_and_needs_no_launcher():
+    command = planned("MODEL=qwen3-4b")
+    assert "python -m adapt.train --platform tax-booking --seed 0 --num-gpus 1" in command
+    assert "accelerate" not in command
+
+
+@needs_make
+def test_a_short_run_passes_its_steps_and_gpus_on():
+    command = planned("MODEL=qwen3-1.7b", "NUM_GPUS=2", "MAX_STEPS=50")
+    assert "--num_processes 2" in command and "--num-gpus 2" in command
+    assert "--max-steps 50" in command

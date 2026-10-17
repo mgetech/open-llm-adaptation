@@ -70,6 +70,7 @@ def evaluate_adapter(
     platform: str = "tax-booking",
     adapters_dir: Path = ADAPTERS_DIR,
     max_steps: int | None = None,
+    num_gpus: int = 1,
     splits: Sequence[str] = SPLITS,
     smoke: bool = False,
     port: int = 8000,
@@ -85,7 +86,9 @@ def evaluate_adapter(
         raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(SPLITS)}")
     entry = None if smoke else trainable_entry(registry, key or "")
 
-    train = TrainSettings(platform, seed, model=key, smoke=smoke, max_steps=max_steps)
+    train = TrainSettings(
+        platform, seed, model=key, smoke=smoke, max_steps=max_steps, num_gpus=num_gpus
+    )
     adapter_dir = adapters_dir / platform / run_name(train)
     if not (adapter_dir / "adapter_config.json").exists():
         raise ValueError(f"no adapter in {adapter_dir}, train it first")
@@ -135,6 +138,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--smoke", action="store_true", help="the adapter of a smoke run")
     parser.add_argument("--max-steps", type=int, help="the adapter of a run with this limit")
+    parser.add_argument(
+        "--num-gpus", type=int, default=1, help="GPUs of that run (only its folder name has it)"
+    )
     parser.add_argument("--splits", nargs="+", default=list(SPLITS), help="default: all splits")
     parser.add_argument("--adapters-dir", type=Path, default=ADAPTERS_DIR)
     parser.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
@@ -157,6 +163,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             platform=args.platform,
             adapters_dir=args.adapters_dir,
             max_steps=args.max_steps,
+            num_gpus=args.num_gpus,
             splits=args.splits,
             smoke=args.smoke,
             port=port,

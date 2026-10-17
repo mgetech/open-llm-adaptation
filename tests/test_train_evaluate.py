@@ -195,9 +195,18 @@ def test_a_smoke_adapter_is_evaluated_against_the_fake_server(tmp_path):
 
 
 def test_a_short_check_uses_the_adapter_and_the_name_of_the_short_run(tmp_path):
-    make_adapter(tmp_path, "qwen3-1.7b-0-steps3")
+    make_adapter(tmp_path, "qwen3-1.7b-0-steps3-gpus1")
     arguments = ["--model", "qwen3-1.7b", "--max-steps", "3", "--dry-run", "--splits", "dev"]
     arguments += ["--adapters-dir", str(tmp_path), "--out-dir", str(tmp_path / "eval")]
+    assert main(arguments) == 0
+    assert (tmp_path / "eval" / "tax-booking" / "qwen3-1.7b-sft-0-steps3" / "dev.json").exists()
+
+
+def test_a_short_check_on_two_gpus_finds_its_adapter(tmp_path):
+    make_adapter(tmp_path, "qwen3-1.7b-0-steps3-gpus2")
+    arguments = ["--model", "qwen3-1.7b", "--max-steps", "3", "--num-gpus", "2", "--dry-run"]
+    arguments += ["--splits", "dev", "--adapters-dir", str(tmp_path)]
+    arguments += ["--out-dir", str(tmp_path / "eval")]
     assert main(arguments) == 0
     assert (tmp_path / "eval" / "tax-booking" / "qwen3-1.7b-sft-0-steps3" / "dev.json").exists()
 

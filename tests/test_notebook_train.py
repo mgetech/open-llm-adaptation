@@ -89,6 +89,17 @@ def test_a_dry_run_trains_a_tiny_model_and_asks_for_the_fake_server(code):
             assert all(flag in call for flag in flags), (target, call)
 
 
+def test_the_notebook_trains_on_two_gpus_but_a_dry_run_has_no_gpu(code):
+    settings = settings_of(code[0])
+    assert settings["NUM_GPUS"] == 2
+    assert 'GPUS = [] if DRY_RUN else [f"NUM_GPUS={NUM_GPUS}"]' in code[0]
+    calls = [s for s in code if '"train"' in s]
+    assert len(calls) == 2  # the short check and the real run, both on the same GPUs
+    assert all("*GPUS" in call for call in calls)
+    short_check_evaluation = next(s for s in code if '"eval-sft"' in s and "MAX_STEPS" in s)
+    assert "*GPUS" in short_check_evaluation  # it needs the GPU count to find the adapter
+
+
 def test_a_dry_run_writes_to_temporary_folders_and_a_real_run_inside_the_repository(code):
     cell = next(source for source in code if "def make" in source)
     dry, _, real = cell.partition("else:\n    REPO = ")

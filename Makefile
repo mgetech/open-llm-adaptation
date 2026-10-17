@@ -1,6 +1,7 @@
 .DEFAULT_GOAL := help
 PLATFORM ?= tax-booking
 SEED ?= 0
+NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINT ?= http://localhost:8000/v1
 
@@ -24,15 +25,16 @@ validate-gold:  ## Check the gold file: schema, amounts and accounts (PLATFORM=)
 models-check:  ## Check the model gates and compare the pinned revisions with the Hub (OFFLINE=1, PIN=1)
 	uv run python -m adapt.models $(if $(OFFLINE),--offline) $(if $(PIN),--pin)
 
-train:  ## QLoRA fine-tuning of one model (MODEL=, SEED=; optional SMOKE=1, RESUME=1, MAX_STEPS=, ADAPTERS_DIR=, RUNS_DIR=)
-	uv run --group gpu python -m adapt.train --platform $(PLATFORM) --seed $(SEED) \
+train:  ## QLoRA fine-tuning of one model (MODEL=, SEED=; optional NUM_GPUS=2, SMOKE=1, RESUME=1, MAX_STEPS=, ADAPTERS_DIR=, RUNS_DIR=)
+	uv run --group gpu $(if $(filter-out 1,$(NUM_GPUS)),accelerate launch --multi_gpu --num_processes $(NUM_GPUS) -m adapt.train,python -m adapt.train) \
+		--platform $(PLATFORM) --seed $(SEED) --num-gpus $(NUM_GPUS) \
 		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(RESUME),--resume) \
 		$(if $(MAX_STEPS),--max-steps $(MAX_STEPS)) \
 		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR))
 
-eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional SMOKE=1, MAX_STEPS=, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1)
+eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional SMOKE=1, MAX_STEPS=, NUM_GPUS=, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1)
 	uv run python -m adapt.train.evaluate --platform $(PLATFORM) --seed $(SEED) \
-		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(MAX_STEPS),--max-steps $(MAX_STEPS)) \
+		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(MAX_STEPS),--max-steps $(MAX_STEPS) --num-gpus $(NUM_GPUS)) \
 		$(if $(SPLITS),--splits $(SPLITS)) $(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) \
 		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
 
