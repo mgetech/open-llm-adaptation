@@ -50,6 +50,9 @@ DATA_DIR = ROOT / "data"
 RESULTS_DIR = Path("results/eval")
 SPLITS = ("dev", "test_iid", "test_ood", "edge", "gold")
 SYSTEM_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+# A request waits for its turn on a busy server. The 30 seconds of the gateway are too short
+# for 8 requests in flight on a T4, and a timeout would count as an error of the model.
+REQUEST_TIMEOUT_SECONDS = 300.0
 
 
 @dataclass(frozen=True)
@@ -251,7 +254,7 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
     adapter_hash = hash_directory(settings.adapter_path) if settings.adapter_path else None
     groups = account_groups(platform.rules)
 
-    with ModelClient(settings.endpoint) as client:
+    with ModelClient(settings.endpoint, timeout=REQUEST_TIMEOUT_SECONDS) as client:
         # When the threshold is still to be tuned, run without one and apply it afterwards.
         pipeline = Pipeline(
             platform,
