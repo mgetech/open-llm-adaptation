@@ -27,5 +27,39 @@
       "count": 150,
       "sha256": "5dd80105c3b819f24577419b634f9a5b20d6a804a6d504453080e6d5a03a77ca"
     }
-  }
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "seed": 0,
+      "note": "first version of the generator",
+      "splits": {
+        "train": {
+          "file": "tax-booking/round1/train.jsonl",
+          "count": 3000,
+          "sha256": "bf16e2ecde881645d93c15f0b5ee7082c11742fd0fd7c441d4161e60b0e68abe"
+        },
+        "dev": {
+          "file": "tax-booking/round1/dev.jsonl",
+          "count": 300,
+          "sha256": "d246763162a4fa7db79b0110e74859f68015f86bbad15a62e9696f2fe6d68329"
+        },
+        "test_iid": {
+          "file": "tax-booking/round1/test_iid.jsonl",
+          "count": 500,
+          "sha256": "cbe7ea35a7e51ed3b64b64bdf66da5c305d81cbcca7de5c8d19cf7a80205ee9f"
+        },
+        "test_ood": {
+          "file": "tax-booking/round1/test_ood.jsonl",
+          "count": 300,
+          "sha256": "6b613c9b5766aeeb60b32ebaa8538607e549fa976eea95088ef4b398a15a39d9"
+        },
+        "edge": {
+          "file": "tax-booking/round1/edge.jsonl",
+          "count": 150,
+          "sha256": "5dd80105c3b819f24577419b634f9a5b20d6a804a6d504453080e6d5a03a77ca"
+        }
+      }
+    }
+  ]
 }

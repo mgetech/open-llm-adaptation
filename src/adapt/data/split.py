@@ -13,6 +13,10 @@ The layout letter_invoice appears only in test_ood. Five canary documents with
 unusual supplier names are part of train. Edge-style documents (the categories in
 `edge.py`) make up a tenth of every generated split, so the model is trained and
 tested on flagging documents too. The edge split is made only of them.
+
+`make data` replaces the files of the current round and keeps the `rounds` list of the
+manifest. `make keep-round ROUND=N` copies the current files to `round<N>/` and adds them
+to that list, so an earlier round can be checked by its hashes after the generator changes.
 """
 
 import argparse
@@ -20,6 +24,7 @@ import hashlib
 import json
 import random
 import re
+import shutil
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -278,16 +283,67 @@ def write_data(
     out_dir = data_dir / platform
     out_dir.mkdir(parents=True, exist_ok=True)
     manifest: dict[str, Any] = {"platform": platform, "seed": seed, "splits": {}}
+    kept = _kept_rounds(manifest_path)
     for split, records in splits.items():
         manifest["splits"][split] = {
             "file": f"{platform}/{split}.jsonl",
             "count": len(records),
             "sha256": _write_jsonl(out_dir / f"{split}.jsonl", records),
         }
+    if kept:
+        manifest["rounds"] = kept
+    _write_manifest(manifest, manifest_path)
+    return manifest
+
+
+def _kept_rounds(manifest_path: Path) -> list[dict[str, Any]]:
+    """The earlier rounds in the manifest on disk, if there is one."""
+    if not manifest_path.exists():
+        return []
+    return json.loads(manifest_path.read_text(encoding="utf-8")).get("rounds", [])
+
+
+def _write_manifest(manifest: Mapping[str, Any], manifest_path: Path) -> None:
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     with manifest_path.open("w", encoding="utf-8", newline="\n") as file:
         file.write(json.dumps(manifest, indent=2) + "\n")
-    return manifest
+
+
+def keep_round(number: int, data_dir: Path, manifest_path: Path, note: str = "") -> dict[str, Any]:
+    """Copy the current files to `round<number>/` and add them to the `rounds` list.
+
+    The files must match the hashes in the manifest, so a round is never kept from files
+    that were edited. A round that is already kept is not overwritten."""
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if any(entry["round"] == number for entry in manifest.get("rounds", [])):
+        raise ValueError(f"round {number} is already kept")
+    platform = manifest["platform"]
+    target = data_dir / platform / f"round{number}"
+    if target.exists():
+        raise ValueError(f"{target} already exists")
+    entry: dict[str, Any] = {
+        "round": number,
+        "seed": manifest["seed"],
+        "note": note,
+        "splits": {},
+    }
+    sources = {}
+    for split, current in manifest["splits"].items():
+        source = data_dir / current["file"]
+        if hashlib.sha256(source.read_bytes()).hexdigest() != current["sha256"]:
+            raise ValueError(f"{source} does not match the manifest")
+        sources[split] = source
+        entry["splits"][split] = {
+            "file": f"{platform}/round{number}/{split}.jsonl",
+            "count": current["count"],
+            "sha256": current["sha256"],
+        }
+    target.mkdir(parents=True)
+    for split, source in sources.items():
+        shutil.copyfile(source, target / f"{split}.jsonl")
+    manifest["rounds"] = [*manifest.get("rounds", []), entry]
+    _write_manifest(manifest, manifest_path)
+    return entry
 
 
 def _write_jsonl(path: Path, records: Sequence[Mapping[str, Any]]) -> str:
@@ -303,7 +359,21 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--manifest", type=Path, default=Path("results/data_manifest.json"))
+    parser.add_argument(
+        "--keep-round", type=int, help="copy the current files to round<N>/ instead of generating"
+    )
+    parser.add_argument(
+        "--note", default="", help="what the generator was like (with --keep-round)"
+    )
     args = parser.parse_args(argv)
+
+    if args.keep_round is not None:
+        try:
+            entry = keep_round(args.keep_round, args.data_dir, args.manifest, args.note)
+        except ValueError as error:
+            raise SystemExit(f"error: {error}") from error
+        print(f"kept round {entry['round']} (seed {entry['seed']}): {len(entry['splits'])} files")
+        return
 
     splits = build_splits(load_platform(args.platform), args.seed)
     manifest = write_data(splits, args.platform, args.seed, args.data_dir, args.manifest)

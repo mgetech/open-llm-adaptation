@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data validate-gold models-check baseline train eval-sft eval gate lint format test requirements
+.PHONY: help setup install-vllm data keep-round validate-gold models-check baseline train eval-sft eval gate lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -18,6 +18,9 @@ install-vllm:  ## Install the vLLM version pinned in configs/models.yaml (Linux 
 
 data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED)
+
+keep-round:  ## Copy the current data to round<N>/ and record it in the manifest (ROUND=, optional NOTE=)
+	uv run python -m adapt.data.split --platform $(PLATFORM) --keep-round $(ROUND) $(if $(NOTE),--note "$(NOTE)")
 
 validate-gold:  ## Check the gold file: schema, amounts and accounts (PLATFORM=)
 	uv run python -m adapt.data.gold --platform $(PLATFORM)
