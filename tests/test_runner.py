@@ -152,8 +152,22 @@ def test_one_row_per_document_in_the_order_of_the_file(perfect_dev):
         "severity",
         "reasons",
         "confidence",
+        "item_confidences",
+        "output",
     }
     assert all(row["correct"] for row in perfect_dev["documents"])
+
+
+def test_every_row_keeps_the_model_output_and_the_item_confidences(perfect_dev):
+    answered = [row for row in perfect_dev["documents"] if row["output"] is not None]
+    assert answered
+    for row in answered:
+        assert set(row["output"]) >= {"items", "currency", "reverse_charge", "needs_review"}
+        if row["output"]["items"]:
+            assert len(row["item_confidences"]) == len(row["output"]["items"])
+            assert row["confidence"] == min(row["item_confidences"])
+        else:
+            assert row["item_confidences"] is None
 
 
 def test_the_results_file_is_valid_json_at_the_documented_path(tmp_path, perfect_dev):

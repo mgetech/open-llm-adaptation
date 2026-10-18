@@ -195,6 +195,7 @@ def test_a_document_the_model_flagged_needs_review(pipe, server):
     result = run(pipe, server, output=FLAGGED)
     assert result.needs_review and result.reasons == ["model_flagged"]
     assert result.items == [] and result.confidence is None
+    assert result.item_confidences is None
     assert result.output == FLAGGED
 
 
@@ -247,6 +248,7 @@ def test_confidence_is_the_probability_of_the_least_certain_account(pipe, server
     logprobs = {"4930": math.log(0.9), "4940": math.log(0.6)}
     result = run(pipe, server, logprob_for=lambda token: logprobs.get(token, -0.001))
     assert result.confidence == pytest.approx(0.6)
+    assert result.item_confidences == [pytest.approx(0.9), pytest.approx(0.6)]
     assert not result.needs_review
 
 
