@@ -12,12 +12,14 @@ import yaml
 from adapt.baseline import free_port, serve_command
 from adapt.config import load_platform
 from adapt.eval.gate import main as gate
-from adapt.eval.runner import SPLITS, hash_directory, results_file
+from adapt.eval.runner import default_splits, hash_directory, results_file
 from adapt.models import MODELS_FILE, Registry, load_registry
 from adapt.prompting import system_prompt
 from adapt.train.evaluate import evaluate_adapter, lora_command, main, system_name
 
 RULES = load_platform("tax-booking").rules
+# A run without --splits evaluates every split, and gold_v2 once its file exists.
+SPLITS = default_splits("tax-booking")
 
 # These tests check the plain names of the first round.
 pytestmark = pytest.mark.usefixtures("first_round")

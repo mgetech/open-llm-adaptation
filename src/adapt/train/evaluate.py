@@ -137,7 +137,7 @@ def evaluate_adapter(
     try:
         for index, server_port in enumerate(ports):
             if dry_run:
-                command = fake_command(server_port)
+                command = fake_command(server_port, data_round)
             else:
                 command = lora_command(registry, key or "", server_port, system, adapter_dir, rank)
             # With several servers, each one has a GPU of its own.

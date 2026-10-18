@@ -96,7 +96,11 @@ def test_the_examples_are_the_same_text_the_model_gets_for_a_real_document(examp
 
 
 def test_the_examples_are_not_documents_or_suppliers_of_any_split(examples):
-    files = [*DATA_DIR.joinpath("tax-booking").glob("*.jsonl"), gold_path("tax-booking")]
+    files = [
+        *DATA_DIR.joinpath("tax-booking").glob("round*/*.jsonl"),
+        gold_path("tax-booking"),
+        gold_path("tax-booking", name="gold_v2"),
+    ]
     records = [
         json.loads(line) for path in files for line in path.read_text(encoding="utf-8").splitlines()
     ]

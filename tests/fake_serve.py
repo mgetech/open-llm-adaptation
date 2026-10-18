@@ -7,7 +7,7 @@ against it say nothing about a model. Stop it with Ctrl+C.
 import argparse
 import time
 
-from adapt.eval.runner import SPLITS, load_canaries, load_documents
+from adapt.eval.runner import default_splits, load_canaries, load_documents
 from fake_model import Model
 from fake_server import FakeServer
 
@@ -16,12 +16,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run the fake OpenAI-compatible server.")
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     args = parser.parse_args()
 
-    documents = [d for split in SPLITS for d in load_documents(args.platform, split)]
+    documents = [
+        d
+        for split in default_splits(args.platform)
+        for d in load_documents(args.platform, split, data_round=args.round)
+    ]
     server = FakeServer(args.port)
     server.version = "fake"
-    server.handler = Model(documents, load_canaries(args.platform))
+    server.handler = Model(documents, load_canaries(args.platform, data_round=args.round))
     with server:
         print(f"fake server at {server.url}", flush=True)
         try:

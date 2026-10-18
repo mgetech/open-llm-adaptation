@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from adapt.config import load_platform
+from adapt.data.rounds import current_round
 from adapt.eval.metrics import (
     Case,
     account_groups,
@@ -392,7 +393,7 @@ def test_loaded_documents_match_the_committed_split_files():
     for split, count in (("dev", 300), ("test_iid", 500), ("test_ood", 300), ("edge", 150)):
         documents = load_documents("tax-booking", split)
         assert len(documents) == count
-        assert (DATA_DIR / "tax-booking" / f"{split}.jsonl").exists()
+        assert (DATA_DIR / "tax-booking" / f"round{current_round()}" / f"{split}.jsonl").exists()
 
 
 def test_a_hash_of_a_folder_changes_with_its_files(tmp_path: Path):

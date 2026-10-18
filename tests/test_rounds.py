@@ -55,13 +55,13 @@ def test_round_one_has_the_plain_names_and_later_rounds_add_their_number():
     assert baseline_name("qwen3-4b", 2) == "qwen3-4b-fewshot-r2"
 
 
-def test_the_current_round_is_in_the_data_folder_and_an_earlier_one_in_its_own():
+def test_every_round_is_in_its_own_folder_and_the_current_one_is_the_last():
     current = current_round()
-    assert round_folder("tax-booking", None) == DATA_DIR / "tax-booking"
-    assert round_folder("tax-booking", current) == DATA_DIR / "tax-booking"
+    assert round_folder("tax-booking", None) == DATA_DIR / "tax-booking" / f"round{current}"
+    assert round_folder("tax-booking", current) == DATA_DIR / "tax-booking" / f"round{current}"
     assert round_folder("tax-booking", 1) == DATA_DIR / "tax-booking" / "round1"
     assert split_path("tax-booking", "test_ood", data_round=1).parent.name == "round1"
-    assert split_path("tax-booking", "test_ood").parent.name == "tax-booking"
+    assert split_path("tax-booking", "test_ood").parent.name == f"round{current}"
 
 
 def test_the_gold_set_does_not_depend_on_the_round():

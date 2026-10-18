@@ -75,8 +75,10 @@ def serve_command(registry: Registry, key: str, port: int) -> list[str]:
     ]
 
 
-def fake_command(port: int) -> list[str]:
-    return [sys.executable, str(ROOT / "tests" / "fake_serve.py"), "--port", str(port)]
+def fake_command(port: int, data_round: int | None = None) -> list[str]:
+    """The fake server, which answers the documents of `data_round` (the current round if None)."""
+    command = [sys.executable, str(ROOT / "tests" / "fake_serve.py"), "--port", str(port)]
+    return command if data_round is None else [*command, "--round", str(data_round)]
 
 
 def free_port() -> int:
@@ -137,7 +139,7 @@ def run_baseline(
     if failed:
         raise ValueError(f"{key} fails the model gates: " + ", ".join(r.name for r in failed))
 
-    command = fake_command(port) if dry_run else serve_command(registry, key, port)
+    command = fake_command(port, data_round) if dry_run else serve_command(registry, key, port)
     base_url = f"http://127.0.0.1:{port}"
     process = subprocess.Popen(command)
     written = []

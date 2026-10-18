@@ -24,7 +24,15 @@ def test_committed_data_matches_the_generator(tmp_path):
     platform = committed["platform"]
 
     splits = build_splits(load_platform(platform), committed["seed"])
-    write_data(splits, platform, committed["seed"], tmp_path / "data", tmp_path / "manifest.json")
+    number = len(committed.get("rounds", [])) + 1
+    write_data(
+        splits,
+        platform,
+        committed["seed"],
+        tmp_path / "data",
+        tmp_path / "manifest.json",
+        data_round=number,
+    )
 
     rebuilt = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
     assert rebuilt == {key: value for key, value in committed.items() if key != "rounds"}

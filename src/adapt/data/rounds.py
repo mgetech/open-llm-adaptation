@@ -1,9 +1,9 @@
 """Which round of data a run uses, and what a round adds to the names of its output.
 
-The current round is the one in `data/<platform>/`. Earlier rounds are kept in `round<N>/` folders
-and listed in `results/data_manifest.json`. Round 1 keeps the plain names (`qwen3-4b-0`). Any
-later round adds `-r<N>` after the model (`qwen3-4b-r2-0`), so a run on newer data never replaces
-one on older data.
+Every round is in its own folder, `data/<platform>/round<N>/`. The current round is the one after
+the kept rounds listed in `results/data_manifest.json`. Round 1 keeps the plain names
+(`qwen3-4b-0`). Any later round adds `-r<N>` after the model (`qwen3-4b-r2-0`), so a run on
+newer data never replaces one on older data.
 
 A run that does not name a round uses the current one.
 """
@@ -42,9 +42,7 @@ def resolve_round(data_round: int | None, data_dir: Path = DATA_DIR) -> int:
 
 def round_folder(platform: str, data_round: int | None, data_dir: Path = DATA_DIR) -> Path:
     """The folder with the split files of a round."""
-    resolved = resolve_round(data_round, data_dir)
-    base = data_dir / platform
-    return base if resolved == current_round(data_dir) else base / f"round{resolved}"
+    return data_dir / platform / f"round{resolve_round(data_round, data_dir)}"
 
 
 def round_tag(data_round: int) -> str:
