@@ -3,6 +3,8 @@ import hashlib
 import json
 import math
 import re
+import shutil
+import subprocess
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -26,6 +28,7 @@ from adapt.eval.runner import (
     ROOT,
     RunSettings,
     evaluate,
+    git_state,
     hash_directory,
     load_canaries,
     load_documents,
@@ -607,3 +610,47 @@ def test_the_command_line_takes_several_endpoints(tmp_path, capsys):
     saved = json.loads((tmp_path / "tax-booking" / "two" / "edge.json").read_text(encoding="utf-8"))
     assert saved["manifest"]["servers"] == 2
     assert len(servers[0].requests) > 0 and len(servers[1].requests) > 0
+
+
+needs_git = pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
+
+
+def git(folder, *arguments):
+    identity = ["-c", "user.name=test", "-c", "user.email=test@example.com"]
+    subprocess.run(["git", *identity, *arguments], cwd=folder, check=True, capture_output=True)
+
+
+@pytest.fixture
+def repository(tmp_path):
+    git(tmp_path, "init")
+    (tmp_path / "code.py").write_text("print(1)\n", encoding="utf-8")
+    git(tmp_path, "add", "code.py")
+    git(tmp_path, "-c", "commit.gpgsign=false", "commit", "-m", "first")
+    return tmp_path
+
+
+@needs_git
+def test_a_clean_tree_is_not_dirty(repository):
+    commit, dirty = git_state(repository)
+    assert len(commit) == 40 and dirty is False
+
+
+@needs_git
+def test_a_new_file_that_git_does_not_track_is_not_a_change(repository):
+    """The results of an earlier run must not mark the next run as dirty."""
+    (repository / "results.json").write_text("{}", encoding="utf-8")
+    assert git_state(repository)[1] is False
+
+
+@needs_git
+def test_a_changed_file_that_git_tracks_is_a_change(repository):
+    (repository / "code.py").write_text("print(2)\n", encoding="utf-8")
+    assert git_state(repository)[1] is True
+
+
+def test_no_git_gives_no_state(tmp_path, monkeypatch):
+    def no_git(*args, **kwargs):
+        raise FileNotFoundError("git")
+
+    monkeypatch.setattr(subprocess, "run", no_git)
+    assert git_state(tmp_path) == (None, None)

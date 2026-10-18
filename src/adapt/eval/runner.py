@@ -143,13 +143,20 @@ def hash_directory(path: Path) -> str:
 
 
 def git_state(root: Path = ROOT) -> tuple[str | None, bool | None]:
-    """The current commit and whether the working tree has changes, or None without git."""
+    """The current commit and whether tracked files have changes, or None without git.
+
+    Files that git does not track are not changes. Results and adapters of earlier runs are such
+    files, and they would mark every later run as dirty."""
     try:
         commit = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, check=True
         ).stdout.strip()
         changes = subprocess.run(
-            ["git", "status", "--porcelain"], cwd=root, capture_output=True, text=True, check=True
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         return None, None
