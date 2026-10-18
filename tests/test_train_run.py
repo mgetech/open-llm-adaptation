@@ -6,6 +6,7 @@ import subprocess
 import pytest
 import yaml
 
+from adapt.data.rounds import current_round
 from adapt.eval.runner import ROOT
 from adapt.models import MODELS_FILE, Registry, load_registry
 from adapt.train.config import load_train_config
@@ -29,23 +30,43 @@ def registry() -> Registry:
 
 
 def test_the_run_name_has_the_model_and_the_seed():
-    assert run_name(TrainSettings("tax-booking", 2, model="qwen3-4b")) == "qwen3-4b-2"
+    assert run_name(TrainSettings("tax-booking", 2, model="qwen3-4b", data_round=1)) == "qwen3-4b-2"
+
+
+def test_a_later_round_adds_its_number_after_the_model():
+    settings = TrainSettings("tax-booking", 2, model="qwen3-4b", data_round=2)
+    assert run_name(settings) == "qwen3-4b-r2-2"
+    short = TrainSettings("tax-booking", 0, model="qwen3-4b", max_steps=3, data_round=2)
+    assert run_name(short) == "qwen3-4b-r2-0-steps3-gpus1"
+
+
+def test_a_run_without_a_round_uses_the_current_one():
+    current = current_round()
+    assert current >= 2
+    assert run_name(TrainSettings("tax-booking", 0, model="qwen3-4b")) == (f"qwen3-4b-r{current}-0")
+
+
+def test_a_round_that_does_not_exist_is_refused():
+    with pytest.raises(ValueError, match="does not exist"):
+        run_name(TrainSettings("tax-booking", 0, model="qwen3-4b", data_round=current_round() + 1))
 
 
 def test_a_short_check_has_its_own_name_so_it_never_replaces_a_full_run():
-    settings = TrainSettings("tax-booking", 0, model="qwen3-4b", max_steps=3)
+    settings = TrainSettings("tax-booking", 0, model="qwen3-4b", max_steps=3, data_round=1)
     assert run_name(settings) == "qwen3-4b-0-steps3-gpus1"
 
 
 def test_a_short_run_on_one_gpu_does_not_replace_the_same_run_on_two():
-    one = TrainSettings("tax-booking", 0, model="qwen3-1.7b", max_steps=50, num_gpus=1)
-    two = TrainSettings("tax-booking", 0, model="qwen3-1.7b", max_steps=50, num_gpus=2)
+    one = TrainSettings("tax-booking", 0, model="qwen3-1.7b", max_steps=50, data_round=1)
+    two = TrainSettings(
+        "tax-booking", 0, model="qwen3-1.7b", max_steps=50, num_gpus=2, data_round=1
+    )
     assert run_name(one) == "qwen3-1.7b-0-steps50-gpus1"
     assert run_name(two) == "qwen3-1.7b-0-steps50-gpus2"
 
 
 def test_a_full_run_has_the_same_name_on_any_number_of_gpus():
-    two = TrainSettings("tax-booking", 1, model="qwen3-4b", num_gpus=2)
+    two = TrainSettings("tax-booking", 1, model="qwen3-4b", num_gpus=2, data_round=1)
     assert run_name(two) == "qwen3-4b-1"
 
 

@@ -8,6 +8,9 @@ the adapter by its system name, with the zero-shot prompt it was trained on. The
 ports), each with the same base model and adapter. The documents of a split are shared between
 them and the results are merged in document order.
 
+`--round N` is the round of the data (default: the current round). The adapter and the system
+name carry it, as in `qwen3-4b-sft-r2-0`, and the splits are the ones of that round.
+
 `--dry-run` starts the fake server from the tests instead of vLLM. `--smoke` selects the adapter
 of a smoke run, which is random, so it can only be used with `--dry-run`. Results from either
 come from a fake model and are never real results.
@@ -28,6 +31,7 @@ from adapt.baseline import (
     stop,
     wait_until_ready,
 )
+from adapt.data.rounds import resolve_round, round_tag
 from adapt.eval.runner import (
     RESULTS_DIR,
     SPLITS,
@@ -43,12 +47,18 @@ from adapt.train.run import ADAPTERS_DIR, TrainSettings, run_name, trainable_ent
 
 
 def system_name(
-    key: str | None, seed: int, *, smoke: bool = False, max_steps: int | None = None
+    key: str | None,
+    seed: int,
+    *,
+    smoke: bool = False,
+    max_steps: int | None = None,
+    data_round: int = 1,
 ) -> str:
-    """The name of the system in the results: `qwen3-4b-sft-0`, or `-steps3` after a short check."""
+    """The name of the system in the results: `qwen3-4b-sft-0`, `qwen3-4b-sft-r2-0` for round 2,
+    and `-steps3` after a short check."""
     if smoke:
         return f"smoke-sft-{seed}"
-    name = f"{key}-sft-{seed}"
+    name = f"{key}-sft{round_tag(data_round)}-{seed}"
     return f"{name}-steps{max_steps}" if max_steps else name
 
 
@@ -83,6 +93,7 @@ def evaluate_adapter(
     dry_run: bool = False,
     workers: int = 8,
     timeout: float = START_TIMEOUT_SECONDS,
+    data_round: int | None = None,
 ) -> list[Path]:
     """Evaluate the adapter of a run on `splits`. Returns the results files.
 
@@ -97,13 +108,20 @@ def evaluate_adapter(
         raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(SPLITS)}")
     entry = None if smoke else trainable_entry(registry, key or "")
 
+    data_round = resolve_round(data_round)
     train = TrainSettings(
-        platform, seed, model=key, smoke=smoke, max_steps=max_steps, num_gpus=num_gpus
+        platform,
+        seed,
+        model=key,
+        smoke=smoke,
+        max_steps=max_steps,
+        num_gpus=num_gpus,
+        data_round=data_round,
     )
     adapter_dir = adapters_dir / platform / run_name(train)
     if not (adapter_dir / "adapter_config.json").exists():
         raise ValueError(f"no adapter in {adapter_dir}, train it first")
-    system = system_name(key, seed, smoke=smoke, max_steps=max_steps)
+    system = system_name(key, seed, smoke=smoke, max_steps=max_steps, data_round=data_round)
 
     if dry_run:
         ports = [port, *(free_port() for _ in range(servers - 1))]
@@ -142,6 +160,7 @@ def evaluate_adapter(
                 model_revision=entry.revision if entry else None,
                 adapter_path=adapter_dir,
                 out_dir=out_dir,
+                data_round=data_round,
             )
             results = evaluate(settings)
             path = results_file(out_dir, platform, system, split)
@@ -172,6 +191,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--port", type=int, help="port of the server (default: 8000, or a free one)"
     )
     parser.add_argument("--servers", type=int, default=1, help="servers, one per GPU")
+    parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     parser.add_argument("--dry-run", action="store_true", help="use the fake server, not vLLM")
     args = parser.parse_args(argv)
     if not args.smoke and not args.model:
@@ -194,6 +214,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             servers=args.servers,
             dry_run=args.dry_run,
             workers=args.workers,
+            data_round=args.round,
         )
     except (RuntimeError, ValueError) as error:
         sys.exit(f"error: {error}")

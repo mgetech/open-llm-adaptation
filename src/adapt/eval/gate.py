@@ -6,7 +6,8 @@ system of the same size. A check whose results are missing counts as failed.
 Where each number comes from:
 - automation rate: the gold split;
 - accuracy on automated documents and critical-error rate: gold and test_ood together;
-- fine-tuned against few-shot: document accuracy on test_ood, McNemar exact test;
+- fine-tuned against few-shot: document accuracy on test_ood, McNemar exact test, only when both
+  systems ran on the same test_ood file (a baseline of another round is refused);
 - generalisation gap: document accuracy on test_iid minus test_ood;
 - review recall: the edge split;
 - invalid JSON and invented accounts: all four splits together;
@@ -52,6 +53,10 @@ class Check:
         if self.operator == "<=":
             return value <= self.limit
         return value < self.limit
+
+
+def _data_hash(results: Mapping[str, Any]) -> str | None:
+    return results.get("manifest", {}).get("data_sha256")
 
 
 def _missing(results: Results, splits: Sequence[str]) -> list[str]:
@@ -123,7 +128,14 @@ def check_gate(
     gap = None if iid is None or ood is None else iid - ood
 
     p_value, detail = None, baseline_note
-    if baseline_test_ood is not None and "test_ood" in results:
+    if (
+        baseline_test_ood is not None
+        and "test_ood" in results
+        and _data_hash(baseline_test_ood) != _data_hash(results["test_ood"])
+    ):
+        # The documents of two rounds share their ids, so a comparison would pair other documents.
+        detail = "not run: the baseline ran on other test_ood data"
+    elif baseline_test_ood is not None and "test_ood" in results:
         test = mcnemar_exact(
             {row["id"]: row["correct"] for row in results["test_ood"]["documents"]},
             {row["id"]: row["correct"] for row in baseline_test_ood["documents"]},

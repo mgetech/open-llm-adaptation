@@ -32,6 +32,7 @@ import numpy as np
 from adapt.client import ModelClient, ssl_context
 from adapt.config import PLATFORMS_DIR, Platform, load_platform
 from adapt.data.gold import gold_path
+from adapt.data.rounds import generator_version, resolve_round, round_folder
 from adapt.eval.metrics import account_groups
 from adapt.eval.scoring import (
     EvalDocument,
@@ -71,18 +72,24 @@ def _read_lines(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
-def split_path(platform: str, split: str, data_dir: Path = DATA_DIR) -> Path:
+def split_path(
+    platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
+) -> Path:
+    """The file of a split. The gold set does not depend on the round. `data_round` None is the
+    current round."""
     if split == "gold":
         return gold_path(platform, data_dir.parent / "platforms")
-    return data_dir / platform / f"{split}.jsonl"
+    return round_folder(platform, data_round, data_dir) / f"{split}.jsonl"
 
 
-def load_documents(platform: str, split: str, data_dir: Path = DATA_DIR) -> list[EvalDocument]:
+def load_documents(
+    platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
+) -> list[EvalDocument]:
     """The documents of one split. Gold documents have no category, noise level or flag
     for a seen supplier, except that the supplier is compared with the training names."""
     if split not in SPLITS:
         raise ValueError(f"unknown split {split!r}, expected one of {', '.join(SPLITS)}")
-    records = _read_lines(split_path(platform, split, data_dir))
+    records = _read_lines(split_path(platform, split, data_dir, data_round))
     if split != "gold":
         return [
             EvalDocument(
@@ -98,7 +105,9 @@ def load_documents(platform: str, split: str, data_dir: Path = DATA_DIR) -> list
             )
             for r in records
         ]
-    train = {r["supplier"] for r in _read_lines(split_path(platform, "train", data_dir))}
+    train = {
+        r["supplier"] for r in _read_lines(split_path(platform, "train", data_dir, data_round))
+    }
     return [
         EvalDocument(
             r["id"],
@@ -113,9 +122,11 @@ def load_documents(platform: str, split: str, data_dir: Path = DATA_DIR) -> list
     ]
 
 
-def load_canaries(platform: str, data_dir: Path = DATA_DIR) -> list[Canary]:
+def load_canaries(
+    platform: str, data_dir: Path = DATA_DIR, data_round: int | None = None
+) -> list[Canary]:
     """The training documents with a canary name, as they are sent at eval time: name removed."""
-    train = _read_lines(split_path(platform, "train", data_dir))
+    train = _read_lines(split_path(platform, "train", data_dir, data_round))
     return [
         Canary(r["canary"]["name"], r["canary"]["text_without_name"], r["chart"])
         for r in train
@@ -262,6 +273,7 @@ class RunSettings:
     few_shot: bool = False
     data_dir: Path = DATA_DIR
     out_dir: Path = RESULTS_DIR
+    data_round: int | None = None  # None: the current round
 
     def __post_init__(self) -> None:
         if not self.endpoints:
@@ -299,8 +311,9 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
         raise ValueError(f"system name {settings.system!r} has characters that are not allowed")
     threshold, source = resolve_threshold(settings)
     platform = platform or load_platform(settings.platform)
-    documents = load_documents(settings.platform, settings.split, settings.data_dir)
-    canaries = load_canaries(settings.platform, settings.data_dir)
+    data_round = resolve_round(settings.data_round, settings.data_dir)
+    documents = load_documents(settings.platform, settings.split, settings.data_dir, data_round)
+    canaries = load_canaries(settings.platform, settings.data_dir, data_round)
     adapter_hash = hash_directory(settings.adapter_path) if settings.adapter_path else None
     groups = account_groups(platform.rules)
     versions = [server_version(endpoint) for endpoint in settings.endpoints]
@@ -338,7 +351,7 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
         results = [apply_threshold(result, threshold) for result in results]
 
     scored = score(documents, results, groups)
-    data_file = split_path(settings.platform, settings.split, settings.data_dir)
+    data_file = split_path(settings.platform, settings.split, settings.data_dir, data_round)
     commit, dirty = git_state()
     prompt = system_prompt(
         settings.platform, platform.rules.chart, platform.rules, few_shot=settings.few_shot
@@ -357,6 +370,8 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
             "gpu": gpu_name(),
             "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
             "few_shot": settings.few_shot,
+            "data_round": data_round,
+            "data_generator": generator_version(data_round, settings.data_dir),
             "data_sha256": hash_file(data_file),
             "git_commit": commit,
             "git_dirty": dirty,
@@ -429,6 +444,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--adapter-path", type=Path, help="adapter folder, hashed for the manifest")
     parser.add_argument("--few-shot", action="store_true", help="add the examples to the prompt")
     parser.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+    parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     args = parser.parse_args(argv)
 
     settings = RunSettings(
@@ -443,6 +459,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.adapter_path,
         few_shot=args.few_shot,
         out_dir=args.out_dir,
+        data_round=args.round,
     )
     try:
         results = evaluate(settings)

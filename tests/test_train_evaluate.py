@@ -19,6 +19,9 @@ from adapt.train.evaluate import evaluate_adapter, lora_command, main, system_na
 
 RULES = load_platform("tax-booking").rules
 
+# These tests check the plain names of the first round.
+pytestmark = pytest.mark.usefixtures("first_round")
+
 
 @pytest.fixture(scope="module")
 def registry() -> Registry:

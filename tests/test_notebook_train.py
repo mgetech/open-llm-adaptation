@@ -4,6 +4,8 @@ import re
 
 import pytest
 
+from adapt.baseline import system_name as baseline_name
+from adapt.data.rounds import current_round
 from adapt.eval.runner import ROOT
 from adapt.models import load_registry
 from adapt.train.evaluate import system_name
@@ -117,7 +119,15 @@ def test_a_dry_run_writes_to_temporary_folders_and_a_real_run_inside_the_reposit
 def test_every_make_target_the_notebook_calls_exists(code):
     text = "\n".join(code)
     called = set(re.findall(r'make\(\s*"([a-z-]+)"', text))
-    assert called == {"setup", "install-vllm", "models-check", "train", "eval-sft", "gate"}
+    assert called == {
+        "setup",
+        "install-vllm",
+        "models-check",
+        "train",
+        "eval-sft",
+        "baseline",
+        "gate",
+    }
     declared = set(
         re.search(r"^\.PHONY:(.*)$", MAKEFILE.read_text(), re.MULTILINE).group(1).split()
     )
@@ -129,6 +139,20 @@ def test_the_model_is_in_the_registry_and_the_check_uses_the_smallest_model(code
     models = load_registry().models
     assert settings["MODEL"] in models
     assert settings["CHECK_MODEL"] == min(models, key=lambda k: models[k].parameters)
+
+
+def test_the_notebook_trains_on_the_current_round_and_passes_it_to_every_step(code):
+    assert settings_of(code[0])["ROUND"] == current_round()
+    for target in ("train", "eval-sft", "baseline"):
+        calls = [s for s in code if f'"{target}"' in s]
+        assert calls, target
+        assert all("*ROUNDS" in call for call in calls), target
+
+
+def test_a_later_round_runs_its_own_baseline_on_test_ood_before_the_gate(code):
+    baseline = next(s for s in code if '"baseline"' in s)
+    assert baseline.startswith("if ROUND > 1:") and '"SPLITS=dev test_ood"' in baseline
+    assert code.index(baseline) < next(i for i, s in enumerate(code) if 'make("gate"' in s)
 
 
 def test_the_short_check_is_short(code):
@@ -143,13 +167,14 @@ def test_the_names_in_the_notebook_are_the_names_the_code_writes(code, dry_run):
     exec(first, namespace)
     exec(code[1], namespace)
     model, seed = namespace["MODEL"], namespace["SEED"]
-    train = TrainSettings("tax-booking", seed, model=model, smoke=dry_run)
+    data_round = namespace["ROUND"]
+    train = TrainSettings("tax-booking", seed, model=model, smoke=dry_run, data_round=data_round)
     assert namespace["RUN"] == run_name(train)
-    assert namespace["SYSTEM"] == system_name(model, seed, smoke=dry_run)
+    assert namespace["SYSTEM"] == system_name(model, seed, smoke=dry_run, data_round=data_round)
     if dry_run:
         assert namespace["BASELINE"] == []
     else:
-        assert namespace["BASELINE"] == [f"BASELINE={model}-fewshot"]
+        assert namespace["BASELINE"] == [f"BASELINE={baseline_name(model, data_round)}"]
 
 
 def test_the_gate_compares_with_the_baseline_and_may_fail(code):

@@ -3,6 +3,10 @@
 I start the server for the model, wait until it answers, run each split with the few-shot
 prompt, and stop the server. The results go to `<out-dir>/<platform>/<model>-fewshot/`.
 
+`--round N` runs on the data of round N (default: the current round) and adds `-r<N>` to the
+system name for a round after the first. `--splits` limits the run: the fine-tuned model is
+compared with the baseline on test_ood only.
+
 `--dry-run` starts the fake server from the tests instead of vLLM, so the whole path can be
 checked without a GPU. Its results come from a fake model. They are never real results.
 """
@@ -17,6 +21,7 @@ from pathlib import Path
 
 import httpx
 
+from adapt.data.rounds import resolve_round, round_tag
 from adapt.eval.runner import (
     RESULTS_DIR,
     ROOT,
@@ -35,8 +40,9 @@ MAX_MODEL_LEN = 4096
 START_TIMEOUT_SECONDS = 1200.0
 
 
-def system_name(key: str) -> str:
-    return f"{key}-fewshot"
+def system_name(key: str, data_round: int = 1) -> str:
+    """`qwen3-4b-fewshot`, and `qwen3-4b-fewshot-r2` for the data of round 2."""
+    return f"{key}-fewshot{round_tag(data_round)}"
 
 
 def serve_command(registry: Registry, key: str, port: int) -> list[str]:
@@ -117,8 +123,14 @@ def run_baseline(
     dry_run: bool = False,
     workers: int = 8,
     timeout: float = START_TIMEOUT_SECONDS,
+    data_round: int | None = None,
+    splits: Sequence[str] = SPLITS,
 ) -> list[Path]:
-    """Evaluate `key` with the few-shot prompt on every split. Returns the results files."""
+    """Evaluate `key` with the few-shot prompt on `splits`. Returns the results files."""
+    data_round = resolve_round(data_round)
+    unknown = [split for split in splits if split not in SPLITS]
+    if unknown:
+        raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(SPLITS)}")
     entry = registry.models[key]
     failed = [r for r in check_model(entry, registry.gates) if not r.passed]
     if failed:
@@ -135,10 +147,10 @@ def run_baseline(
         pinned = registry.gates.vllm.version
         if not dry_run and version != pinned:
             raise ValueError(f"the server runs vllm {version}, the registry pins {pinned}")
-        for split in SPLITS:
+        for split in splits:
             settings = RunSettings(
                 platform,
-                system_name(key),
+                system_name(key, data_round),
                 split,
                 endpoint,
                 key,
@@ -146,6 +158,7 @@ def run_baseline(
                 model_revision=entry.revision,
                 few_shot=True,
                 out_dir=out_dir,
+                data_round=data_round,
             )
             results = evaluate(settings)
             path = results_file(out_dir, platform, settings.system, split)
@@ -167,6 +180,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--port", type=int, help="port of the server (default: 8000, or a free one)"
     )
     parser.add_argument("--dry-run", action="store_true", help="use the fake server, not vLLM")
+    parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
+    parser.add_argument("--splits", nargs="+", default=list(SPLITS), help="default: all splits")
     args = parser.parse_args(argv)
 
     registry = load_registry()
@@ -183,6 +198,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             port=port,
             dry_run=args.dry_run,
             workers=args.workers,
+            data_round=args.round,
+            splits=args.splits,
         )
     except (RuntimeError, ValueError) as error:
         sys.exit(f"error: {error}")

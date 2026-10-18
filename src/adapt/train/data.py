@@ -19,8 +19,10 @@ from adapt.prompting import build_messages, system_prompt
 IGNORE = -100
 
 
-def load_train_records(platform: str, data_dir: Path = DATA_DIR) -> list[dict[str, Any]]:
-    path = split_path(platform, "train", data_dir)
+def load_train_records(
+    platform: str, data_dir: Path = DATA_DIR, data_round: int | None = None
+) -> list[dict[str, Any]]:
+    path = split_path(platform, "train", data_dir, data_round)
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 

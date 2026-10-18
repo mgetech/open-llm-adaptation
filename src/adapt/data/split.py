@@ -332,6 +332,7 @@ def keep_round(number: int, data_dir: Path, manifest_path: Path, note: str = "")
     entry: dict[str, Any] = {
         "round": number,
         "seed": manifest["seed"],
+        "generator": manifest.get("generator", 1),
         "note": note,
         "splits": {},
     }
