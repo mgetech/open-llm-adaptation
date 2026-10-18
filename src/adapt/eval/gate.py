@@ -26,7 +26,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 from adapt.config import Gate, load_platform
-from adapt.eval.runner import RESULTS_DIR, results_file
+from adapt.data.rounds import eval_dir
+from adapt.eval.runner import results_file
 from adapt.eval.stats import mcnemar_exact
 
 GATE_SPLITS = ("gold", "test_iid", "test_ood", "edge")
@@ -335,15 +336,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument("--system", required=True)
     parser.add_argument("--baseline", help="few-shot system of the same size")
-    parser.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+    parser.add_argument("--round", type=int, help="round of the results (default: the current one)")
+    parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
     args = parser.parse_args(argv)
+    try:
+        out_dir = args.out_dir or eval_dir(args.round)
+    except ValueError as error:
+        sys.exit(f"error: {error}")
 
     gate = load_platform(args.platform).config.gate
-    results = load_results(args.out_dir, args.platform, args.system)
+    results = load_results(out_dir, args.platform, args.system)
     baseline = None
     note = "not run: no baseline given"
     if args.baseline:
-        baseline_path = results_file(args.out_dir, args.platform, args.baseline, "test_ood")
+        baseline_path = results_file(out_dir, args.platform, args.baseline, "test_ood")
         if baseline_path.exists():
             baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
         else:

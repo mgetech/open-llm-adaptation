@@ -5,7 +5,8 @@ the kept rounds listed in `results/data_manifest.json`. Round 1 keeps the plain 
 (`qwen3-4b-0`). Any later round adds `-r<N>` after the model (`qwen3-4b-r2-0`), so a run on
 newer data never replaces one on older data.
 
-A run that does not name a round uses the current one.
+A run that does not name a round uses the current one. The results of a round are in
+`results/round<N>/eval/` and `results/round<N>/runs/`.
 """
 
 import json
@@ -43,6 +44,16 @@ def resolve_round(data_round: int | None, data_dir: Path = DATA_DIR) -> int:
 def round_folder(platform: str, data_round: int | None, data_dir: Path = DATA_DIR) -> Path:
     """The folder with the split files of a round."""
     return data_dir / platform / f"round{resolve_round(data_round, data_dir)}"
+
+
+def eval_dir(data_round: int | None = None, data_dir: Path = DATA_DIR) -> Path:
+    """Where the evaluation results of a round are: `results/round<N>/eval`."""
+    return Path("results") / f"round{resolve_round(data_round, data_dir)}" / "eval"
+
+
+def runs_dir(data_round: int | None = None, data_dir: Path = DATA_DIR) -> Path:
+    """Where the run manifests of a round are: `results/round<N>/runs`."""
+    return Path("results") / f"round{resolve_round(data_round, data_dir)}" / "runs"
 
 
 def round_tag(data_round: int) -> str:

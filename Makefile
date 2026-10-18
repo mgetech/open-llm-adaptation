@@ -51,8 +51,8 @@ eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINTS=; optional RO
 baseline:  ## Few-shot baseline of one model, with its own server (MODEL=; optional ROUND=, SPLITS=, OUT_DIR=, DRY_RUN=1)
 	uv run python -m adapt.baseline --platform $(PLATFORM) --model $(MODEL) 		$(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
 
-gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=, OUT_DIR=)
-	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE)) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
+gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=, ROUND=, OUT_DIR=)
+	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE)) $(if $(ROUND),--round $(ROUND)) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
 
 lint:  ## Check style and formatting
 	uv run ruff check .

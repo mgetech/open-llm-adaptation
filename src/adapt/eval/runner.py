@@ -2,7 +2,8 @@
 
 Run with `make eval PLATFORM=... SYSTEM=... SPLIT=... ENDPOINTS=...`. Every document goes
 through the same pipeline the gateway uses. The results go to
-`results/eval/<platform>/<system>/<split>.json` and hold the metrics with confidence
+`results/round<N>/eval/<platform>/<system>/<split>.json` (N is the round of the data, the
+current round unless `--round` says another) and hold the metrics with confidence
 intervals, the slices, one row per document, and a manifest of what was run.
 
 `ENDPOINTS` can name several servers that hold the same model and adapter. Document `i` of the
@@ -32,7 +33,7 @@ import numpy as np
 from adapt.client import ModelClient, ssl_context
 from adapt.config import PLATFORMS_DIR, Platform, load_platform
 from adapt.data.gold import gold_path
-from adapt.data.rounds import generator_version, resolve_round, round_folder
+from adapt.data.rounds import eval_dir, generator_version, resolve_round, round_folder
 from adapt.eval.metrics import account_groups
 from adapt.eval.scoring import (
     EvalDocument,
@@ -53,7 +54,7 @@ from adapt.prompting import system_prompt
 
 ROOT = PLATFORMS_DIR.parent
 DATA_DIR = ROOT / "data"
-RESULTS_DIR = Path("results/eval")
+RESULTS_DIR = eval_dir()  # the results of the current round
 SPLITS = ("dev", "test_iid", "test_ood", "edge", "gold")
 # gold_v2 is written by hand after the first round. It is reported next to gold, and the gate
 # does not read it.
@@ -453,9 +454,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--model-revision", help="revision of the base model, for the manifest")
     parser.add_argument("--adapter-path", type=Path, help="adapter folder, hashed for the manifest")
     parser.add_argument("--few-shot", action="store_true", help="add the examples to the prompt")
-    parser.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
+    parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
     args = parser.parse_args(argv)
+    try:
+        out_dir = args.out_dir or eval_dir(args.round)
+    except ValueError as error:
+        sys.exit(f"error: {error}")
 
     settings = RunSettings(
         args.platform,
@@ -468,14 +473,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.model_revision,
         args.adapter_path,
         few_shot=args.few_shot,
-        out_dir=args.out_dir,
+        out_dir=out_dir,
         data_round=args.round,
     )
     try:
         results = evaluate(settings)
     except ValueError as error:
         sys.exit(f"error: {error}")
-    path = results_path(settings, args.out_dir)
+    path = results_path(settings, out_dir)
     write_results(results, path)
     print(f"{args.system} on {args.split}: {len(results['documents'])} documents")
     print(_summary(results))

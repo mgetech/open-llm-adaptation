@@ -2,7 +2,7 @@
 
     adapters/<platform>/<model>-<seed>/            the adapter (not committed)
     adapters/<platform>/<model>-<seed>-checkpoints/  checkpoints, for `--resume`
-    results/runs/<platform>-<model>-<seed>.json    the run manifest
+    results/round<N>/runs/<platform>-<model>-<seed>.json    the run manifest
 
 `--round N` trains on the data of round N (default: the current round). A run on a later round
 than the first has `-r<N>` after the model, as in `qwen3-4b-r2-0`.
@@ -37,6 +37,7 @@ from typing import Any
 
 from adapt.config import load_platform
 from adapt.data.rounds import generator_version, resolve_round, round_tag
+from adapt.data.rounds import runs_dir as round_runs_dir
 from adapt.eval.runner import git_state, gpu_name, hash_directory, hash_file, split_path
 from adapt.models import ModelEntry, Registry, check_model, load_registry
 from adapt.prompting import system_prompt
@@ -44,7 +45,6 @@ from adapt.train.config import TrainConfig, load_train_config
 from adapt.train.data import encode_records, load_train_records
 
 ADAPTERS_DIR = Path("adapters")
-RUNS_DIR = Path("results/runs")
 PACKAGES = ("torch", "transformers", "trl", "peft", "bitsandbytes", "datasets", "tokenizers")
 
 
@@ -58,7 +58,7 @@ class TrainSettings:
     resume: bool = False
     num_gpus: int = 1  # processes: one per GPU (on the CPU in a smoke run)
     adapters_dir: Path = ADAPTERS_DIR
-    runs_dir: Path | None = None  # default: results/runs, or the adapter folder for a smoke run
+    runs_dir: Path | None = None  # default: results/round<N>/runs, or the adapter folder (smoke)
     data_round: int | None = None  # None: the current round
 
 
@@ -222,10 +222,12 @@ def run(
     run_id = f"{settings.platform}-{name}"
     adapter_dir = settings.adapters_dir / settings.platform / name
     checkpoint_dir = settings.adapters_dir / settings.platform / f"{name}-checkpoints"
-    runs_dir = settings.runs_dir or (adapter_dir.parent if settings.smoke else RUNS_DIR)
+    data_round = resolve_round(settings.data_round)
+    runs_dir = settings.runs_dir or (
+        adapter_dir.parent if settings.smoke else round_runs_dir(data_round)
+    )
     prepare_output(adapter_dir, checkpoint_dir, resume=settings.resume, smoke=settings.smoke)
 
-    data_round = resolve_round(settings.data_round)
     records = load_train_records(settings.platform, data_round=data_round)
     if settings.smoke:
         records = records[: max(config.smoke.examples, config.smoke.tokenizer_examples)]
@@ -379,7 +381,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--num-gpus", type=int, default=1, help="processes started by the launcher, one per GPU"
     )
     parser.add_argument("--adapters-dir", type=Path, default=ADAPTERS_DIR)
-    parser.add_argument("--runs-dir", type=Path, help="default: results/runs")
+    parser.add_argument("--runs-dir", type=Path, help="default: results/round<N>/runs")
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     args = parser.parse_args(argv)
     if not args.smoke and not args.model:

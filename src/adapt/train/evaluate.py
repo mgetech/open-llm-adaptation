@@ -33,10 +33,9 @@ from adapt.baseline import (
     stop,
     wait_until_ready,
 )
-from adapt.data.rounds import resolve_round, round_tag
+from adapt.data.rounds import eval_dir, resolve_round, round_tag
 from adapt.eval.runner import (
     ALL_SPLITS,
-    RESULTS_DIR,
     RunSettings,
     default_splits,
     evaluate,
@@ -191,7 +190,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--splits", nargs="+", help="default: all splits, and gold_v2 if its file exists"
     )
     parser.add_argument("--adapters-dir", type=Path, default=ADAPTERS_DIR)
-    parser.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+    parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
     parser.add_argument("--workers", type=int, default=8, help="requests in flight")
     parser.add_argument(
         "--port", type=int, help="port of the server (default: 8000, or a free one)"
@@ -209,7 +208,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             load_registry(),
             args.model,
             args.seed,
-            args.out_dir,
+            args.out_dir or eval_dir(args.round),
             platform=args.platform,
             adapters_dir=args.adapters_dir,
             max_steps=args.max_steps,

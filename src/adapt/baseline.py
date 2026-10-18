@@ -21,10 +21,9 @@ from pathlib import Path
 
 import httpx
 
-from adapt.data.rounds import resolve_round, round_tag
+from adapt.data.rounds import eval_dir, resolve_round, round_tag
 from adapt.eval.runner import (
     ALL_SPLITS,
-    RESULTS_DIR,
     ROOT,
     SPLITS,
     RunSettings,
@@ -177,7 +176,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the few-shot baseline of one model.")
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument("--model", required=True, help="key in configs/models.yaml")
-    parser.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+    parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
     parser.add_argument("--workers", type=int, default=8, help="requests in flight")
     parser.add_argument(
         "--port", type=int, help="port of the server (default: 8000, or a free one)"
@@ -198,7 +197,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         run_baseline(
             registry,
             args.model,
-            args.out_dir,
+            args.out_dir or eval_dir(args.round),
             platform=args.platform,
             port=port,
             dry_run=args.dry_run,

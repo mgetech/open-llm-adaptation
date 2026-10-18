@@ -16,13 +16,15 @@ from adapt.baseline import system_name as baseline_name
 from adapt.config import load_platform
 from adapt.data.rounds import (
     current_round,
+    eval_dir,
     generator_version,
     resolve_round,
     round_folder,
     round_tag,
+    runs_dir,
 )
 from adapt.eval.gate import check_gate
-from adapt.eval.runner import DATA_DIR, ROOT, load_documents, results_file, split_path
+from adapt.eval.runner import DATA_DIR, RESULTS_DIR, ROOT, load_documents, results_file, split_path
 from adapt.train.evaluate import main as evaluate_main
 from adapt.train.evaluate import system_name
 
@@ -176,6 +178,7 @@ def test_a_baseline_of_other_data_is_not_compared():
         ("eval-sft", ["MODEL=qwen3-4b"]),
         ("baseline", ["MODEL=qwen3-4b"]),
         ("eval", ["SYSTEM=x"]),
+        ("gate", ["SYSTEM=x"]),
     ],
 )
 def test_make_passes_the_round_on(target, variables):
@@ -191,3 +194,40 @@ def test_make_passes_the_round_on(target, variables):
 
     assert "--round 2" in planned("ROUND=2")
     assert "--round" not in planned()
+
+
+def test_the_results_of_each_round_have_their_own_folders():
+    assert eval_dir(1).as_posix() == "results/round1/eval"
+    assert runs_dir(2).as_posix() == "results/round2/runs"
+    assert eval_dir().as_posix() == f"results/round{current_round()}/eval"
+    assert eval_dir() == RESULTS_DIR
+    with pytest.raises(ValueError, match="does not exist"):
+        eval_dir(99)
+
+
+def test_the_round_one_results_are_in_their_folder_and_nowhere_else():
+    first = ROOT / "results" / "round1"
+    assert (first / "eval" / "tax-booking" / "qwen3-4b-sft-0" / "test_ood.json").exists()
+    assert (first / "runs" / "tax-booking-qwen3-4b-0.json").exists()
+    assert not (ROOT / "results" / "eval").exists() and not (ROOT / "results" / "runs").exists()
+
+
+def test_the_gate_finds_the_results_of_a_round_by_its_number(capsys):
+    from adapt.eval.gate import main as gate
+
+    code = gate(["--system", "qwen3-4b-sft-0", "--baseline", "qwen3-4b-fewshot", "--round", "1"])
+    out = capsys.readouterr().out
+    assert code == 1 and "gate: FAIL (2 of 10 checks)" in out
+    # Round 2 has no results yet, so every check is missing.
+    code = gate(["--system", "qwen3-4b-sft-0", "--round", "2"])
+    assert code == 1 and "gate: FAIL (10 of 10 checks)" in capsys.readouterr().out
+    with pytest.raises(SystemExit, match="round 99 does not exist"):
+        gate(["--system", "qwen3-4b-sft-0", "--round", "99"])
+
+
+def test_a_run_writes_into_the_results_folder_of_its_round(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    arguments = ["--model", "qwen3-1.7b", "--dry-run", "--splits", "dev", "--round", "1"]
+    assert baseline_main(arguments) == 0
+    written = tmp_path / "results" / "round1" / "eval" / "tax-booking" / "qwen3-1.7b-fewshot"
+    assert [path.name for path in written.iterdir()] == ["dev.json"]

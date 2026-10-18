@@ -5,7 +5,7 @@ import re
 import pytest
 
 from adapt.baseline import system_name as baseline_name
-from adapt.data.rounds import current_round
+from adapt.data.rounds import current_round, eval_dir, runs_dir
 from adapt.eval.runner import ROOT
 from adapt.models import load_registry
 from adapt.train.evaluate import system_name
@@ -116,6 +116,15 @@ def test_a_dry_run_writes_to_temporary_folders_and_a_real_run_inside_the_reposit
     assert "tempfile" not in real
 
 
+def test_the_notebook_writes_where_the_commands_look_for_the_results_of_its_round(code):
+    namespace: dict = {}
+    exec(code[0], namespace)
+    exec(code[1], namespace)
+    repo, round_number = namespace["REPO"], namespace["ROUND"]
+    assert namespace["OUT_DIR"].relative_to(repo) == eval_dir(round_number)
+    assert namespace["RUNS_DIR"].relative_to(repo) == runs_dir(round_number)
+
+
 def test_every_make_target_the_notebook_calls_exists(code):
     text = "\n".join(code)
     called = set(re.findall(r'make\(\s*"([a-z-]+)"', text))
@@ -158,9 +167,9 @@ def test_a_later_round_runs_its_own_baseline_on_test_ood_before_the_gate(code):
 def test_the_last_cell_zips_the_files_to_copy_and_the_adapter_and_is_skipped_in_a_dry_run(code):
     cell = code[-1]
     assert cell.startswith("if not DRY_RUN:")
-    assert 'f"results/runs/tax-booking-{RUN}.json"' in cell
-    assert 'f"results/eval/tax-booking/{SYSTEM}"' in cell
-    assert 'f"results/eval/tax-booking/{MODEL}-fewshot{TAG}"' in cell
+    assert 'f"results/round{ROUND}/runs/tax-booking-{RUN}.json"' in cell
+    assert 'f"results/round{ROUND}/eval/tax-booking/{SYSTEM}"' in cell
+    assert 'f"results/round{ROUND}/eval/tax-booking/{MODEL}-fewshot{TAG}"' in cell
     assert 'f"adapters/tax-booking/{RUN}"' in cell
     assert cell.count('run("zip"') == 2 and "cwd=REPO" in cell
     # A second run must not add to the archive of the first.
