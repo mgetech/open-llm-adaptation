@@ -10,6 +10,7 @@ from adapt.eval.gate import (
     format_table,
     main,
     report_only,
+    rule_report,
 )
 from adapt.eval.runner import (
     RunSettings,
@@ -333,6 +334,52 @@ def test_the_report_only_numbers_come_from_test_ood():
     assert shown["documents per second"] == "12.000"
     assert shown["latency p50 / p95 seconds"] == "0.100 / 0.400"
     assert "not run" in dict(report_only({}))["item F1, weighted error cost, speed"]
+
+
+def rule_rows(*specs):
+    """Rows as (expected_review, needs_review, by_rule, reasons)."""
+    return [
+        {
+            "id": f"d{index}",
+            "expected_review": expected,
+            "needs_review": flagged,
+            "by_rule": by_rule,
+            "reasons": reasons,
+        }
+        for index, (expected, flagged, by_rule, reasons) in enumerate(specs)
+    ]
+
+
+def test_the_rule_report_separates_rule_flags_from_model_flags():
+    results = {
+        "gold": {"documents": rule_rows((False, False, False, []))},
+        "edge": {
+            "documents": rule_rows(
+                (True, True, True, ["foreign_currency"]),
+                (True, True, True, ["no_total"]),
+                (True, True, False, ["model_flagged"]),
+                (True, False, False, []),
+            )
+        },
+    }
+    shown = dict(rule_report(results))
+    assert (
+        shown["documents flagged by a pipeline rule"]
+        == "2 of 5 (40.0%), 1 of them for foreign currency"
+    )
+    assert shown["review recall on edge, with / without the rules"] == "0.750 / 0.250"
+
+
+def test_results_from_before_the_rule_report_say_that_it_is_not_recorded():
+    old = {
+        "edge": {
+            "documents": [
+                {"id": "d0", "expected_review": True, "needs_review": True, "reasons": []}
+            ]
+        }
+    }
+    assert dict(rule_report(old)) == {"flagged by a pipeline rule": "not recorded in these results"}
+    assert "not recorded" in dict(rule_report({}))["flagged by a pipeline rule"]
 
 
 @pytest.fixture(scope="module")

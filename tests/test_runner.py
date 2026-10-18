@@ -36,6 +36,7 @@ from adapt.eval.runner import (
     results_path,
     write_results,
 )
+from adapt.pipeline import document_problems
 from adapt.prompting import system_prompt
 from fake_model import Model, unsure_about_4980, wrong_account_with_low_confidence
 from fake_server import FakeServer, Reply
@@ -154,6 +155,7 @@ def test_one_row_per_document_in_the_order_of_the_file(perfect_dev):
         "confidence",
         "item_confidences",
         "output",
+        "by_rule",
     }
     assert all(row["correct"] for row in perfect_dev["documents"])
 
@@ -590,7 +592,13 @@ def test_each_server_has_its_own_requests_in_flight():
     with stack:
         results = evaluate_edge(servers)
     assert results["performance"]["workers"] == 3
-    assert all(len(server.requests) > 50 for server in servers)
+    # The documents that fail a document check never reach a server.
+    platform = load_platform("tax-booking")
+    sent = sum(
+        not document_problems(d.text, d.chart, platform)
+        for d in load_documents("tax-booking", "edge")
+    )
+    assert all(len(server.requests) > 0.4 * sent for server in servers)
 
 
 def test_servers_with_different_vllm_versions_are_refused_before_any_request():

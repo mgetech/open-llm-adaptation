@@ -227,6 +227,37 @@ def report_only(results: Results) -> list[tuple[str, str]]:
     ]
 
 
+def rule_report(results: Results) -> list[tuple[str, str]]:
+    """How many documents a pipeline rule flagged, and what that does to review recall.
+
+    A rule is a document check (a missing total, an unsupported chart, a foreign currency). It
+    flags a document without the model, so its flags are shown apart from the model's. Results
+    from before the runs kept this have no `by_rule` field."""
+    rows = [row for split in GATE_SPLITS if split in results for row in results[split]["documents"]]
+    if not rows or any("by_rule" not in row for row in rows):
+        return [("flagged by a pipeline rule", "not recorded in these results")]
+    flagged = [row for row in rows if row["by_rule"]]
+    currency = sum("foreign_currency" in row["reasons"] for row in flagged)
+    shown = [
+        (
+            "documents flagged by a pipeline rule",
+            f"{len(flagged)} of {len(rows)} ({len(flagged) / len(rows):.1%}), "
+            f"{currency} of them for foreign currency",
+        )
+    ]
+    wanted = [row for row in results.get("edge", {}).get("documents", []) if row["expected_review"]]
+    if wanted:
+        with_rule = sum(row["needs_review"] for row in wanted) / len(wanted)
+        model_only = sum(row["needs_review"] and not row["by_rule"] for row in wanted) / len(wanted)
+        shown.append(
+            (
+                "review recall on edge, with / without the rules",
+                f"{_format(with_rule)} / {_format(model_only)}",
+            )
+        )
+    return shown
+
+
 def _format(value: float | None) -> str:
     return "no data" if value is None else f"{value:.3f}"
 
@@ -286,7 +317,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(title)
     print(format_table(checks))
     print()
-    for name, value in report_only(results):
+    for name, value in [*report_only(results), *rule_report(results)]:
         print(f"report only: {name}: {value}")
     failed = [check for check in checks if not check.passed]
     print()

@@ -194,6 +194,7 @@ def document_rows(scored: Sequence[Scored]) -> list[dict[str, Any]]:
 
     `output` is what the model answered (None if it gave no valid answer) and
     `item_confidences` the probability of each item's account, so that the errors can be read.
+    `by_rule` is true when a document check flagged the document and the model was not called.
     """
     return [
         {
@@ -207,6 +208,7 @@ def document_rows(scored: Sequence[Scored]) -> list[dict[str, Any]]:
             "confidence": s.result.confidence,
             "item_confidences": s.result.item_confidences,
             "output": s.result.output,
+            "by_rule": s.result.by_rule,
         }
         for s in scored
     ]

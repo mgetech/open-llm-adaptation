@@ -9,6 +9,7 @@ import adapt.pipeline as pipeline_module
 from adapt.client import ModelClient, TokenLogprob
 from adapt.config import load_platform
 from adapt.data.split import build_splits
+from adapt.eval.runner import SPLITS, load_documents, split_path
 from adapt.pipeline import MAX_TEXT_LENGTH, Pipeline, account_confidences, document_problems
 from fake_server import completion_body
 
@@ -131,6 +132,65 @@ def test_a_document_that_fails_the_first_checks_never_reaches_the_model(
     assert result.reasons == reasons
     assert result.items == [] and result.booking_lines == []
     assert server.requests == []
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Total USD 45.20",
+        "Total: 45.20 GBP",
+        "Total CHF 45.20",
+        "Total: $45.20",
+        "Total £45.20",
+        "Total due: 45,20 SEK",
+    ],
+)
+def test_a_foreign_currency_needs_review_without_the_model(pipe, server, line):
+    result = pipe.process(f"Nordpaper GmbH\n{line}", "SKR03")
+    assert result.needs_review and result.reasons == ["foreign_currency"]
+    assert result.by_rule
+    assert result.items == [] and result.booking_lines == []
+    assert server.requests == []
+
+
+@pytest.mark.parametrize("line", ["Total EUR 45.20", "Total: 45.20 EUR", "Total € 45,20"])
+def test_euro_documents_are_not_flagged_for_their_currency(platform, line):
+    assert document_problems(f"Nordpaper GmbH\n{line}", "SKR03", platform) == []
+
+
+def test_a_currency_code_inside_a_word_is_not_a_currency(platform):
+    text = "Usdorf Handels GmbH\nTotal EUR 45.20\nTRYIT GmbH"
+    assert document_problems(text, "SKR03", platform) == []
+
+
+def test_the_rule_flags_exactly_the_documents_labelled_with_another_currency(platform):
+    train = [
+        (record["id"], record["document_text"], record["chart"], record["target"])
+        for record in map(
+            json.loads, split_path("tax-booking", "train").read_text("utf-8").splitlines()
+        )
+    ]
+    others = [
+        (d.id, d.text, d.chart, d.target)
+        for split in SPLITS
+        for d in load_documents("tax-booking", split)
+    ]
+    documents = train + others
+    flagged = {
+        id_
+        for id_, text, chart, _ in documents
+        if "foreign_currency" in document_problems(text, chart, platform)
+    }
+    expected = {id_ for id_, _, _, target in documents if target["currency"] != "EUR"}
+    assert expected and flagged == expected
+
+
+def test_only_the_document_checks_set_by_rule(pipe, server):
+    assert pipe.process("", "SKR03").by_rule
+    assert not run(pipe, server, output=FLAGGED).by_rule
+    assert not run(pipe, server).by_rule
+    server.reply(status=500).reply(status=500)
+    assert not pipe.process(TEXT, "SKR03").by_rule
 
 
 def test_the_text_length_limit_is_inclusive(platform):

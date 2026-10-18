@@ -31,6 +31,10 @@ _TOTAL = re.compile(
     rf"[^\d]{{0,40}}{_DIGIT}[\dOolIS., ]*[.,]{_DIGIT}{_DIGIT}(?!\d)",
     re.IGNORECASE,
 )
+# A currency sign or a currency code other than the euro.
+_FOREIGN_CURRENCY = re.compile(
+    r"[$£¥]|\b(?:USD|GBP|CHF|JPY|CNY|CAD|AUD|SEK|NOK|DKK|PLN|CZK|HUF|RON|BGN|TRY)\b"
+)
 _ACCOUNT_VALUE = re.compile(r'"account"\s*:\s*"([^"]*)"')
 
 ReviewReason = (
@@ -39,6 +43,7 @@ ReviewReason = (
         "empty_text",
         "text_too_long",
         "no_total",
+        "foreign_currency",
         "model_unavailable",
         "invalid_output",
         "model_flagged",
@@ -64,6 +69,8 @@ class Result:
     confidence: float | None = None
     output: dict[str, Any] | None = field(default=None, repr=False)
     item_confidences: list[float] | None = field(default=None, repr=False)
+    # True when a document check sent the document to review and the model was not called.
+    by_rule: bool = False
 
 
 def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewReason]:
@@ -78,6 +85,8 @@ def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewR
         problems.append("unsupported_chart")
     if present and not _TOTAL.search(text):
         problems.append("no_total")
+    if present and _FOREIGN_CURRENCY.search(text):
+        problems.append("foreign_currency")
     return problems
 
 
@@ -155,6 +164,7 @@ class Pipeline:
         lines: list[BookingLine] | None = None,
         confidence: float | None = None,
         item_confidences: list[float] | None = None,
+        by_rule: bool = False,
     ) -> Result:
         items = output["items"] if output else []
         return Result(
@@ -168,12 +178,13 @@ class Pipeline:
             confidence=confidence,
             output=output,
             item_confidences=item_confidences,
+            by_rule=by_rule,
         )
 
     def _process(self, document_text: str, chart: str, request_id: str) -> Result:
         problems = document_problems(document_text, chart, self.platform)
         if problems:
-            return self._review(request_id, problems)
+            return self._review(request_id, problems, by_rule=True)
 
         messages = build_messages(self._system, pseudonymise(document_text))
         try:
