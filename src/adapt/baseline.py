@@ -23,6 +23,7 @@ import httpx
 
 from adapt.data.rounds import resolve_round, round_tag
 from adapt.eval.runner import (
+    ALL_SPLITS,
     RESULTS_DIR,
     ROOT,
     SPLITS,
@@ -128,9 +129,9 @@ def run_baseline(
 ) -> list[Path]:
     """Evaluate `key` with the few-shot prompt on `splits`. Returns the results files."""
     data_round = resolve_round(data_round)
-    unknown = [split for split in splits if split not in SPLITS]
+    unknown = [split for split in splits if split not in ALL_SPLITS]
     if unknown:
-        raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(SPLITS)}")
+        raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(ALL_SPLITS)}")
     entry = registry.models[key]
     failed = [r for r in check_model(entry, registry.gates) if not r.passed]
     if failed:
@@ -181,7 +182,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--dry-run", action="store_true", help="use the fake server, not vLLM")
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
-    parser.add_argument("--splits", nargs="+", default=list(SPLITS), help="default: all splits")
+    parser.add_argument(
+        "--splits", nargs="+", default=list(SPLITS), help="default: all splits, not gold_v2"
+    )
     args = parser.parse_args(argv)
 
     registry = load_registry()

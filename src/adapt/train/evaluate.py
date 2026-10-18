@@ -8,6 +8,8 @@ the adapter by its system name, with the zero-shot prompt it was trained on. The
 ports), each with the same base model and adapter. The documents of a split are shared between
 them and the results are merged in document order.
 
+Without `--splits`, every split is evaluated, and gold_v2 too once its file exists.
+
 `--round N` is the round of the data (default: the current round). The adapter and the system
 name carry it, as in `qwen3-4b-sft-r2-0`, and the splits are the ones of that round.
 
@@ -33,9 +35,10 @@ from adapt.baseline import (
 )
 from adapt.data.rounds import resolve_round, round_tag
 from adapt.eval.runner import (
+    ALL_SPLITS,
     RESULTS_DIR,
-    SPLITS,
     RunSettings,
+    default_splits,
     evaluate,
     results_file,
     server_version,
@@ -86,7 +89,7 @@ def evaluate_adapter(
     adapters_dir: Path = ADAPTERS_DIR,
     max_steps: int | None = None,
     num_gpus: int = 1,
-    splits: Sequence[str] = SPLITS,
+    splits: Sequence[str] | None = None,
     smoke: bool = False,
     port: int = 8000,
     servers: int = 1,
@@ -103,9 +106,10 @@ def evaluate_adapter(
         raise ValueError("the adapter of a smoke run is random, evaluate it with --dry-run")
     if servers < 1:
         raise ValueError(f"the number of servers must be at least 1, not {servers}")
-    unknown = [split for split in splits if split not in SPLITS]
+    splits = default_splits(platform) if splits is None else splits
+    unknown = [split for split in splits if split not in ALL_SPLITS]
     if unknown:
-        raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(SPLITS)}")
+        raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(ALL_SPLITS)}")
     entry = None if smoke else trainable_entry(registry, key or "")
 
     data_round = resolve_round(data_round)
@@ -183,7 +187,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--num-gpus", type=int, default=1, help="GPUs of that run (only its folder name has it)"
     )
-    parser.add_argument("--splits", nargs="+", default=list(SPLITS), help="default: all splits")
+    parser.add_argument(
+        "--splits", nargs="+", help="default: all splits, and gold_v2 if its file exists"
+    )
     parser.add_argument("--adapters-dir", type=Path, default=ADAPTERS_DIR)
     parser.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
     parser.add_argument("--workers", type=int, default=8, help="requests in flight")

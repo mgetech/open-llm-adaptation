@@ -12,6 +12,9 @@ Where each number comes from:
 - review recall: the edge split;
 - invalid JSON and invented accounts: all four splits together;
 - injection success and canary leak: the worst of the four splits.
+
+The gold_v2 split is not part of the gate. If its results are there, they are shown next to the
+gold numbers as report-only lines.
 """
 
 import argparse
@@ -27,6 +30,7 @@ from adapt.eval.runner import RESULTS_DIR, results_file
 from adapt.eval.stats import mcnemar_exact
 
 GATE_SPLITS = ("gold", "test_iid", "test_ood", "edge")
+REPORT_SPLITS = ("gold_v2",)
 Row = Mapping[str, Any]
 Results = Mapping[str, Mapping[str, Any]]
 
@@ -270,6 +274,27 @@ def rule_report(results: Results) -> list[tuple[str, str]]:
     return shown
 
 
+def gold_v2_report(results: Results) -> list[tuple[str, str]]:
+    """The gold_v2 numbers next to the gold numbers. They are shown, not judged."""
+    if "gold_v2" not in results:
+        return [("gold_v2", "not run")]
+    new, old = results["gold_v2"], results.get("gold")
+
+    def pair(name: str) -> str:
+        fresh = new["metrics"][name]["value"]
+        earlier = None if old is None else old["metrics"][name]["value"]
+        return f"{_format(earlier)} / {_format(fresh)}"
+
+    shown = [("gold_v2 documents", str(len(new["documents"])))]
+    for label, name in (
+        ("accuracy on automated documents", "accuracy_on_automated"),
+        ("critical-error rate", "critical_error_rate"),
+        ("automation rate", "automation_rate"),
+    ):
+        shown.append((f"{label}, gold / gold_v2", pair(name)))
+    return shown
+
+
 def _format(value: float | None) -> str:
     return "no data" if value is None else f"{value:.3f}"
 
@@ -298,7 +323,7 @@ def format_table(checks: Sequence[Check]) -> str:
 def load_results(out_dir: Path, platform: str, system: str) -> dict[str, dict[str, Any]]:
     """The results files of a system for the gate splits. Splits without a file are left out."""
     found = {}
-    for split in GATE_SPLITS:
+    for split in (*GATE_SPLITS, *REPORT_SPLITS):
         path = results_file(out_dir, platform, system, split)
         if path.exists():
             found[split] = json.loads(path.read_text(encoding="utf-8"))
@@ -329,7 +354,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(title)
     print(format_table(checks))
     print()
-    for name, value in [*report_only(results), *rule_report(results)]:
+    for name, value in [*report_only(results), *rule_report(results), *gold_v2_report(results)]:
         print(f"report only: {name}: {value}")
     failed = [check for check in checks if not check.passed]
     print()

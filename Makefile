@@ -22,7 +22,7 @@ data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=)
 keep-round:  ## Copy the current data to round<N>/ and record it in the manifest (ROUND=, optional NOTE=)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --keep-round $(ROUND) $(if $(NOTE),--note "$(NOTE)")
 
-validate-gold:  ## Check the gold file: schema, amounts and accounts (PLATFORM=)
+validate-gold:  ## Check the gold files: schema, amounts and accounts (PLATFORM=)
 	uv run python -m adapt.data.gold --platform $(PLATFORM)
 
 models-check:  ## Check the model gates and compare the pinned revisions with the Hub (OFFLINE=1, PIN=1)

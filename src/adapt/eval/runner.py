@@ -55,6 +55,10 @@ ROOT = PLATFORMS_DIR.parent
 DATA_DIR = ROOT / "data"
 RESULTS_DIR = Path("results/eval")
 SPLITS = ("dev", "test_iid", "test_ood", "edge", "gold")
+# gold_v2 is written by hand after the first round. It is reported next to gold, and the gate
+# does not read it.
+GOLD_SPLITS = ("gold", "gold_v2")
+ALL_SPLITS = (*SPLITS, "gold_v2")
 SYSTEM_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # A request waits for its turn on a busy server. The 30 seconds of the gateway are too short
 # for 8 requests in flight on a T4, and a timeout would count as an error of the model.
@@ -72,25 +76,31 @@ def _read_lines(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
+def default_splits(platform: str, root: Path = PLATFORMS_DIR) -> tuple[str, ...]:
+    """The splits to evaluate when none are named: all of them, and gold_v2 once its file exists."""
+    return (*SPLITS, "gold_v2") if gold_path(platform, root, "gold_v2").exists() else SPLITS
+
+
 def split_path(
     platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
 ) -> Path:
     """The file of a split. The gold set does not depend on the round. `data_round` None is the
     current round."""
-    if split == "gold":
-        return gold_path(platform, data_dir.parent / "platforms")
+    if split in GOLD_SPLITS:
+        return gold_path(platform, data_dir.parent / "platforms", split)
     return round_folder(platform, data_round, data_dir) / f"{split}.jsonl"
 
 
 def load_documents(
     platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
 ) -> list[EvalDocument]:
-    """The documents of one split. Gold documents have no category, noise level or flag
-    for a seen supplier, except that the supplier is compared with the training names."""
-    if split not in SPLITS:
-        raise ValueError(f"unknown split {split!r}, expected one of {', '.join(SPLITS)}")
+    """The documents of one split. Gold documents (gold and gold_v2) have no category, noise
+    level or flag for a seen supplier, except that the supplier is compared with the training
+    names."""
+    if split not in ALL_SPLITS:
+        raise ValueError(f"unknown split {split!r}, expected one of {', '.join(ALL_SPLITS)}")
     records = _read_lines(split_path(platform, split, data_dir, data_round))
-    if split != "gold":
+    if split not in GOLD_SPLITS:
         return [
             EvalDocument(
                 r["id"],
@@ -426,7 +436,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Evaluate a system on one split.")
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument("--system", required=True, help="name for the results folder")
-    parser.add_argument("--split", default="dev", choices=SPLITS)
+    parser.add_argument("--split", default="dev", choices=ALL_SPLITS)
     parser.add_argument(
         "--endpoints",
         nargs="+",

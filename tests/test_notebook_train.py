@@ -155,6 +155,19 @@ def test_a_later_round_runs_its_own_baseline_on_test_ood_before_the_gate(code):
     assert code.index(baseline) < next(i for i, s in enumerate(code) if 'make("gate"' in s)
 
 
+def test_the_last_cell_zips_the_files_to_copy_and_the_adapter_and_is_skipped_in_a_dry_run(code):
+    cell = code[-1]
+    assert cell.startswith("if not DRY_RUN:")
+    assert 'f"results/runs/tax-booking-{RUN}.json"' in cell
+    assert 'f"results/eval/tax-booking/{SYSTEM}"' in cell
+    assert 'f"results/eval/tax-booking/{MODEL}-fewshot{TAG}"' in cell
+    assert 'f"adapters/tax-booking/{RUN}"' in cell
+    assert cell.count('run("zip"') == 2 and "cwd=REPO" in cell
+    # A second run must not add to the archive of the first.
+    assert cell.index('run("rm"') < cell.index('run("zip"')
+    assert "-steps" not in cell
+
+
 def test_the_short_check_is_short(code):
     assert 0 < settings_of(code[0])["CHECK_STEPS"] <= 10
 
