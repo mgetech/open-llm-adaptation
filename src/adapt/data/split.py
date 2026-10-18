@@ -37,6 +37,9 @@ from adapt.data.layouts import render_document
 from adapt.data.noise import add_noise
 from adapt.data.pseudonymise import pseudonymise
 
+# Raised when a change to the generator or the rules changes the data it makes from a seed.
+# The manifest records it. A manifest without it comes from version 1.
+GENERATOR_VERSION = 2
 SPLIT_SIZES = {"train": 3000, "dev": 300, "test_iid": 500, "test_ood": 300, "edge": 150}
 HELD_OUT_LAYOUT = "letter_invoice"
 ALL_LAYOUTS = frozenset(get_args(Layout))
@@ -282,7 +285,12 @@ def write_data(
     """Write the split files and the manifest. Return the manifest."""
     out_dir = data_dir / platform
     out_dir.mkdir(parents=True, exist_ok=True)
-    manifest: dict[str, Any] = {"platform": platform, "seed": seed, "splits": {}}
+    manifest: dict[str, Any] = {
+        "platform": platform,
+        "seed": seed,
+        "generator": GENERATOR_VERSION,
+        "splits": {},
+    }
     kept = _kept_rounds(manifest_path)
     for split, records in splits.items():
         manifest["splits"][split] = {

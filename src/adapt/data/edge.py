@@ -50,6 +50,8 @@ PER_CATEGORY = 15
 # letter_invoice is held out of every split except test_ood and gold.
 EDGE_LAYOUTS = frozenset(get_args(Layout)) - {"letter_invoice"}
 UNSUPPORTED_CHART = "SKR04"
+# Layouts a shop can print a mixed business and private purchase on.
+MIXED_LAYOUTS = ("till_receipt", "short_receipt", "table_invoice")
 
 AMBIGUOUS_ITEMS = (
     "Online marketplace order",
@@ -228,12 +230,16 @@ def _business_private_mixed(pool: _Pool, rng: random.Random) -> EdgeDocument:
         for item in supplier_type.items
         if item.account in private
     ]
-    if "till_receipt" not in pool.layouts or not private_items:
-        raise ValueError("no allowed layout or private item for mixed documents")
+    if not private_items:
+        raise ValueError("no private item for mixed documents")
+
+    def layouts_of(supplier_type: SupplierType) -> list[str]:
+        return [x for x in supplier_type.layouts if x in MIXED_LAYOUTS and x in pool.layouts]
+
     shop = rng.choice(
         pool.usable(
             lambda t: (
-                "till_receipt" in t.layouts
+                bool(layouts_of(t))
                 and t.country == "DE"
                 and not any(i.account in private for i in t.items)
             ),
@@ -241,6 +247,7 @@ def _business_private_mixed(pool: _Pool, rng: random.Random) -> EdgeDocument:
         )
     )
     shop_type = pool.types()[shop.type_key]
+    layout = rng.choice(layouts_of(shop_type))
     picked = rng.choices(shop_type.items, k=rng.randint(1, 2))
     picked += rng.choices(private_items, k=rng.randint(1, 2))
     rng.shuffle(picked)
@@ -248,9 +255,7 @@ def _business_private_mixed(pool: _Pool, rng: random.Random) -> EdgeDocument:
         Item(i.description, draw_amount(rng, i.price), i.account, i.vat_rate) for i in picked
     )
     invoice = replace(
-        make_invoice(
-            pool.rules, shop, "till_receipt", _random_date(rng), rng.randint(1, 9999), items
-        ),
+        make_invoice(pool.rules, shop, layout, _random_date(rng), rng.randint(1, 9999), items),
         target={},
     )
     target = _flagged_target(invoice, "Business and private items on one receipt")

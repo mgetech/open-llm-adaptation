@@ -229,3 +229,21 @@ def test_money_pattern_matches_both_styles():
         "1.234,56",
         "4.50",
     ]
+
+
+def test_mixed_documents_appear_on_receipts_and_invoices(many):
+    layouts = {d.layout for d in in_category(many, "business_private_mixed")}
+    assert {"till_receipt", "table_invoice"} <= layouts
+    assert layouts <= {"till_receipt", "short_receipt", "table_invoice"}
+
+
+def test_mixed_documents_name_their_private_items(platform, many):
+    private_accounts = {a.number for a in platform.rules.accounts if a.group == "private"}
+    private = {
+        i.description
+        for t in platform.rules.supplier_types
+        for i in t.items
+        if i.account in private_accounts
+    }
+    for document in in_category(many, "business_private_mixed"):
+        assert any(description in document.text for description in private)

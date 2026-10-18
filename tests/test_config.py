@@ -130,6 +130,7 @@ def test_rules_reject_duplicate_supplier_key(rules_data):
         (("supplier_types", 0, "items", 0, "price"), [50, 10]),
         (("supplier_types", 0, "layouts"), ["fax"]),
         (("supplier_types", 0, "country"), "FR"),
+        (("supplier_types", 0, "weight"), 0),
         (("accounts", 0, "number"), "48"),
         (("accounts", 0, "group"), "tax"),
     ],

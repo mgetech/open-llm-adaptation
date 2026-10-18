@@ -78,6 +78,8 @@ class SupplierType(_Model):
     country: Country
     layouts: list[Layout] = Field(min_length=1)
     items: list[SupplierItem] = Field(min_length=1)
+    # How often a document is drawn for this type, compared with a type of weight 1.
+    weight: int = Field(default=1, ge=1)
 
     @model_validator(mode="after")
     def check_layouts(self) -> Self:

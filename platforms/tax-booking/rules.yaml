@@ -106,6 +106,7 @@ supplier_types:
       - {description: Office rent, account: "4210", vat_rate: "0", price: [300, 700]}
       - {description: Storage room rent, account: "4210", vat_rate: "0", price: [40, 200]}
       - {description: Parking space rent, account: "4210", vat_rate: "19", price: [40, 150]}
+      - {description: Service charges, account: "4210", vat_rate: "19", price: [30, 250]}
 
   - key: insurance_company
     country: DE
@@ -308,16 +309,49 @@ supplier_types:
     country: DE
     layouts: [till_receipt]
     items:
-      - {description: Groceries, account: "1800", vat_rate: "7", price: [5, 120]}
-      - {description: Household goods, account: "1800", vat_rate: "19", price: [3, 80]}
+      - {description: Pasta 500g, account: "1800", vat_rate: "7", price: [1, 4]}
+      - {description: Basmati rice, account: "1800", vat_rate: "7", price: [2, 8]}
+      - {description: Butter 250g, account: "1800", vat_rate: "7", price: [2, 6]}
+      - {description: Eggs 10 pcs, account: "1800", vat_rate: "7", price: [2, 6]}
+      - {description: Tomatoes 1kg, account: "1800", vat_rate: "7", price: [2, 7]}
+      - {description: Oat flakes, account: "1800", vat_rate: "7", price: [1, 5]}
+      - {description: Orange juice 1l, account: "1800", vat_rate: "7", price: [1, 5]}
+      - {description: Frozen pizza, account: "1800", vat_rate: "7", price: [2, 8]}
+      - {description: Cheddar cheese, account: "1800", vat_rate: "7", price: [2, 9]}
+      - {description: Ground coffee, account: "1800", vat_rate: "7", price: [4, 14]}
+      - {description: Chocolate bars 3pk, account: "1800", vat_rate: "7", price: [2, 7]}
+      - {description: Sponges 6pk, account: "1800", vat_rate: "19", price: [1, 5]}
+      - {description: Trash bags, account: "1800", vat_rate: "19", price: [2, 8]}
+      - {description: Light bulbs 2pk, account: "1800", vat_rate: "19", price: [3, 12]}
+      - {description: Batteries AA 8pk, account: "1800", vat_rate: "19", price: [4, 16]}
+      - {description: Scented candles, account: "1800", vat_rate: "19", price: [3, 15]}
+      - {description: Aluminium foil, account: "1800", vat_rate: "19", price: [2, 6]}
+      - {description: Toilet paper 12 rolls, account: "1800", vat_rate: "19", price: [4, 12]}
+      - {description: Floor cleaner, account: "1800", vat_rate: "19", price: [2, 8]}
+      - {description: Dishwasher tablets, account: "1800", vat_rate: "19", price: [4, 15]}
 
   - key: training_provider
     country: DE
+    weight: 2
     layouts: [table_invoice, letter_invoice]
     items:
       - {description: Seminar fee, account: "4945", vat_rate: "19", price: [90, 700]}
       - {description: Online course, account: "4945", vat_rate: "19", price: [20, 400]}
+      - {description: Workshop fee, account: "4945", vat_rate: "19", price: [60, 500]}
+      - {description: Webinar access, account: "4945", vat_rate: "19", price: [15, 150]}
       - {description: Exam fee, account: "4945", vat_rate: "0", price: [50, 300]}
+      - {description: Re-sit exam fee, account: "4945", vat_rate: "0", price: [40, 200]}
+      - {description: Assessment fee, account: "4945", vat_rate: "0", price: [30, 250]}
+
+  - key: language_school
+    country: DE
+    weight: 2
+    layouts: [table_invoice, letter_invoice]
+    items:
+      - {description: Language course, account: "4945", vat_rate: "19", price: [80, 650]}
+      - {description: Business English workshop, account: "4945", vat_rate: "19", price: [60, 450]}
+      - {description: Placement test fee, account: "4945", vat_rate: "0", price: [20, 120]}
+      - {description: Diploma exam fee, account: "4945", vat_rate: "0", price: [60, 300]}
 
   - key: postal_service
     country: DE
@@ -325,7 +359,9 @@ supplier_types:
     items:
       - {description: Postage stamps, account: "4910", vat_rate: "0", price: [1, 40]}
       - {description: Registered letter, account: "4910", vat_rate: "0", price: [3, 12]}
+      - {description: Priority letter, account: "4910", vat_rate: "0", price: [2, 15]}
       - {description: Parcel shipping, account: "4910", vat_rate: "19", price: [5, 40]}
+      - {description: Packing material, account: "4910", vat_rate: "19", price: [2, 25]}
 
   - key: courier_service
     country: DE

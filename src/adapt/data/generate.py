@@ -126,7 +126,8 @@ def draw_invoice(
     With `mixed` the items have more than one VAT rate, so every supplier needs several rates.
     """
     types = {t.key: t for t in rules.supplier_types}
-    supplier = rng.choice(suppliers)
+    weights = [types[s.type_key].weight for s in suppliers]
+    supplier = rng.choices(suppliers, weights)[0]
     supplier_type = types[supplier.type_key]
     layout = rng.choice([x for x in supplier_type.layouts if x in allowed])
 
