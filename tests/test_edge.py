@@ -247,3 +247,39 @@ def test_mixed_documents_name_their_private_items(platform, many):
     }
     for document in in_category(many, "business_private_mixed"):
         assert any(description in document.text for description in private)
+
+
+def test_free_text_reverse_charge_notes_use_many_phrasings(many):
+    found = in_category(many, "reverse_charge_free_text")
+    used = {note for document in found for note in FREE_TEXT_NOTES if note in document.text}
+    assert len(FREE_TEXT_NOTES) >= 10
+    assert len(used) >= 8
+
+
+def test_injection_documents_use_many_phrasings(many):
+    found = in_category(many, "prompt_injection")
+    used = {phrase for document in found for phrase in INJECTIONS if phrase in document.text}
+    assert len(used) >= 8
+
+
+def test_ambiguous_documents_use_many_phrasings(many):
+    found = in_category(many, "ambiguous_purpose")
+    used = {item for document in found for item in AMBIGUOUS_ITEMS if item in document.text}
+    assert len(AMBIGUOUS_ITEMS) >= 15
+    assert len(used) >= 10
+
+
+def test_a_discount_sits_below_the_item_it_reduces_and_shares_its_account(many):
+    named = 0
+    for document in in_category(many, "credit_or_discount"):
+        items = document.target["items"]
+        if document.target["document_type"] == "credit_note":
+            continue
+        position = next(n for n, item in enumerate(items) if item["amount"] < 0)
+        above = items[position - 1]
+        assert items[position]["account"] == above["account"]
+        assert items[position]["vat_rate"] == above["vat_rate"]
+        assert -items[position]["amount"] <= above["amount"] * 0.2 + 0.01
+        if items[position]["description"].endswith(f" on {above['description']}"):
+            named += 1
+    assert named > 0
