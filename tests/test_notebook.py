@@ -83,7 +83,7 @@ def test_every_make_target_the_notebook_calls_exists(code):
     assert called <= declared
 
 
-def test_the_notebook_runs_the_candidates_of_the_registry(code):
+def test_the_notebook_runs_the_models_of_the_registry(code):
     tree = ast.parse(code[0])
     models = next(
         ast.literal_eval(n.value)
@@ -91,8 +91,7 @@ def test_the_notebook_runs_the_candidates_of_the_registry(code):
         if isinstance(n, ast.Assign) and n.targets[0].id == "MODELS"
     )
     registry = load_registry()
-    candidates = [key for key, entry in registry.models.items() if entry.role == "candidate"]
-    assert models == candidates
+    assert models == list(registry.models)
 
 
 def test_the_gate_is_expected_to_fail_without_stopping_the_notebook(code):

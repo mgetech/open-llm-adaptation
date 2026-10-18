@@ -1,7 +1,7 @@
 """Render a chat with the Qwen3 chat template, without the tokenizer library.
 
 `fixtures/qwen3_chat_template.jinja` is the chat template of the Qwen3 models (Apache-2.0).
-The 1.7B, 4B and 8B models ship the same template. It is rendered the way the tokenizer
+The 1.7B and 4B models ship the same template. It is rendered the way the tokenizer
 library renders it: sandboxed, with trim_blocks and lstrip_blocks.
 """
 

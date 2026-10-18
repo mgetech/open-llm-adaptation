@@ -28,12 +28,13 @@ dev = [
     "ruff>=0.8",
 ]
 # Training only. Imported lazily, so the CPU path never needs it.
+# torch is the version that vLLM pins, so training and serving share one environment.
 gpu = [
     "accelerate>=1.0",
     "bitsandbytes>=0.44",
     "datasets>=3.0",
     "peft>=0.13",
-    "torch>=2.4",
+    "torch==2.13.0",
     "transformers>=4.51",
     "trl>=0.12",
 ]

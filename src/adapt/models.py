@@ -12,7 +12,6 @@ import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -36,7 +35,6 @@ class ModelEntry(_Model):
     licence: str
     parameters: int = Field(gt=0)
     architecture: str
-    role: Literal["candidate", "reference"]
     chat_template: ChatTemplate
 
 
@@ -108,7 +106,7 @@ def training_memory_gb(parameters: int, gate: QloraGate) -> float:
 
 
 def check_model(entry: ModelEntry, gates: Gates) -> list[GateResult]:
-    """The gates that need only the registry. Training and serving apply to candidates."""
+    """The gates that need only the registry."""
     allowed = [licence.lower() for licence in gates.licences]
     results = [
         GateResult(
@@ -124,9 +122,6 @@ def check_model(entry: ModelEntry, gates: Gates) -> list[GateResult]:
             else f"{entry.revision} is not a SHA",
         ),
     ]
-    if entry.role != "candidate":
-        return results
-
     limit = gates.qlora.gpu_memory_gb * gates.qlora.usable_fraction
     needed = training_memory_gb(entry.parameters, gates.qlora)
     results.append(
@@ -209,7 +204,7 @@ def format_results(registry: Registry, results: dict[str, list[GateResult]]) -> 
     lines = []
     for key, found in results.items():
         entry = registry.models[key]
-        lines.append(f"{key}  {entry.hf_id}  ({entry.role})")
+        lines.append(f"{key}  {entry.hf_id}")
         lines.extend(
             f"  {'pass' if result.passed else 'FAIL'}  {result.name}: {result.detail}"
             for result in found

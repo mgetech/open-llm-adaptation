@@ -36,14 +36,11 @@ def results_by_name(entry, gates):
     return {r.name: r for r in check_model(entry, gates)}
 
 
-def test_the_three_qwen3_models_are_listed(registry):
+def test_the_two_qwen3_models_are_listed(registry):
     assert {key: entry.hf_id for key, entry in registry.models.items()} == {
         "qwen3-1.7b": "Qwen/Qwen3-1.7B",
         "qwen3-4b": "Qwen/Qwen3-4B",
-        "qwen3-8b": "Qwen/Qwen3-8B",
     }
-    roles = {key: entry.role for key, entry in registry.models.items()}
-    assert roles == {"qwen3-1.7b": "candidate", "qwen3-4b": "candidate", "qwen3-8b": "reference"}
 
 
 def test_thinking_is_off_for_every_model(registry):
@@ -130,15 +127,6 @@ def test_a_smaller_gpu_fails_a_model_that_fits_a_bigger_one(registry, data):
     assert results_by_name(small.models["qwen3-1.7b"], small.gates)["qlora fits one gpu"].passed
 
 
-def test_a_reference_model_is_not_held_to_the_training_gates(registry, data):
-    data["models"]["qwen3-8b"]["parameters"] = 70_000_000_000
-    data["models"]["qwen3-8b"]["architecture"] = "SomethingElse"
-    changed = Registry.model_validate(data)
-    names = results_by_name(changed.models["qwen3-8b"], changed.gates)
-    assert set(names) == {"licence", "revision pinned"}
-    assert all(r.passed for r in names.values())
-
-
 def test_an_architecture_without_lora_support_fails(registry, data):
     data["models"]["qwen3-4b"]["architecture"] = "MambaForCausalLM"
     changed = Registry.model_validate(data)
@@ -165,12 +153,6 @@ def test_unknown_fields_and_missing_fields_are_refused(data):
         Registry.model_validate(missing)
     with pytest.raises(ValidationError):
         Registry.model_validate({**data, "models": {}})
-
-
-def test_the_role_must_be_known(data):
-    data["models"]["qwen3-4b"]["role"] = "maybe"
-    with pytest.raises(ValidationError):
-        Registry.model_validate(data)
 
 
 def entry_with(registry, **changes):
@@ -239,7 +221,7 @@ def test_a_revision_that_is_not_a_sha_is_not_sent_to_the_hub(registry):
 def test_checks_for_all_models_can_skip_the_hub(registry):
     results = run_checks(registry, None)
     assert set(results) == set(registry.models)
-    assert sum(len(found) for found in results.values()) == 10
+    assert sum(len(found) for found in results.values()) == 8
     assert all(r.passed for found in results.values() for r in found)
 
 
@@ -252,7 +234,7 @@ def write_registry(tmp_path, data, text=None):
 def test_pinning_replaces_only_the_revisions_that_are_not_shas(tmp_path):
     text = MODELS_FILE.read_text(encoding="utf-8")
     text = text.replace("70d244cc86ccca08cf5af4e1e306ecf908b1ad5e", "main")
-    text = text.replace("b968826d9c46dd6066d109eabc6255188de91218", "v1")
+    text = text.replace("1cfa9a7208912126459214e8b04321603b3df60c", "v1")
     path = write_registry(tmp_path, None, text)
     asked = []
 
@@ -260,18 +242,17 @@ def test_pinning_replaces_only_the_revisions_that_are_not_shas(tmp_path):
         asked.append((hf_id, revision))
         return HubInfo(SHA if revision == "main" else OTHER_SHA, "apache-2.0", 1)
 
-    assert pin_revisions(path, hub) == {"qwen3-1.7b": SHA, "qwen3-8b": OTHER_SHA}
-    assert asked == [("Qwen/Qwen3-1.7B", "main"), ("Qwen/Qwen3-8B", "v1")]
+    assert pin_revisions(path, hub) == {"qwen3-1.7b": SHA, "qwen3-4b": OTHER_SHA}
+    assert asked == [("Qwen/Qwen3-1.7B", "main"), ("Qwen/Qwen3-4B", "v1")]
 
     pinned = load_registry(path)
     assert pinned.models["qwen3-1.7b"].revision == SHA
-    assert pinned.models["qwen3-8b"].revision == OTHER_SHA
-    assert pinned.models["qwen3-4b"].revision == "1cfa9a7208912126459214e8b04321603b3df60c"
+    assert pinned.models["qwen3-4b"].revision == OTHER_SHA
     # Nothing else in the file changed, and the comments are still there.
     expected = text.replace("revision: main", f"revision: {SHA}")
     expected = expected.replace("revision: v1", f"revision: {OTHER_SHA}")
     assert path.read_text(encoding="utf-8") == expected
-    assert "# Candidate and reference models" in expected
+    assert "# Candidate models" in expected
 
 
 def test_pinning_does_nothing_when_all_revisions_are_shas(tmp_path):
@@ -309,8 +290,8 @@ def test_pinning_keeps_windows_line_endings(tmp_path):
 def test_the_command_passes_for_the_file_in_the_repo(capsys):
     assert models.main(["--offline"]) == 0
     out = capsys.readouterr().out
-    assert "models: PASS (10 of 10 checks)" in out
-    for key in ("qwen3-1.7b", "qwen3-4b", "qwen3-8b"):
+    assert "models: PASS (8 of 8 checks)" in out
+    for key in ("qwen3-1.7b", "qwen3-4b"):
         assert key in out
     assert "FAIL" not in out
 
@@ -325,8 +306,8 @@ def test_the_command_asks_the_hub_unless_told_not_to(monkeypatch, capsys, regist
 
     monkeypatch.setattr(models, "hub_info", hub)
     assert models.main([]) == 0
-    assert sorted(asked) == ["Qwen/Qwen3-1.7B", "Qwen/Qwen3-4B", "Qwen/Qwen3-8B"]
-    assert "models: PASS (19 of 19 checks)" in capsys.readouterr().out
+    assert sorted(asked) == ["Qwen/Qwen3-1.7B", "Qwen/Qwen3-4B"]
+    assert "models: PASS (14 of 14 checks)" in capsys.readouterr().out
     asked.clear()
     assert models.main(["--offline"]) == 0
     assert asked == []
@@ -338,7 +319,7 @@ def test_the_command_fails_for_a_disallowed_licence(tmp_path, data, capsys):
     assert models.main(["--offline", "--file", str(path)]) == 1
     out = capsys.readouterr().out
     assert "FAIL  licence: gpl-3.0" in out
-    assert "models: FAIL (1 of 10 checks)" in out
+    assert "models: FAIL (1 of 8 checks)" in out
 
 
 def test_the_command_fails_when_the_hub_disagrees(monkeypatch, capsys):
