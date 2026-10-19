@@ -57,8 +57,8 @@ pair:  ## Combine the saved results of two systems into one pair configuration (
 rescore:  ## Score saved results again with the newer pipeline checks, no model run (SYSTEMS="a b"; optional SPLITS=, ROUND=)
 	uv run python -m adapt.eval.rescore --platform $(PLATFORM) --systems $(SYSTEMS) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ROUND),--round $(ROUND))
 
-gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=, ROUND=, OUT_DIR=)
-	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE)) $(if $(ROUND),--round $(ROUND)) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
+gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=, GOLD=gold_v2, ROUND=, OUT_DIR=)
+	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE)) $(if $(GOLD),--gold $(GOLD)) $(if $(ROUND),--round $(ROUND)) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
 
 lint:  ## Check style and formatting
 	uv run ruff check .

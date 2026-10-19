@@ -1,10 +1,12 @@
 """The eval gate: compare the results of a system with the thresholds in `platform.yaml`.
 
 Run with `make gate SYSTEM=...`. Add `BASELINE=...` to include the test against the few-shot
-system of the same size. A check whose results are missing counts as failed.
+system of the same size. A check whose results are missing counts as failed. `GOLD=gold_v2` reads
+the gold_v2 results where the list below says gold; the default is gold, so every round is
+judged the same way. The two gold sets are never pooled.
 
 Where each number comes from:
-- automation rate: the gold split;
+- automation rate: the gold split (gold_v2 with `GOLD=gold_v2`);
 - accuracy on automated documents and critical-error rate: gold and test_ood together;
 - fine-tuned against few-shot: document accuracy on test_ood, McNemar exact test, only when both
   systems ran on the same test_ood file (a baseline of another round is refused);
@@ -13,8 +15,8 @@ Where each number comes from:
 - invalid JSON and invented accounts: all four splits together;
 - injection success and canary leak: the worst of the four splits.
 
-The gold_v2 split is not part of the gate. If its results are there, they are shown next to the
-gold numbers as report-only lines. The dev_real split is not read: it is for choosing a
+By default the gold_v2 split is not part of the gate. If its results are there, they are shown
+next to the gold numbers as report-only lines. The dev_real split is not read: it is for choosing a
 configuration, never for the gate or a report.
 """
 
@@ -27,10 +29,12 @@ from pathlib import Path
 from typing import Any, Literal
 
 from adapt.config import Gate, load_platform
+from adapt.data.gold import ORIGINAL_ID
 from adapt.data.rounds import eval_dir
 from adapt.eval.runner import results_file
 from adapt.eval.stats import mcnemar_exact
 
+GOLD_CHOICES = ("gold", "gold_v2")
 GATE_SPLITS = ("gold", "test_iid", "test_ood", "edge")
 REPORT_SPLITS = ("gold_v2",)
 Row = Mapping[str, Any]
@@ -61,6 +65,11 @@ class Check:
         return value < self.limit
 
 
+def gate_splits(gold: str = "gold") -> tuple[str, ...]:
+    """The four splits the gate reads, with `gold` as the gold set."""
+    return (gold, *GATE_SPLITS[1:])
+
+
 def _data_hash(results: Mapping[str, Any]) -> str | None:
     return results.get("manifest", {}).get("data_sha256")
 
@@ -89,11 +98,11 @@ def _metric(results: Results, split: str, name: str) -> float | None:
     return results[split]["metrics"][name]["value"]
 
 
-def _worst(results: Results, name: str) -> float | None:
+def _worst(results: Results, name: str, splits: Sequence[str] = GATE_SPLITS) -> float | None:
     """The largest value of a metric over the gate splits. None if a split is missing."""
-    if _missing(results, GATE_SPLITS):
+    if _missing(results, splits):
         return None
-    values = [_metric(results, split, name) for split in GATE_SPLITS]
+    values = [_metric(results, split, name) for split in splits]
     defined = [v for v in values if v is not None]
     return max(defined) if defined else None
 
@@ -120,12 +129,15 @@ def check_gate(
     results: Results,
     baseline_test_ood: Mapping[str, Any] | None = None,
     baseline_note: str = "not run: no baseline given",
+    gold: str = "gold",
 ) -> list[Check]:
     """All checks, in the order of the KPI table. `results` maps a split to its results file.
+    `gold` is the gold set the gate reads: gold, or gold_v2 for the clean claim.
 
     `baseline_test_ood` is the test_ood results of the few-shot system. Without it the test
     against few-shot is not run, and `baseline_note` says why."""
-    both = ("gold", "test_ood")
+    splits = gate_splits(gold)
+    both = (gold, "test_ood")
     accuracy = _pooled(results, both, lambda r: r["correct"], _automated)
     critical = _pooled(results, both, lambda r: r["severity"] == "critical", _automated)
 
@@ -153,29 +165,29 @@ def check_gate(
         detail = "not run: test_ood"
 
     def pooled_reason(code: str) -> float | None:
-        return _pooled(results, GATE_SPLITS, _reason(code), _always)
+        return _pooled(results, splits, _reason(code), _always)
 
     return [
         Check(
             "automation rate",
-            _metric(results, "gold", "automation_rate"),
+            _metric(results, gold, "automation_rate"),
             ">=",
             gate.automation_rate_min,
-            _where(results, ["gold"], "gold"),
+            _where(results, [gold], gold),
         ),
         Check(
             "accuracy on automated documents",
             accuracy,
             ">=",
             gate.accuracy_automated_min,
-            _where(results, both, "gold + test_ood"),
+            _where(results, both, f"{gold} + test_ood"),
         ),
         Check(
             "critical-error rate",
             critical,
             "<=",
             gate.critical_error_rate_max,
-            _where(results, both, "gold + test_ood"),
+            _where(results, both, f"{gold} + test_ood"),
         ),
         Check(
             "fine-tuned vs few-shot, p-value",
@@ -204,28 +216,28 @@ def check_gate(
             pooled_reason("invalid_output"),
             "<=",
             gate.invalid_json_rate_max,
-            _where(results, GATE_SPLITS, "all four splits"),
+            _where(results, splits, "all four splits"),
         ),
         Check(
             "invented account rate",
             pooled_reason("unknown_account"),
             "<=",
             gate.invented_account_rate_max,
-            _where(results, GATE_SPLITS, "all four splits"),
+            _where(results, splits, "all four splits"),
         ),
         Check(
             "prompt-injection success",
-            _worst(results, "injection_success_rate"),
+            _worst(results, "injection_success_rate", splits),
             "<=",
             gate.injection_success_max,
-            _where(results, GATE_SPLITS, "worst of four splits"),
+            _where(results, splits, "worst of four splits"),
         ),
         Check(
             "canary leak",
-            _worst(results, "canary_leak_rate"),
+            _worst(results, "canary_leak_rate", splits),
             "<=",
             gate.canary_leak_max,
-            _where(results, GATE_SPLITS, "worst of four splits"),
+            _where(results, splits, "worst of four splits"),
         ),
     ]
 
@@ -245,14 +257,19 @@ def report_only(results: Results) -> list[tuple[str, str]]:
     ]
 
 
-def rule_report(results: Results) -> list[tuple[str, str]]:
+def rule_report(results: Results, gold: str = "gold") -> list[tuple[str, str]]:
     """How many documents a pipeline rule flagged, and what that does to review recall.
 
     A rule is a document check (a missing total, an unsupported chart, a foreign currency, heavy
     noise) that flags a document without the model, or the printed-VAT check on an answer. Its
     flags are shown apart from the model's. Results from before the runs kept this have no
     `by_rule` field."""
-    rows = [row for split in GATE_SPLITS if split in results for row in results[split]["documents"]]
+    rows = [
+        row
+        for split in gate_splits(gold)
+        if split in results
+        for row in results[split]["documents"]
+    ]
     if not rows or any("by_rule" not in row for row in rows):
         return [("flagged by a pipeline rule", "not recorded in these results")]
     flagged = [row for row in rows if row["by_rule"]]
@@ -292,7 +309,14 @@ def gold_v2_report(results: Results) -> list[tuple[str, str]]:
         earlier = None if old is None else old["metrics"][name]["value"]
         return f"{_format(earlier)} / {_format(fresh)}"
 
-    shown = [("gold_v2 documents", str(len(new["documents"])))]
+    documents = new["documents"]
+    original = sum(bool(ORIGINAL_ID.match(row["id"])) for row in documents)
+    shown = [
+        (
+            "gold_v2 documents",
+            f"{len(documents)} ({original} original, {len(documents) - original} added)",
+        )
+    ]
     for label, name in (
         ("accuracy on automated documents", "accuracy_on_automated"),
         ("critical-error rate", "critical_error_rate"),
@@ -327,10 +351,13 @@ def format_table(checks: Sequence[Check]) -> str:
     return "\n".join(lines)
 
 
-def load_results(out_dir: Path, platform: str, system: str) -> dict[str, dict[str, Any]]:
-    """The results files of a system for the gate splits. Splits without a file are left out."""
+def load_results(
+    out_dir: Path, platform: str, system: str, gold: str = "gold"
+) -> dict[str, dict[str, Any]]:
+    """The results files of a system for the gate splits and the report splits. Splits without
+    a file are left out."""
     found = {}
-    for split in (*GATE_SPLITS, *REPORT_SPLITS):
+    for split in dict.fromkeys((*gate_splits(gold), *GATE_SPLITS, *REPORT_SPLITS)):
         path = results_file(out_dir, platform, system, split)
         if path.exists():
             found[split] = json.loads(path.read_text(encoding="utf-8"))
@@ -343,6 +370,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--system", required=True)
     parser.add_argument("--baseline", help="few-shot system of the same size")
     parser.add_argument("--round", type=int, help="round of the results (default: the current one)")
+    parser.add_argument(
+        "--gold", choices=GOLD_CHOICES, default="gold", help="the gold set the gate reads"
+    )
     parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
     args = parser.parse_args(argv)
     try:
@@ -351,7 +381,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         sys.exit(f"error: {error}")
 
     gate = load_platform(args.platform).config.gate
-    results = load_results(out_dir, args.platform, args.system)
+    results = load_results(out_dir, args.platform, args.system, args.gold)
     baseline = None
     note = "not run: no baseline given"
     if args.baseline:
@@ -360,13 +390,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
         else:
             note = f"not run: no test_ood results for {args.baseline}"
-    checks = check_gate(gate, results, baseline, note)
+    checks = check_gate(gate, results, baseline, note, args.gold)
 
     title = f"gate for {args.system}" + (f" against {args.baseline}" if args.baseline else "")
+    if args.gold != "gold":
+        title += f", with {args.gold} as the gold set"
     print(title)
     print(format_table(checks))
     print()
-    for name, value in [*report_only(results), *rule_report(results), *gold_v2_report(results)]:
+    for name, value in [
+        *report_only(results),
+        *rule_report(results, args.gold),
+        *gold_v2_report(results),
+    ]:
         print(f"report only: {name}: {value}")
     failed = [check for check in checks if not check.passed]
     print()
