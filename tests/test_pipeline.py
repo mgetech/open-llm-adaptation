@@ -35,6 +35,8 @@ OUTPUT = {
     "needs_review": False,
     "reason": "Office supplies at 19%, book at 7%",
 }
+# A document that prints no VAT, for answers that are not about TEXT.
+PLAIN = "Nordpaper GmbH\nItem 100.00\nTotal EUR 100.00"
 FLAGGED = {
     **OUTPUT,
     "items": [],
@@ -120,7 +122,7 @@ def test_a_request_id_is_kept_or_made_up(pipe, server):
         (TEXT, None, ["unsupported_chart"]),
         ("Nordpaper GmbH\nPaper 23.80", "SKR03", ["no_total"]),
         ("Nordpaper GmbH\nTotal EUR 4", "SKR03", ["no_total"]),
-        ("Nordpaper GmbH\nTotal EUR 2?4.0?", "SKR03", ["no_total"]),
+        ("Nordpaper GmbH\nTotal EUR 2?4.0?", "SKR03", ["no_total", "heavy_noise"]),
         ("Nordpaper GmbH\nPaper 23.80", "SKR04", ["unsupported_chart", "no_total"]),
     ],
 )
@@ -183,6 +185,48 @@ def test_the_rule_flags_exactly_the_documents_labelled_with_another_currency(pla
     }
     expected = {id_ for id_, _, _, target in documents if target["currency"] != "EUR"}
     assert expected and flagged == expected
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Printer paper A4 ... 2?.80",
+        "Printer paper A4 ... #3.80",
+        "Printer paper A4 ... 2*,80",
+        "Printer paper A4 ... 1.2?4,00",
+    ],
+)
+def test_an_amount_that_cannot_be_read_needs_review_without_the_model(pipe, server, line):
+    result = pipe.process(TEXT.replace("2x Printer paper A4 ... 23.80", line), "SKR03")
+    assert result.needs_review and result.reasons == ["heavy_noise"]
+    assert result.by_rule
+    assert server.requests == []
+
+
+@pytest.mark.parametrize("line", ["Invoice #1234", "Wait... 5? ok", "Ref #12  Tel. 030 23125"])
+def test_marks_that_are_not_inside_an_amount_are_not_heavy_noise(platform, line):
+    assert document_problems(f"{TEXT}\n{line}", "SKR03", platform) == []
+
+
+def test_an_item_booked_at_another_rate_than_the_printed_vat_needs_review(pipe, server):
+    wrong = [{**OUTPUT["items"][0], "vat_rate": "7"}, OUTPUT["items"][1]]
+    result = run(pipe, server, output=output_with(items=wrong))
+    assert result.needs_review and result.reasons == ["vat_mismatch"]
+    assert result.by_rule
+    assert len(result.booking_lines) == 2
+
+
+def test_the_vat_check_is_not_a_rule_flag_when_the_model_flagged_the_document(pipe, server):
+    wrong = [{**OUTPUT["items"][0], "vat_rate": "7"}, OUTPUT["items"][1]]
+    result = run(pipe, server, output=output_with(items=wrong, needs_review=True, reason="unsure"))
+    assert result.reasons == ["model_flagged", "vat_mismatch"]
+    assert not result.by_rule
+
+
+def test_a_reverse_charge_answer_is_not_compared_with_printed_vat(pipe, server):
+    wrong = [{**OUTPUT["items"][0], "vat_rate": "7"}, OUTPUT["items"][1]]
+    result = run(pipe, server, output=output_with(items=wrong, reverse_charge=True))
+    assert "vat_mismatch" not in result.reasons
 
 
 def test_only_the_document_checks_set_by_rule(pipe, server):
@@ -278,20 +322,20 @@ def test_a_total_that_does_not_match_needs_review(pipe, server):
 
 def test_a_net_amount_near_the_asset_limit_needs_review(pipe, server):
     item = {"description": "Laptop", "amount": 975.8, "account": "0410", "vat_rate": "19"}
-    result = run(pipe, server, output=output_with(items=[item], total=975.8))
+    result = run(pipe, server, output=output_with(items=[item], total=975.8), text=PLAIN)
     assert result.needs_review and result.reasons == ["near_asset_limit"]
 
 
 def test_an_asset_booked_as_expense_needs_review(pipe, server):
     item = {"description": "Desk", "amount": 1785.0, "account": "4930", "vat_rate": "19"}
-    result = run(pipe, server, output=output_with(items=[item], total=1785.0))
+    result = run(pipe, server, output=output_with(items=[item], total=1785.0), text=PLAIN)
     assert result.needs_review and result.reasons == ["asset_as_expense"]
 
 
 def test_a_credit_note_comes_out_automated(pipe, server):
     item = {"description": "Toner, returned", "amount": -59.5, "account": "4930", "vat_rate": "19"}
     output = output_with(items=[item], total=-59.5, document_type="credit_note")
-    result = run(pipe, server, output=output)
+    result = run(pipe, server, output=output, text=PLAIN)
     assert not result.needs_review
     assert result.booking_lines[0].net == Decimal("-50.00")
 

@@ -18,6 +18,7 @@ from adapt.config import Platform
 from adapt.data.pseudonymise import pseudonymise
 from adapt.prompting import build_messages, system_prompt
 from adapt.schema import build_output_schema
+from adapt.vat_check import vat_mismatch
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +36,11 @@ _TOTAL = re.compile(
 _FOREIGN_CURRENCY = re.compile(
     r"[$£¥]|\b(?:USD|GBP|CHF|JPY|CNY|CAD|AUD|SEK|NOK|DKK|PLN|CZK|HUF|RON|BGN|TRY)\b"
 )
+# An amount, with a `?`, `#` or `*` where a digit could not be read. A bare `#1234` is an invoice
+# number, not an amount, so the shape must have a decimal separator and two decimals.
+_AMOUNT_SHAPE = re.compile(
+    r"(?<![\w?#*.,])(?:[\d?#*]{1,3}[.,])*[\d?#*]{1,3}[.,][\d?#*]{2}(?![\w?#*])"
+)
 _ACCOUNT_VALUE = re.compile(r'"account"\s*:\s*"([^"]*)"')
 
 ReviewReason = (
@@ -44,6 +50,8 @@ ReviewReason = (
         "text_too_long",
         "no_total",
         "foreign_currency",
+        "heavy_noise",
+        "vat_mismatch",
         "model_unavailable",
         "invalid_output",
         "model_flagged",
@@ -69,8 +77,16 @@ class Result:
     confidence: float | None = None
     output: dict[str, Any] | None = field(default=None, repr=False)
     item_confidences: list[float] | None = field(default=None, repr=False)
-    # True when a document check sent the document to review and the model was not called.
+    # True when a rule sent the document to review: a document check (the model was not called),
+    # or the printed-VAT check on an answer the model did not flag itself.
     by_rule: bool = False
+
+
+def _has_unreadable_amount(text: str) -> bool:
+    return any(
+        any(c.isdigit() for c in match) and any(c in "?#*" for c in match)
+        for match in map(re.Match.group, _AMOUNT_SHAPE.finditer(text))
+    )
 
 
 def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewReason]:
@@ -87,6 +103,8 @@ def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewR
         problems.append("no_total")
     if present and _FOREIGN_CURRENCY.search(text):
         problems.append("foreign_currency")
+    if present and _has_unreadable_amount(text):
+        problems.append("heavy_noise")
     return problems
 
 
@@ -203,6 +221,8 @@ class Pipeline:
         if output["items"]:
             booking = compute_booking(output, chart, self.platform)
             lines, reasons = booking.lines, reasons + booking.reasons
+            if vat_mismatch(document_text, output["items"], output["reverse_charge"]):
+                reasons.append("vat_mismatch")
             item_confidences = account_confidences(
                 completion.content, completion.tokens, len(output["items"])
             )
@@ -213,4 +233,7 @@ class Pipeline:
                 reasons.append("low_confidence")
         elif not output["needs_review"]:
             reasons.append("no_items")
-        return self._review(request_id, reasons, output, lines, confidence, item_confidences)
+        by_rule = "vat_mismatch" in reasons and "model_flagged" not in reasons
+        return self._review(
+            request_id, reasons, output, lines, confidence, item_confidences, by_rule=by_rule
+        )

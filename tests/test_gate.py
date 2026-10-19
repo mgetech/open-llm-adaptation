@@ -370,6 +370,23 @@ def test_the_rule_report_separates_rule_flags_from_model_flags():
     assert shown["review recall on edge, with / without the rules"] == "0.750 / 0.250"
 
 
+def test_the_rule_report_names_heavy_noise_and_vat_mismatch_when_they_occur():
+    results = {
+        "gold": {"documents": rule_rows((False, True, True, ["vat_mismatch"]))},
+        "edge": {
+            "documents": rule_rows(
+                (True, True, True, ["heavy_noise"]),
+                (True, True, True, ["heavy_noise", "no_total"]),
+                (True, False, False, []),
+            )
+        },
+    }
+    shown = dict(rule_report(results))
+    assert shown["documents flagged by a pipeline rule"] == (
+        "3 of 4 (75.0%), 0 of them for foreign currency, 2 for heavy noise, 1 for a VAT mismatch"
+    )
+
+
 def test_results_from_before_the_rule_report_say_that_it_is_not_recorded():
     old = {
         "edge": {

@@ -247,19 +247,24 @@ def report_only(results: Results) -> list[tuple[str, str]]:
 def rule_report(results: Results) -> list[tuple[str, str]]:
     """How many documents a pipeline rule flagged, and what that does to review recall.
 
-    A rule is a document check (a missing total, an unsupported chart, a foreign currency). It
-    flags a document without the model, so its flags are shown apart from the model's. Results
-    from before the runs kept this have no `by_rule` field."""
+    A rule is a document check (a missing total, an unsupported chart, a foreign currency, heavy
+    noise) that flags a document without the model, or the printed-VAT check on an answer. Its
+    flags are shown apart from the model's. Results from before the runs kept this have no
+    `by_rule` field."""
     rows = [row for split in GATE_SPLITS if split in results for row in results[split]["documents"]]
     if not rows or any("by_rule" not in row for row in rows):
         return [("flagged by a pipeline rule", "not recorded in these results")]
     flagged = [row for row in rows if row["by_rule"]]
     currency = sum("foreign_currency" in row["reasons"] for row in flagged)
+    detail = f"{currency} of them for foreign currency"
+    for reason, label in (("heavy_noise", "heavy noise"), ("vat_mismatch", "a VAT mismatch")):
+        count = sum(reason in row["reasons"] for row in flagged)
+        if count:
+            detail += f", {count} for {label}"
     shown = [
         (
             "documents flagged by a pipeline rule",
-            f"{len(flagged)} of {len(rows)} ({len(flagged) / len(rows):.1%}), "
-            f"{currency} of them for foreign currency",
+            f"{len(flagged)} of {len(rows)} ({len(flagged) / len(rows):.1%}), {detail}",
         )
     ]
     wanted = [row for row in results.get("edge", {}).get("documents", []) if row["expected_review"]]
