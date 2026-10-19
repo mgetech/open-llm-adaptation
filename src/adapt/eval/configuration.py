@@ -29,9 +29,15 @@ from adapt.eval.runner import (
     results_file,
     write_results,
 )
-from adapt.eval.scoring import EvalDocument, compute_metrics, compute_slices, document_rows, score
+from adapt.eval.scoring import (
+    EvalDocument,
+    compute_metrics,
+    compute_slices,
+    document_rows,
+    result_from_row,
+    score,
+)
 from adapt.eval.stats import SEED
-from adapt.pipeline import Result
 
 LOW_CONFIDENCE = "low_confidence"
 DISAGREE = "adapters_disagree"
@@ -135,18 +141,7 @@ def combine_results(
         for a, b in zip(first["documents"], second["documents"], strict=True)
     ]
     results = [
-        Result(
-            request_id=document.id,
-            needs_review=row["needs_review"],
-            reasons=row["reasons"],
-            items=row["output"]["items"] if row["output"] else [],
-            booking_lines=[],
-            adapter=name,
-            adapter_version=None,
-            confidence=row["confidence"],
-            output=row["output"],
-            by_rule=row["by_rule"],
-        )
+        result_from_row({**row, "id": document.id}, name)
         for document, row in zip(documents, combined, strict=True)
     ]
     scored = score(documents, results, groups)

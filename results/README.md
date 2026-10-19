@@ -9,7 +9,8 @@ results/
     eval/<platform>/<system>/<split>.json    metrics, confidence intervals, slices and one row per document
     runs/<platform>-<model>-<seed>.json      manifest of one training run
   round2/
-    ...
+    eval/, runs/                              as in round 1
+    rescored/<platform>/<system>/<split>.json the round 2 results scored again with pipeline checks added later
 ```
 
 ## The rounds
@@ -29,5 +30,7 @@ make gate SYSTEM=qwen3-4b-sft-r2-0 BASELINE=qwen3-4b-fewshot-r2 ROUND=2
 ```
 
 The gate compares a system with the few-shot baseline of the same round, because the test documents of the two rounds differ. It refuses a baseline that ran on other test data.
+
+The files in `rescored/` come from `make rescore`. It applies the `heavy_noise` and `vat_mismatch` checks to the answers saved in `eval/`, without running a model, and keeps the confidence thresholds of the run. The `eval/` files stay as they were run. `standin-1.7b-4b-r2-each` and `-ignore` combine the two round 2 adapters of different sizes with `make pair`. They stand in for a pair of two seeds of one size, which does not exist for round 2.
 
 Files with `-steps` in their name come from short runs, such as the training speed measurement on one and on two GPUs. They are not results of a full run.

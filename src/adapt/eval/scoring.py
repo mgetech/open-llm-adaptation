@@ -36,6 +36,24 @@ class EvalDocument:
     seen_supplier: bool | None = None
 
 
+def result_from_row(row: Mapping[str, Any], adapter: str) -> Result:
+    """The pipeline result that a saved results row stands for. Booking lines are not kept."""
+    output = row["output"]
+    return Result(
+        request_id=row["id"],
+        needs_review=row["needs_review"],
+        reasons=list(row["reasons"]),
+        items=output["items"] if output else [],
+        booking_lines=[],
+        adapter=adapter,
+        adapter_version=None,
+        confidence=row["confidence"],
+        output=output,
+        item_confidences=row.get("item_confidences"),
+        by_rule=row["by_rule"],
+    )
+
+
 def to_case(document: EvalDocument, result: Result) -> Case:
     output = result.output or {}
     return Case(
