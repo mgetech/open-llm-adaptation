@@ -1,9 +1,11 @@
-"""Check the gold evaluation file.
+"""Check the gold evaluation files.
 
 Run with `make validate-gold`. Gold labels are not computed by code, so these
-checks are the only guard on them.
+checks are the only guard on them. There are two files: `gold.jsonl`, and `gold_v2.jsonl` with
+the documents written before any round-2 result existed. The second one is checked when it is
+there.
 
-Each line of `platforms/<platform>/evals/gold.jsonl` is one JSON object with:
+Each line of `platforms/<platform>/evals/<name>.jsonl` is one JSON object with:
 - `id`: a unique string;
 - `platform` and `chart`: the platform name and the chart of accounts of its rules;
 - `layout` (optional): one of the layouts in `adapt.config.Layout`;
@@ -26,10 +28,11 @@ from adapt.schema import build_output_schema
 
 REQUIRED_FIELDS = ("id", "platform", "chart", "document_text", "target")
 OPTIONAL_FIELDS = ("layout",)
+GOLD_NAMES = ("gold", "gold_v2")
 
 
-def gold_path(platform: str, root: Path = PLATFORMS_DIR) -> Path:
-    return root / platform / "evals" / "gold.jsonl"
+def gold_path(platform: str, root: Path = PLATFORMS_DIR, name: str = "gold") -> Path:
+    return root / platform / "evals" / f"{name}.jsonl"
 
 
 def _cents(value: Any) -> Decimal:
@@ -124,21 +127,34 @@ def validate_gold(path: Path, platform: Platform) -> list[str]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Check the gold evaluation file.")
+    parser = argparse.ArgumentParser(description="Check the gold evaluation files.")
     parser.add_argument("--platform", default="tax-booking")
-    parser.add_argument("--path", type=Path, help="default: platforms/<platform>/evals/gold.jsonl")
+    parser.add_argument(
+        "--path",
+        type=Path,
+        help="check this file only (default: gold.jsonl, and gold_v2.jsonl if it exists)",
+    )
     args = parser.parse_args(argv)
 
-    path = args.path or gold_path(args.platform)
-    problems = validate_gold(path, load_platform(args.platform))
-    for problem in problems:
-        print(problem, file=sys.stderr)
-    if problems:
-        print(f"{path}: {len(problems)} problem(s)", file=sys.stderr)
-        return 1
-    count = len(path.read_text(encoding="utf-8").splitlines())
-    print(f"{path}: {count} records, all valid")
-    return 0
+    if args.path:
+        paths = [args.path]
+    else:
+        paths = [gold_path(args.platform)]
+        if gold_path(args.platform, name="gold_v2").exists():
+            paths.append(gold_path(args.platform, name="gold_v2"))
+    platform = load_platform(args.platform)
+    failed = False
+    for path in paths:
+        problems = validate_gold(path, platform)
+        for problem in problems:
+            print(problem, file=sys.stderr)
+        if problems:
+            print(f"{path}: {len(problems)} problem(s)", file=sys.stderr)
+            failed = True
+        else:
+            count = len(path.read_text(encoding="utf-8").splitlines())
+            print(f"{path}: {count} records, all valid")
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

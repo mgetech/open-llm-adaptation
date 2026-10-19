@@ -1,0 +1,1106 @@
+{
+  "platform": "tax-booking",
+  "system": "qwen3-1.7b-sft-r2-0",
+  "split": "gold_v2",
+  "manifest": {
+    "model": "qwen3-1.7b-sft-r2-0",
+    "model_revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+    "adapter_hash": "da8d77b9b7772b90d1c5cb5bb8e08a382e10ffcfa12d309b2786cc11767043b2",
+    "vllm_version": "0.30.0",
+    "servers": 2,
+    "gpu": "Tesla T4",
+    "prompt_sha256": "2f3789f30dd9234c912df016d6c5687b85920d701c0bdf5d4dffe1f1e13edcb7",
+    "few_shot": false,
+    "data_round": 2,
+    "data_generator": 2,
+    "data_sha256": "3ca60588398834d3ac3c40a2410f6ed89fdf76a09c4331b47331189b3a990d5c",
+    "git_commit": "3d775e7eb0a77c681ad4b8b742e82b62f93f4b24",
+    "git_dirty": false,
+    "seed": 0,
+    "threshold": 0.9996815701985932,
+    "documents": 20
+  },
+  "confidence_threshold": {
+    "value": 0.9996815701985932,
+    "source": "tuned on dev (dev.json)"
+  },
+  "performance": {
+    "workers": 8,
+    "wall_seconds": 20.962143484999615,
+    "documents_per_second": 0.954100901671238,
+    "latency_p50_seconds": 11.584838515999763,
+    "latency_p95_seconds": 15.846605179450172
+  },
+  "metrics": {
+    "document_accuracy": {
+      "value": 0.25,
+      "low": 0.1,
+      "high": 0.45
+    },
+    "automation_rate": {
+      "value": 0.1875,
+      "low": 0.0,
+      "high": 0.4
+    },
+    "accuracy_on_automated": {
+      "value": 0.5,
+      "low": 0.0,
+      "high": 1.0
+    },
+    "critical_error_rate": {
+      "value": 0.5,
+      "low": 0.0,
+      "high": 1.0
+    },
+    "weighted_error_cost": {
+      "value": 1000.0,
+      "low": 0.0,
+      "high": 2500.0
+    },
+    "review_recall": {
+      "value": 0.75,
+      "low": 0.2388888888888895,
+      "high": 1.0
+    },
+    "injection_success_rate": {
+      "value": null,
+      "low": null,
+      "high": null
+    },
+    "item_precision": {
+      "value": 0.5833333333333334,
+      "low": 0.36358800773694394,
+      "high": 0.7844174208144795
+    },
+    "item_recall": {
+      "value": 0.5833333333333334,
+      "low": 0.36358800773694394,
+      "high": 0.7844174208144795
+    },
+    "item_f1": {
+      "value": 0.5833333333333334,
+      "low": 0.36358800773694394,
+      "high": 0.7844174208144795
+    },
+    "invalid_json_rate": {
+      "value": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "invented_account_rate": {
+      "value": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "canary_leak_rate": {
+      "value": 0.0,
+      "documents": 5
+    },
+    "severity_counts": {
+      "critical": 2,
+      "major": 0,
+      "minor": 0
+    }
+  },
+  "slices": {
+    "items": {
+      "0": {
+        "n": 4,
+        "document_accuracy": 0.75,
+        "automation_rate": null,
+        "accuracy_on_automated": 0.0
+      },
+      "1": {
+        "n": 2,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      },
+      "2": {
+        "n": 3,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.3333333333333333,
+        "accuracy_on_automated": 0.0
+      },
+      "3": {
+        "n": 6,
+        "document_accuracy": 0.16666666666666666,
+        "automation_rate": 0.16666666666666666,
+        "accuracy_on_automated": 1.0
+      },
+      "4+": {
+        "n": 5,
+        "document_accuracy": 0.2,
+        "automation_rate": 0.2,
+        "accuracy_on_automated": 1.0
+      }
+    },
+    "vat_rates": {
+      "mixed": {
+        "n": 10,
+        "document_accuracy": 0.2,
+        "automation_rate": 0.3,
+        "accuracy_on_automated": 0.6666666666666666
+      },
+      "none": {
+        "n": 4,
+        "document_accuracy": 0.75,
+        "automation_rate": null,
+        "accuracy_on_automated": 0.0
+      },
+      "single": {
+        "n": 6,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      }
+    },
+    "layout": {
+      "credit_note": {
+        "n": 3,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      },
+      "eu_invoice": {
+        "n": 3,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      },
+      "letter_invoice": {
+        "n": 4,
+        "document_accuracy": 0.75,
+        "automation_rate": 0.5,
+        "accuracy_on_automated": 1.0
+      },
+      "short_receipt": {
+        "n": 2,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.5,
+        "accuracy_on_automated": 0.0
+      },
+      "table_invoice": {
+        "n": 5,
+        "document_accuracy": 0.2,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": 0.0
+      },
+      "till_receipt": {
+        "n": 3,
+        "document_accuracy": 0.3333333333333333,
+        "automation_rate": 0.3333333333333333,
+        "accuracy_on_automated": 1.0
+      }
+    },
+    "supplier": {
+      "unseen": {
+        "n": 20,
+        "document_accuracy": 0.25,
+        "automation_rate": 0.1875,
+        "accuracy_on_automated": 0.5
+      }
+    },
+    "category": {
+      "none": {
+        "n": 20,
+        "document_accuracy": 0.25,
+        "automation_rate": 0.1875,
+        "accuracy_on_automated": 0.5
+      }
+    }
+  },
+  "documents": [
+    {
+      "id": "gold2-001",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.6795893676400773,
+      "item_confidences": [
+        0.9999430204688449,
+        0.999961854375324,
+        0.9659204449810184,
+        0.6795893676400773
+      ],
+      "output": {
+        "supplier": "Aegis Prime Services Ltd",
+        "document_date": "2026-01-10",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 182.0,
+        "items": [
+          {
+            "description": "Commercial office stationery supplies (19%)",
+            "amount": 119.0,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Professional reference handbook (7%)",
+            "amount": 53.5,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Breakroom organic snacks bundle (7%)",
+            "amount": 21.4,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Volume loyalty order discount (19%)",
+            "amount": -11.9,
+            "account": "4980",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, books and journals at 7%, operating supplies at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-002",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "total_mismatch"
+      ],
+      "confidence": 0.9999345580668092,
+      "item_confidences": [
+        0.9999345580668092
+      ],
+      "output": {
+        "supplier": "Crestline Solutions Inc",
+        "document_date": "2026-02-15",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 952.0,
+        "items": [
+          {
+            "description": "High-Performance Editing Workstation Tower (net)",
+            "amount": 800.0,
+            "account": "0410",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business equipment at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-003",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.8613223813928007,
+      "item_confidences": [
+        0.9916995050843337,
+        0.9991569476912339,
+        0.8613223813928007
+      ],
+      "output": {
+        "supplier": "Pioneer Dynamics Corp",
+        "document_date": "2026-03-20",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 773.5,
+        "items": [
+          {
+            "description": "Ergonomic Executive Office Chair",
+            "amount": 476.0,
+            "account": "0650",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Steel Filing Cabinet 3-Drawer",
+            "amount": 238.0,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Desktop Organizer Tray Set",
+            "amount": 59.5,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office furniture at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-004",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.7488033229619119,
+      "item_confidences": [
+        0.933881122147468,
+        0.9725154315013571,
+        0.7488033229619119
+      ],
+      "output": {
+        "supplier": "NovaWeb Hosting Inc.",
+        "document_date": "2026-02-15",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 545.0,
+        "items": [
+          {
+            "description": "Web hosting annual plan",
+            "amount": 180.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Domain registration .com",
+            "amount": 15.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Custom logo design service",
+            "amount": 350.0,
+            "account": "4610",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Software licences at 19%, advertising at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-005",
+      "expected_review": true,
+      "needs_review": false,
+      "correct": false,
+      "answer_correct": false,
+      "severity": "critical",
+      "reasons": [],
+      "confidence": 0.9999982118635344,
+      "item_confidences": [
+        0.9999982118635344,
+        1.0
+      ],
+      "output": {
+        "supplier": "Vanguardian Trade LLC",
+        "document_date": "2026-05-12",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 595.0,
+        "items": [
+          {
+            "description": "Miscellaneous general wholesale merchandise assortment",
+            "amount": 500.0,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Miscellaneous general wholesale merchandise assortment",
+            "amount": 95.0,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Goods for resale (standard rate) at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-006",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9999564905017542,
+      "item_confidences": [
+        0.9999994039538151,
+        0.9999564905017542,
+        0.9999837877990074
+      ],
+      "output": {
+        "supplier": "Zenith Meridian Corp",
+        "document_date": "2026-06-18",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 71.4,
+        "items": [
+          {
+            "description": "Parcel shipment",
+            "amount": 35.7,
+            "account": "4910",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Priority document mailing",
+            "amount": 10.7,
+            "account": "4910",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Official registered legal mail",
+            "amount": 25.0,
+            "account": "4910",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Postage and shipping at 19%, postage and shipping at 7%, postage and shipping at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-007",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.7878774859350438,
+      "item_confidences": [
+        0.9975443471464839,
+        0.9999318169392539,
+        0.7878774859350438,
+        0.9999903441405488,
+        0.9960525235276312
+      ],
+      "output": {
+        "supplier": "Brightway Office Supplies Ltd",
+        "document_date": "2026-03-10",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 72.3,
+        "items": [
+          {
+            "description": "Organic coffee beans 1 kg",
+            "amount": 24.5,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Green tea boxes",
+            "amount": 12.8,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Hand soap 5L refill",
+            "amount": 22.0,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "All-purpose cleaner",
+            "amount": 16.5,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Rebate on cleaner bulk order",
+            "amount": -3.5,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Goods for resale (reduced rate) at 7%, goods for resale (standard rate) at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-008",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.4044738597234804,
+      "item_confidences": [
+        0.4044738597234804,
+        0.9572102345240161
+      ],
+      "output": {
+        "supplier": "Silver Creek Industries LLC",
+        "document_date": "2026-03-14",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 164.0,
+        "items": [
+          {
+            "description": "Office laser printer toner",
+            "amount": 119.0,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Child's bicycle helmet",
+            "amount": 45.0,
+            "account": "3300",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Goods for resale (standard rate) at 19%, goods for resale (reduced rate) at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-009",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "gold2-010",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.999814783075519,
+      "item_confidences": [
+        0.999814783075519,
+        0.9999998807907247,
+        0.9999939203633587,
+        1.0,
+        0.9999986886995842
+      ],
+      "output": {
+        "supplier": "Oakridge Drugstore Inc.",
+        "document_date": "2026-04-02",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 17.8,
+        "items": [
+          {
+            "description": "Organic muesli 500g",
+            "amount": 4.5,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Apple juice 1L",
+            "amount": 2.2,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Shower gel mint",
+            "amount": 3.4,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Toothpaste sensitive",
+            "amount": 2.9,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Laundry softener",
+            "amount": 4.8,
+            "account": "1800",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 7%, private withdrawals at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-011",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9942440131438102,
+      "item_confidences": [
+        0.9942440131438102
+      ],
+      "output": {
+        "supplier": "Apex Horizon Mart",
+        "document_date": "2026-10-12",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 35.7,
+        "items": [
+          {
+            "description": "Wireless Bluetooth Mouse",
+            "amount": 35.7,
+            "account": "0410",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business equipment at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-012",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9963732462186081,
+      "item_confidences": [
+        0.9963732462186081,
+        0.999997854237364
+      ],
+      "output": {
+        "supplier": "Titanium Crest Supplies",
+        "document_date": "2026-10-19",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 17.25,
+        "items": [
+          {
+            "description": "A4 Copy Paper Ream 500s",
+            "amount": 11.9,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Organic Fresh Apples 1kg",
+            "amount": 5.35,
+            "account": "1800",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, private withdrawals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-013",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9909638395240838,
+      "item_confidences": [
+        0.9922815129581587,
+        0.999998927117538,
+        0.9909638395240838
+      ],
+      "output": {
+        "supplier": "Cornerstone Bakery & Kiosk Ltd",
+        "document_date": "2026-04-08",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 15.0,
+        "items": [
+          {
+            "description": "Whole grain bread rolls",
+            "amount": 3.6,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Cheddar cheese pack",
+            "amount": 4.5,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Scented candles pack",
+            "amount": 6.9,
+            "account": "1800",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 7%, private withdrawals at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-014",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": false,
+      "answer_correct": false,
+      "severity": "critical",
+      "reasons": [],
+      "confidence": 0.9999533913127768,
+      "item_confidences": [
+        0.9999533913127768,
+        0.9999997615814777
+      ],
+      "output": {
+        "supplier": "Express Postal Services Ltd",
+        "document_date": "2026-04-14",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 11.74,
+        "items": [
+          {
+            "description": "Registered letter postage",
+            "amount": 4.25,
+            "account": "4910",
+            "vat_rate": "0"
+          },
+          {
+            "description": "Standard parcel shipping",
+            "amount": 7.49,
+            "account": "4910",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Postage and shipping at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-015",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.5835902213932744,
+      "item_confidences": [
+        0.9314403170001481,
+        0.9479533158762927,
+        0.5835902213932744
+      ],
+      "output": {
+        "supplier": "Astral Nexus Corp",
+        "document_date": "2026-11-05",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -131.3,
+        "items": [
+          {
+            "description": "Wireless keyboard returned",
+            "amount": -59.5,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Office desk organizer returned",
+            "amount": -23.8,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Professional textbook returned",
+            "amount": -48.0,
+            "account": "4940",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: low-value assets at 19%, books and journals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-016",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.6714395632859751,
+      "item_confidences": [
+        0.6714395632859751
+      ],
+      "output": {
+        "supplier": "Beacon Light Solutions Inc",
+        "document_date": "2026-11-10",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -83.3,
+        "items": [
+          {
+            "description": "Defective laser printer toner cartridge returned",
+            "amount": -83.3,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: goods for resale (standard rate) at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-017",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9939601245223915,
+      "item_confidences": [
+        0.9939601245223915,
+        0.9999998807907247
+      ],
+      "output": {
+        "supplier": "Delta Pulse Enterprises",
+        "document_date": "2026-11-15",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -595.0,
+        "items": [
+          {
+            "description": "Ergonomic mesh office chair returned",
+            "amount": -357.0,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Steel filing cabinet returned",
+            "amount": -238.0,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-018",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9609788827019785,
+      "item_confidences": [
+        0.9609788827019785,
+        0.9999282402792048,
+        0.9997815249020459,
+        0.9999890328592463
+      ],
+      "output": {
+        "supplier": "Fusion Crest Technologies",
+        "document_date": "2026-12-01",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 750.0,
+        "items": [
+          {
+            "description": "Server hosting cluster nodes (net)",
+            "amount": 400.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "SSL security certificates (net)",
+            "amount": 150.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Domain name renewals (net)",
+            "amount": 80.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "IP subnet leasing (net)",
+            "amount": 120.0,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Software licences at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-019",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9854268129230718,
+      "item_confidences": [
+        0.9999924898693491,
+        0.999980569249298,
+        0.9854268129230718
+      ],
+      "output": {
+        "supplier": "OmniSphere Global Ltd",
+        "document_date": "2026-12-08",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 750.0,
+        "items": [
+          {
+            "description": "Advanced Cybersecurity Training Course (net)",
+            "amount": 500.0,
+            "account": "4945",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Online Certification Exam Registration (net)",
+            "amount": 150.0,
+            "account": "4945",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Training Course Manuals & Guides (net)",
+            "amount": 100.0,
+            "account": "4945",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Training and courses at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "gold2-020",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.644225125126315,
+      "item_confidences": [
+        0.9997753407006461,
+        0.644225125126315,
+        0.9999349159632668,
+        0.9935117300980847
+      ],
+      "output": {
+        "supplier": "Suncrest Specialty Foods S.A.",
+        "document_date": "2026-04-20",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 450.0,
+        "items": [
+          {
+            "description": "Artisanal olive oil bottles",
+            "amount": 120.0,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Herbal tea selection packs",
+            "amount": 85.0,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Organic honey jars",
+            "amount": 95.0,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Decorative gift packaging boxes",
+            "amount": 150.0,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Goods for resale (standard rate) at 19%; reverse charge"
+      },
+      "by_rule": false
+    }
+  ]
+}

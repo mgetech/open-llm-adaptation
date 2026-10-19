@@ -4,6 +4,8 @@ import re
 
 import pytest
 
+from adapt.baseline import system_name as baseline_name
+from adapt.data.rounds import current_round, eval_dir, runs_dir
 from adapt.eval.runner import ROOT
 from adapt.models import load_registry
 from adapt.train.evaluate import system_name
@@ -114,10 +116,27 @@ def test_a_dry_run_writes_to_temporary_folders_and_a_real_run_inside_the_reposit
     assert "tempfile" not in real
 
 
+def test_the_notebook_writes_where_the_commands_look_for_the_results_of_its_round(code):
+    namespace: dict = {}
+    exec(code[0], namespace)
+    exec(code[1], namespace)
+    repo, round_number = namespace["REPO"], namespace["ROUND"]
+    assert namespace["OUT_DIR"].relative_to(repo) == eval_dir(round_number)
+    assert namespace["RUNS_DIR"].relative_to(repo) == runs_dir(round_number)
+
+
 def test_every_make_target_the_notebook_calls_exists(code):
     text = "\n".join(code)
     called = set(re.findall(r'make\(\s*"([a-z-]+)"', text))
-    assert called == {"setup", "install-vllm", "models-check", "train", "eval-sft", "gate"}
+    assert called == {
+        "setup",
+        "install-vllm",
+        "models-check",
+        "train",
+        "eval-sft",
+        "baseline",
+        "gate",
+    }
     declared = set(
         re.search(r"^\.PHONY:(.*)$", MAKEFILE.read_text(), re.MULTILINE).group(1).split()
     )
@@ -129,6 +148,33 @@ def test_the_model_is_in_the_registry_and_the_check_uses_the_smallest_model(code
     models = load_registry().models
     assert settings["MODEL"] in models
     assert settings["CHECK_MODEL"] == min(models, key=lambda k: models[k].parameters)
+
+
+def test_the_notebook_trains_on_the_current_round_and_passes_it_to_every_step(code):
+    assert settings_of(code[0])["ROUND"] == current_round()
+    for target in ("train", "eval-sft", "baseline"):
+        calls = [s for s in code if f'"{target}"' in s]
+        assert calls, target
+        assert all("*ROUNDS" in call for call in calls), target
+
+
+def test_a_later_round_runs_its_own_baseline_on_test_ood_before_the_gate(code):
+    baseline = next(s for s in code if '"baseline"' in s)
+    assert baseline.startswith("if ROUND > 1:") and '"SPLITS=dev test_ood"' in baseline
+    assert code.index(baseline) < next(i for i, s in enumerate(code) if 'make("gate"' in s)
+
+
+def test_the_last_cell_zips_the_files_to_copy_and_the_adapter_and_is_skipped_in_a_dry_run(code):
+    cell = code[-1]
+    assert cell.startswith("if not DRY_RUN:")
+    assert 'f"results/round{ROUND}/runs/tax-booking-{RUN}.json"' in cell
+    assert 'f"results/round{ROUND}/eval/tax-booking/{SYSTEM}"' in cell
+    assert 'f"results/round{ROUND}/eval/tax-booking/{MODEL}-fewshot{TAG}"' in cell
+    assert 'f"adapters/tax-booking/{RUN}"' in cell
+    assert cell.count('run("zip"') == 2 and "cwd=REPO" in cell
+    # A second run must not add to the archive of the first.
+    assert cell.index('run("rm"') < cell.index('run("zip"')
+    assert "-steps" not in cell
 
 
 def test_the_short_check_is_short(code):
@@ -143,13 +189,14 @@ def test_the_names_in_the_notebook_are_the_names_the_code_writes(code, dry_run):
     exec(first, namespace)
     exec(code[1], namespace)
     model, seed = namespace["MODEL"], namespace["SEED"]
-    train = TrainSettings("tax-booking", seed, model=model, smoke=dry_run)
+    data_round = namespace["ROUND"]
+    train = TrainSettings("tax-booking", seed, model=model, smoke=dry_run, data_round=data_round)
     assert namespace["RUN"] == run_name(train)
-    assert namespace["SYSTEM"] == system_name(model, seed, smoke=dry_run)
+    assert namespace["SYSTEM"] == system_name(model, seed, smoke=dry_run, data_round=data_round)
     if dry_run:
         assert namespace["BASELINE"] == []
     else:
-        assert namespace["BASELINE"] == [f"BASELINE={model}-fewshot"]
+        assert namespace["BASELINE"] == [f"BASELINE={baseline_name(model, data_round)}"]
 
 
 def test_the_gate_compares_with_the_baseline_and_may_fail(code):

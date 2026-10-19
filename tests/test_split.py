@@ -16,8 +16,10 @@ from adapt.data.split import (
     LeakageError,
     build_splits,
     check_leakage,
+    keep_round,
     main,
     split_suppliers,
+    write_data,
 )
 from adapt.schema import build_output_schema
 
@@ -261,8 +263,8 @@ def test_same_seed_gives_identical_files_and_hashes(tmp_path):
     first = run(tmp_path / "one")
     second = run(tmp_path / "two")
     for split in SPLIT_SIZES:
-        a = (first / "data" / "tax-booking" / f"{split}.jsonl").read_bytes()
-        b = (second / "data" / "tax-booking" / f"{split}.jsonl").read_bytes()
+        a = (first / "data" / "tax-booking" / "round1" / f"{split}.jsonl").read_bytes()
+        b = (second / "data" / "tax-booking" / "round1" / f"{split}.jsonl").read_bytes()
         assert a == b
     manifest_a = (first / "results" / "data_manifest.json").read_text(encoding="utf-8")
     manifest_b = (second / "results" / "data_manifest.json").read_text(encoding="utf-8")
@@ -297,7 +299,7 @@ def test_manifest_matches_the_files(tmp_path):
 
 def test_files_use_unix_line_endings_and_valid_json(tmp_path):
     run(tmp_path)
-    for path in (tmp_path / "data" / "tax-booking").glob("*.jsonl"):
+    for path in (tmp_path / "data" / "tax-booking" / "round1").glob("*.jsonl"):
         data = path.read_bytes()
         assert b"\r" not in data
         lines = data.decode("utf-8").splitlines()
@@ -307,7 +309,117 @@ def test_files_use_unix_line_endings_and_valid_json(tmp_path):
 def test_only_the_split_files_and_the_manifest_are_written(tmp_path):
     run(tmp_path)
     assert sorted(p.name for p in (tmp_path / "data").iterdir()) == ["tax-booking"]
-    assert sorted(p.name for p in (tmp_path / "data" / "tax-booking").iterdir()) == sorted(
+    assert [p.name for p in (tmp_path / "data" / "tax-booking").iterdir()] == ["round1"]
+    folder = tmp_path / "data" / "tax-booking" / "round1"
+    assert sorted(p.name for p in folder.iterdir()) == sorted(
         f"{split}.jsonl" for split in SPLIT_SIZES
     )
     assert [p.name for p in (tmp_path / "results").iterdir()] == ["data_manifest.json"]
+
+
+def tiny_data(tmp_path, seed=0):
+    """Two small splits written the way `make data` writes them."""
+    splits = {"train": [{"id": "a"}, {"id": "b"}], "dev": [{"id": "c"}]}
+    manifest = tmp_path / "results" / "data_manifest.json"
+    write_data(splits, "tax-booking", seed, tmp_path / "data", manifest)
+    return tmp_path / "data", manifest
+
+
+def test_a_round_is_written_into_its_own_folder(tmp_path):
+    data_dir, manifest_path = tiny_data(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for split, entry in manifest["splits"].items():
+        assert entry["file"] == f"tax-booking/round1/{split}.jsonl"
+        assert (data_dir / entry["file"]).exists()
+    assert sorted(p.name for p in (data_dir / "tax-booking" / "round1").iterdir()) == [
+        "dev.jsonl",
+        "train.jsonl",
+    ]
+
+
+def test_keeping_a_round_lists_it_and_copies_nothing(tmp_path):
+    data_dir, manifest_path = tiny_data(tmp_path)
+    current = json.loads(manifest_path.read_text(encoding="utf-8"))["splits"]
+
+    entry = keep_round(1, data_dir, manifest_path, "first generator")
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["rounds"] == [entry]
+    assert manifest["splits"] == current
+    assert entry["round"] == 1 and entry["seed"] == 0 and entry["note"] == "first generator"
+    assert entry["generator"] == manifest["generator"]
+    for split, kept in entry["splits"].items():
+        assert kept == current[split]
+        data = (data_dir / kept["file"]).read_bytes()
+        assert hashlib.sha256(data).hexdigest() == kept["sha256"]
+    assert [p.name for p in (data_dir / "tax-booking").iterdir()] == ["round1"]
+
+
+def test_the_next_round_goes_into_the_next_folder_and_the_kept_one_stays(tmp_path):
+    data_dir, manifest_path = tiny_data(tmp_path)
+    entry = keep_round(1, data_dir, manifest_path)
+    kept_file = data_dir / entry["splits"]["train"]["file"]
+    kept = kept_file.read_bytes()
+
+    write_data(
+        {"train": [{"id": "z"}], "dev": [{"id": "y"}]}, "tax-booking", 1, data_dir, manifest_path
+    )
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["seed"] == 1
+    assert manifest["rounds"] == [entry]
+    assert manifest["splits"]["train"]["file"] == "tax-booking/round2/train.jsonl"
+    assert (data_dir / "tax-booking" / "round2" / "train.jsonl").exists()
+    assert kept_file.read_bytes() == kept
+
+
+def test_writing_the_current_round_again_replaces_its_own_files(tmp_path):
+    data_dir, manifest_path = tiny_data(tmp_path)
+    write_data(
+        {"train": [{"id": "z"}], "dev": [{"id": "y"}]}, "tax-booking", 3, data_dir, manifest_path
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["splits"]["train"]["file"] == "tax-booking/round1/train.jsonl"
+    assert (data_dir / manifest["splits"]["train"]["file"]).read_text("utf-8") == '{"id": "z"}\n'
+
+
+def test_a_manifest_without_kept_rounds_has_no_rounds_key(tmp_path):
+    _, manifest_path = tiny_data(tmp_path)
+    assert "rounds" not in json.loads(manifest_path.read_text(encoding="utf-8"))
+
+
+def test_a_round_cannot_be_kept_twice(tmp_path):
+    data_dir, manifest_path = tiny_data(tmp_path)
+    keep_round(1, data_dir, manifest_path)
+    before = manifest_path.read_bytes()
+    with pytest.raises(ValueError, match="already kept"):
+        keep_round(1, data_dir, manifest_path)
+    assert manifest_path.read_bytes() == before
+
+
+def test_only_the_current_round_can_be_kept(tmp_path):
+    data_dir, manifest_path = tiny_data(tmp_path)
+    before = manifest_path.read_bytes()
+    with pytest.raises(ValueError, match="the current round is 1, not 2"):
+        keep_round(2, data_dir, manifest_path)
+    assert manifest_path.read_bytes() == before
+
+
+def test_a_round_is_not_kept_from_files_that_changed(tmp_path):
+    data_dir, manifest_path = tiny_data(tmp_path)
+    (data_dir / "tax-booking" / "round1" / "dev.jsonl").write_bytes(b'{"id": "edited"}\n')
+    before = manifest_path.read_bytes()
+    with pytest.raises(ValueError, match="does not match the manifest"):
+        keep_round(1, data_dir, manifest_path)
+    assert manifest_path.read_bytes() == before
+
+
+def test_the_command_line_keeps_a_round(tmp_path, capsys):
+    data_dir, manifest_path = tiny_data(tmp_path)
+    arguments = ["--data-dir", str(data_dir), "--manifest", str(manifest_path)]
+    main([*arguments, "--keep-round", "1", "--note", "first generator"])
+    assert "kept round 1" in capsys.readouterr().out
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert [entry["round"] for entry in manifest["rounds"]] == [1]
+    with pytest.raises(SystemExit, match="already kept"):
+        main([*arguments, "--keep-round", "1"])

@@ -209,3 +209,51 @@ def test_reason_is_shortened_when_too_long():
     assert len(reason) <= MAX_REASON_LENGTH
     assert "more" in reason
     assert reason.endswith("; reverse charge")
+
+
+def test_private_receipts_use_item_names_and_not_one_fixed_name(rules):
+    shop = next(t for t in rules.supplier_types if t.key == "supermarket")
+    assert {item.account for item in shop.items} == {"1800"}
+    for rate in ("7", "19"):
+        names = {item.description for item in shop.items if item.vat_rate == rate}
+        assert len(names) >= 8, rate
+    assert not {"Groceries", "Household goods"} & {item.description for item in shop.items}
+
+
+def test_private_receipts_show_several_different_items(invoices, rules):
+    shops = {s for s in make_suppliers(rules, SEED) if s.type_key == "supermarket"}
+    receipts = [i for i in invoices if i.supplier in shops]
+    assert len(receipts) > 30
+    assert len({item.description for receipt in receipts for item in receipt.items}) >= 15
+
+
+def test_zero_rate_items_come_with_standard_rate_items_on_one_document(invoices):
+    mixed = [i for i in invoices if {"0", "19"} <= {item.vat_rate for item in i.items}]
+    assert len(mixed) >= 40
+    # Several kinds of supplier mix them, not one.
+    assert len({i.supplier.type_key for i in mixed}) >= 4
+
+
+def test_exam_style_fees_are_zero_rated_and_course_fees_are_not(rules):
+    for key in ("training_provider", "language_school"):
+        school = next(t for t in rules.supplier_types if t.key == key)
+        zero = [i for i in school.items if i.vat_rate == "0"]
+        standard = [i for i in school.items if i.vat_rate == "19"]
+        assert len(zero) >= 2 and len(standard) >= 2, key
+        assert {i.account for i in school.items} == {"4945"}, key
+
+
+def test_a_type_with_a_higher_weight_is_drawn_more_often(rules, suppliers, invoices):
+    weights = {t.key: t.weight for t in rules.supplier_types}
+    heavy = ("training_provider", "language_school")
+    assert weights["training_provider"] == weights["language_school"] == 2
+    assert {w for key, w in weights.items() if key not in heavy} == {1}
+    per_supplier = Counter(i.supplier.type_key for i in invoices)
+    suppliers_of = Counter(s.type_key for s in suppliers)
+    rate = {key: per_supplier[key] / suppliers_of[key] for key in weights}
+    # Documents with mixed rates only come from types with several rates, so compare those.
+    several = {t.key for t in rules.supplier_types if len({i.vat_rate for i in t.items}) > 1}
+    ordinary = [rate[key] for key in several if key not in heavy]
+    average = sum(ordinary) / len(ordinary)
+    for key in heavy:
+        assert 1.5 * average < rate[key] < 2.5 * average, key

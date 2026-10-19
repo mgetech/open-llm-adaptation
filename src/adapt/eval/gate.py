@@ -6,11 +6,15 @@ system of the same size. A check whose results are missing counts as failed.
 Where each number comes from:
 - automation rate: the gold split;
 - accuracy on automated documents and critical-error rate: gold and test_ood together;
-- fine-tuned against few-shot: document accuracy on test_ood, McNemar exact test;
+- fine-tuned against few-shot: document accuracy on test_ood, McNemar exact test, only when both
+  systems ran on the same test_ood file (a baseline of another round is refused);
 - generalisation gap: document accuracy on test_iid minus test_ood;
 - review recall: the edge split;
 - invalid JSON and invented accounts: all four splits together;
 - injection success and canary leak: the worst of the four splits.
+
+The gold_v2 split is not part of the gate. If its results are there, they are shown next to the
+gold numbers as report-only lines.
 """
 
 import argparse
@@ -22,10 +26,12 @@ from pathlib import Path
 from typing import Any, Literal
 
 from adapt.config import Gate, load_platform
-from adapt.eval.runner import RESULTS_DIR, results_file
+from adapt.data.rounds import eval_dir
+from adapt.eval.runner import results_file
 from adapt.eval.stats import mcnemar_exact
 
 GATE_SPLITS = ("gold", "test_iid", "test_ood", "edge")
+REPORT_SPLITS = ("gold_v2",)
 Row = Mapping[str, Any]
 Results = Mapping[str, Mapping[str, Any]]
 
@@ -52,6 +58,10 @@ class Check:
         if self.operator == "<=":
             return value <= self.limit
         return value < self.limit
+
+
+def _data_hash(results: Mapping[str, Any]) -> str | None:
+    return results.get("manifest", {}).get("data_sha256")
 
 
 def _missing(results: Results, splits: Sequence[str]) -> list[str]:
@@ -123,7 +133,14 @@ def check_gate(
     gap = None if iid is None or ood is None else iid - ood
 
     p_value, detail = None, baseline_note
-    if baseline_test_ood is not None and "test_ood" in results:
+    if (
+        baseline_test_ood is not None
+        and "test_ood" in results
+        and _data_hash(baseline_test_ood) != _data_hash(results["test_ood"])
+    ):
+        # The documents of two rounds share their ids, so a comparison would pair other documents.
+        detail = "not run: the baseline ran on other test_ood data"
+    elif baseline_test_ood is not None and "test_ood" in results:
         test = mcnemar_exact(
             {row["id"]: row["correct"] for row in results["test_ood"]["documents"]},
             {row["id"]: row["correct"] for row in baseline_test_ood["documents"]},
@@ -227,6 +244,58 @@ def report_only(results: Results) -> list[tuple[str, str]]:
     ]
 
 
+def rule_report(results: Results) -> list[tuple[str, str]]:
+    """How many documents a pipeline rule flagged, and what that does to review recall.
+
+    A rule is a document check (a missing total, an unsupported chart, a foreign currency). It
+    flags a document without the model, so its flags are shown apart from the model's. Results
+    from before the runs kept this have no `by_rule` field."""
+    rows = [row for split in GATE_SPLITS if split in results for row in results[split]["documents"]]
+    if not rows or any("by_rule" not in row for row in rows):
+        return [("flagged by a pipeline rule", "not recorded in these results")]
+    flagged = [row for row in rows if row["by_rule"]]
+    currency = sum("foreign_currency" in row["reasons"] for row in flagged)
+    shown = [
+        (
+            "documents flagged by a pipeline rule",
+            f"{len(flagged)} of {len(rows)} ({len(flagged) / len(rows):.1%}), "
+            f"{currency} of them for foreign currency",
+        )
+    ]
+    wanted = [row for row in results.get("edge", {}).get("documents", []) if row["expected_review"]]
+    if wanted:
+        with_rule = sum(row["needs_review"] for row in wanted) / len(wanted)
+        model_only = sum(row["needs_review"] and not row["by_rule"] for row in wanted) / len(wanted)
+        shown.append(
+            (
+                "review recall on edge, with / without the rules",
+                f"{_format(with_rule)} / {_format(model_only)}",
+            )
+        )
+    return shown
+
+
+def gold_v2_report(results: Results) -> list[tuple[str, str]]:
+    """The gold_v2 numbers next to the gold numbers. They are shown, not judged."""
+    if "gold_v2" not in results:
+        return [("gold_v2", "not run")]
+    new, old = results["gold_v2"], results.get("gold")
+
+    def pair(name: str) -> str:
+        fresh = new["metrics"][name]["value"]
+        earlier = None if old is None else old["metrics"][name]["value"]
+        return f"{_format(earlier)} / {_format(fresh)}"
+
+    shown = [("gold_v2 documents", str(len(new["documents"])))]
+    for label, name in (
+        ("accuracy on automated documents", "accuracy_on_automated"),
+        ("critical-error rate", "critical_error_rate"),
+        ("automation rate", "automation_rate"),
+    ):
+        shown.append((f"{label}, gold / gold_v2", pair(name)))
+    return shown
+
+
 def _format(value: float | None) -> str:
     return "no data" if value is None else f"{value:.3f}"
 
@@ -255,7 +324,7 @@ def format_table(checks: Sequence[Check]) -> str:
 def load_results(out_dir: Path, platform: str, system: str) -> dict[str, dict[str, Any]]:
     """The results files of a system for the gate splits. Splits without a file are left out."""
     found = {}
-    for split in GATE_SPLITS:
+    for split in (*GATE_SPLITS, *REPORT_SPLITS):
         path = results_file(out_dir, platform, system, split)
         if path.exists():
             found[split] = json.loads(path.read_text(encoding="utf-8"))
@@ -267,15 +336,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument("--system", required=True)
     parser.add_argument("--baseline", help="few-shot system of the same size")
-    parser.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+    parser.add_argument("--round", type=int, help="round of the results (default: the current one)")
+    parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
     args = parser.parse_args(argv)
+    try:
+        out_dir = args.out_dir or eval_dir(args.round)
+    except ValueError as error:
+        sys.exit(f"error: {error}")
 
     gate = load_platform(args.platform).config.gate
-    results = load_results(args.out_dir, args.platform, args.system)
+    results = load_results(out_dir, args.platform, args.system)
     baseline = None
     note = "not run: no baseline given"
     if args.baseline:
-        baseline_path = results_file(args.out_dir, args.platform, args.baseline, "test_ood")
+        baseline_path = results_file(out_dir, args.platform, args.baseline, "test_ood")
         if baseline_path.exists():
             baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
         else:
@@ -286,7 +360,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(title)
     print(format_table(checks))
     print()
-    for name, value in report_only(results):
+    for name, value in [*report_only(results), *rule_report(results), *gold_v2_report(results)]:
         print(f"report only: {name}: {value}")
     failed = [check for check in checks if not check.passed]
     print()

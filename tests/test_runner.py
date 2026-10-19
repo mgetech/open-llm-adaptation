@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from adapt.config import load_platform
+from adapt.data.rounds import current_round
 from adapt.eval.metrics import (
     Case,
     account_groups,
@@ -36,6 +37,7 @@ from adapt.eval.runner import (
     results_path,
     write_results,
 )
+from adapt.pipeline import document_problems
 from adapt.prompting import system_prompt
 from fake_model import Model, unsure_about_4980, wrong_account_with_low_confidence
 from fake_server import FakeServer, Reply
@@ -152,8 +154,23 @@ def test_one_row_per_document_in_the_order_of_the_file(perfect_dev):
         "severity",
         "reasons",
         "confidence",
+        "item_confidences",
+        "output",
+        "by_rule",
     }
     assert all(row["correct"] for row in perfect_dev["documents"])
+
+
+def test_every_row_keeps_the_model_output_and_the_item_confidences(perfect_dev):
+    answered = [row for row in perfect_dev["documents"] if row["output"] is not None]
+    assert answered
+    for row in answered:
+        assert set(row["output"]) >= {"items", "currency", "reverse_charge", "needs_review"}
+        if row["output"]["items"]:
+            assert len(row["item_confidences"]) == len(row["output"]["items"])
+            assert row["confidence"] == min(row["item_confidences"])
+        else:
+            assert row["item_confidences"] is None
 
 
 def test_the_results_file_is_valid_json_at_the_documented_path(tmp_path, perfect_dev):
@@ -376,7 +393,7 @@ def test_loaded_documents_match_the_committed_split_files():
     for split, count in (("dev", 300), ("test_iid", 500), ("test_ood", 300), ("edge", 150)):
         documents = load_documents("tax-booking", split)
         assert len(documents) == count
-        assert (DATA_DIR / "tax-booking" / f"{split}.jsonl").exists()
+        assert (DATA_DIR / "tax-booking" / f"round{current_round()}" / f"{split}.jsonl").exists()
 
 
 def test_a_hash_of_a_folder_changes_with_its_files(tmp_path: Path):
@@ -576,7 +593,13 @@ def test_each_server_has_its_own_requests_in_flight():
     with stack:
         results = evaluate_edge(servers)
     assert results["performance"]["workers"] == 3
-    assert all(len(server.requests) > 50 for server in servers)
+    # The documents that fail a document check never reach a server.
+    platform = load_platform("tax-booking")
+    sent = sum(
+        not document_problems(d.text, d.chart, platform)
+        for d in load_documents("tax-booking", "edge")
+    )
+    assert all(len(server.requests) > 0.4 * sent for server in servers)
 
 
 def test_servers_with_different_vllm_versions_are_refused_before_any_request():

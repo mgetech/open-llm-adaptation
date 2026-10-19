@@ -13,6 +13,11 @@ The layout letter_invoice appears only in test_ood. Five canary documents with
 unusual supplier names are part of train. Edge-style documents (the categories in
 `edge.py`) make up a tenth of every generated split, so the model is trained and
 tested on flagging documents too. The edge split is made only of them.
+
+Every round has its own folder, `data/<platform>/round<N>/`. `make data` writes the current round
+(the one after the kept rounds) and keeps the `rounds` list of the manifest. `make keep-round
+ROUND=N` adds the current round to that list, so the next `make data` starts a new round and an
+earlier round can be checked by its hashes after the generator changes.
 """
 
 import argparse
@@ -32,6 +37,9 @@ from adapt.data.layouts import render_document
 from adapt.data.noise import add_noise
 from adapt.data.pseudonymise import pseudonymise
 
+# Raised when a change to the generator or the rules changes the data it makes from a seed.
+# The manifest records it. A manifest without it comes from version 1.
+GENERATOR_VERSION = 2
 SPLIT_SIZES = {"train": 3000, "dev": 300, "test_iid": 500, "test_ood": 300, "edge": 150}
 HELD_OUT_LAYOUT = "letter_invoice"
 ALL_LAYOUTS = frozenset(get_args(Layout))
@@ -273,21 +281,71 @@ def write_data(
     seed: int,
     data_dir: Path,
     manifest_path: Path,
+    data_round: int | None = None,
 ) -> dict[str, Any]:
-    """Write the split files and the manifest. Return the manifest."""
-    out_dir = data_dir / platform
+    """Write the split files into the folder of the round, and the manifest. Return the manifest.
+
+    The round is the one after the rounds that were kept, unless `data_round` says another."""
+    kept = _kept_rounds(manifest_path)
+    number = data_round or len(kept) + 1
+    out_dir = data_dir / platform / f"round{number}"
     out_dir.mkdir(parents=True, exist_ok=True)
-    manifest: dict[str, Any] = {"platform": platform, "seed": seed, "splits": {}}
+    manifest: dict[str, Any] = {
+        "platform": platform,
+        "seed": seed,
+        "generator": GENERATOR_VERSION,
+        "splits": {},
+    }
     for split, records in splits.items():
         manifest["splits"][split] = {
-            "file": f"{platform}/{split}.jsonl",
+            "file": f"{platform}/round{number}/{split}.jsonl",
             "count": len(records),
             "sha256": _write_jsonl(out_dir / f"{split}.jsonl", records),
         }
+    if kept:
+        manifest["rounds"] = kept
+    _write_manifest(manifest, manifest_path)
+    return manifest
+
+
+def _kept_rounds(manifest_path: Path) -> list[dict[str, Any]]:
+    """The earlier rounds in the manifest on disk, if there is one."""
+    if not manifest_path.exists():
+        return []
+    return json.loads(manifest_path.read_text(encoding="utf-8")).get("rounds", [])
+
+
+def _write_manifest(manifest: Mapping[str, Any], manifest_path: Path) -> None:
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     with manifest_path.open("w", encoding="utf-8", newline="\n") as file:
         file.write(json.dumps(manifest, indent=2) + "\n")
-    return manifest
+
+
+def keep_round(number: int, data_dir: Path, manifest_path: Path, note: str = "") -> dict[str, Any]:
+    """Add the current round to the `rounds` list, so that `make data` starts the next one.
+
+    The files must match the hashes in the manifest, so a round is never kept from files
+    that were edited. Only the current round can be kept, and only once."""
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    kept = manifest.get("rounds", [])
+    if any(entry["round"] == number for entry in kept):
+        raise ValueError(f"round {number} is already kept")
+    if number != len(kept) + 1:
+        raise ValueError(f"the current round is {len(kept) + 1}, not {number}")
+    for current in manifest["splits"].values():
+        source = data_dir / current["file"]
+        if hashlib.sha256(source.read_bytes()).hexdigest() != current["sha256"]:
+            raise ValueError(f"{source} does not match the manifest")
+    entry: dict[str, Any] = {
+        "round": number,
+        "seed": manifest["seed"],
+        "generator": manifest.get("generator", 1),
+        "note": note,
+        "splits": manifest["splits"],
+    }
+    manifest["rounds"] = [*kept, entry]
+    _write_manifest(manifest, manifest_path)
+    return entry
 
 
 def _write_jsonl(path: Path, records: Sequence[Mapping[str, Any]]) -> str:
@@ -303,7 +361,23 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--manifest", type=Path, default=Path("results/data_manifest.json"))
+    parser.add_argument(
+        "--keep-round",
+        type=int,
+        help="add the current round to the kept rounds instead of generating",
+    )
+    parser.add_argument(
+        "--note", default="", help="what the generator was like (with --keep-round)"
+    )
     args = parser.parse_args(argv)
+
+    if args.keep_round is not None:
+        try:
+            entry = keep_round(args.keep_round, args.data_dir, args.manifest, args.note)
+        except ValueError as error:
+            raise SystemExit(f"error: {error}") from error
+        print(f"kept round {entry['round']} (seed {entry['seed']}): {len(entry['splits'])} files")
+        return
 
     splits = build_splits(load_platform(args.platform), args.seed)
     manifest = write_data(splits, args.platform, args.seed, args.data_dir, args.manifest)

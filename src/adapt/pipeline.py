@@ -31,6 +31,10 @@ _TOTAL = re.compile(
     rf"[^\d]{{0,40}}{_DIGIT}[\dOolIS., ]*[.,]{_DIGIT}{_DIGIT}(?!\d)",
     re.IGNORECASE,
 )
+# A currency sign or a currency code other than the euro.
+_FOREIGN_CURRENCY = re.compile(
+    r"[$£¥]|\b(?:USD|GBP|CHF|JPY|CNY|CAD|AUD|SEK|NOK|DKK|PLN|CZK|HUF|RON|BGN|TRY)\b"
+)
 _ACCOUNT_VALUE = re.compile(r'"account"\s*:\s*"([^"]*)"')
 
 ReviewReason = (
@@ -39,6 +43,7 @@ ReviewReason = (
         "empty_text",
         "text_too_long",
         "no_total",
+        "foreign_currency",
         "model_unavailable",
         "invalid_output",
         "model_flagged",
@@ -63,6 +68,9 @@ class Result:
     adapter_version: str | None
     confidence: float | None = None
     output: dict[str, Any] | None = field(default=None, repr=False)
+    item_confidences: list[float] | None = field(default=None, repr=False)
+    # True when a document check sent the document to review and the model was not called.
+    by_rule: bool = False
 
 
 def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewReason]:
@@ -77,6 +85,8 @@ def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewR
         problems.append("unsupported_chart")
     if present and not _TOTAL.search(text):
         problems.append("no_total")
+    if present and _FOREIGN_CURRENCY.search(text):
+        problems.append("foreign_currency")
     return problems
 
 
@@ -153,6 +163,8 @@ class Pipeline:
         output: dict[str, Any] | None = None,
         lines: list[BookingLine] | None = None,
         confidence: float | None = None,
+        item_confidences: list[float] | None = None,
+        by_rule: bool = False,
     ) -> Result:
         items = output["items"] if output else []
         return Result(
@@ -165,12 +177,14 @@ class Pipeline:
             adapter_version=self.adapter_version,
             confidence=confidence,
             output=output,
+            item_confidences=item_confidences,
+            by_rule=by_rule,
         )
 
     def _process(self, document_text: str, chart: str, request_id: str) -> Result:
         problems = document_problems(document_text, chart, self.platform)
         if problems:
-            return self._review(request_id, problems)
+            return self._review(request_id, problems, by_rule=True)
 
         messages = build_messages(self._system, pseudonymise(document_text))
         try:
@@ -183,23 +197,20 @@ class Pipeline:
         reasons: list[ReviewReason] = []
         lines: list[BookingLine] = []
         confidence = None
+        item_confidences = None
         if output["needs_review"]:
             reasons.append("model_flagged")
         if output["items"]:
             booking = compute_booking(output, chart, self.platform)
             lines, reasons = booking.lines, reasons + booking.reasons
-            confidence = self._confidence(completion.content, completion.tokens, output)
+            item_confidences = account_confidences(
+                completion.content, completion.tokens, len(output["items"])
+            )
+            confidence = min(item_confidences) if item_confidences else None
             if confidence is None:
                 reasons.append("no_confidence")
             elif confidence < self.threshold:
                 reasons.append("low_confidence")
         elif not output["needs_review"]:
             reasons.append("no_items")
-        return self._review(request_id, reasons, output, lines, confidence)
-
-    @staticmethod
-    def _confidence(
-        content: str, tokens: list[TokenLogprob], output: dict[str, Any]
-    ) -> float | None:
-        confidences = account_confidences(content, tokens, len(output["items"]))
-        return min(confidences) if confidences else None
+        return self._review(request_id, reasons, output, lines, confidence, item_confidences)

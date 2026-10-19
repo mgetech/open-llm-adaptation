@@ -1,31 +1,66 @@
 {
   "platform": "tax-booking",
-  "seed": 0,
+  "seed": 1,
+  "generator": 2,
   "splits": {
     "train": {
-      "file": "tax-booking/train.jsonl",
+      "file": "tax-booking/round2/train.jsonl",
       "count": 3000,
-      "sha256": "bf16e2ecde881645d93c15f0b5ee7082c11742fd0fd7c441d4161e60b0e68abe"
+      "sha256": "fec651d4ced13b28607d9df2f1a8b5d5965bc1d38bb29cd53da4a381c33794ae"
     },
     "dev": {
-      "file": "tax-booking/dev.jsonl",
+      "file": "tax-booking/round2/dev.jsonl",
       "count": 300,
-      "sha256": "d246763162a4fa7db79b0110e74859f68015f86bbad15a62e9696f2fe6d68329"
+      "sha256": "18d91cff0d9e214881369dfa3ed866bcac5635884109ee5f3734c18d5d6011a8"
     },
     "test_iid": {
-      "file": "tax-booking/test_iid.jsonl",
+      "file": "tax-booking/round2/test_iid.jsonl",
       "count": 500,
-      "sha256": "cbe7ea35a7e51ed3b64b64bdf66da5c305d81cbcca7de5c8d19cf7a80205ee9f"
+      "sha256": "dbc21e101c2bba0dc9d0c1b1bc9ea54ab9d7b52ec666fad89a78ab668787f1ed"
     },
     "test_ood": {
-      "file": "tax-booking/test_ood.jsonl",
+      "file": "tax-booking/round2/test_ood.jsonl",
       "count": 300,
-      "sha256": "6b613c9b5766aeeb60b32ebaa8538607e549fa976eea95088ef4b398a15a39d9"
+      "sha256": "42d0cf61def3184a2a46823db51392be86b7866b7de20168c5a4a6c0d09b1ecc"
     },
     "edge": {
-      "file": "tax-booking/edge.jsonl",
+      "file": "tax-booking/round2/edge.jsonl",
       "count": 150,
-      "sha256": "5dd80105c3b819f24577419b634f9a5b20d6a804a6d504453080e6d5a03a77ca"
+      "sha256": "04b93686f92a3945f904fec9078176b2414a9296236561840265965e7c8e8fe7"
     }
-  }
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "seed": 0,
+      "note": "first version of the generator",
+      "splits": {
+        "train": {
+          "file": "tax-booking/round1/train.jsonl",
+          "count": 3000,
+          "sha256": "bf16e2ecde881645d93c15f0b5ee7082c11742fd0fd7c441d4161e60b0e68abe"
+        },
+        "dev": {
+          "file": "tax-booking/round1/dev.jsonl",
+          "count": 300,
+          "sha256": "d246763162a4fa7db79b0110e74859f68015f86bbad15a62e9696f2fe6d68329"
+        },
+        "test_iid": {
+          "file": "tax-booking/round1/test_iid.jsonl",
+          "count": 500,
+          "sha256": "cbe7ea35a7e51ed3b64b64bdf66da5c305d81cbcca7de5c8d19cf7a80205ee9f"
+        },
+        "test_ood": {
+          "file": "tax-booking/round1/test_ood.jsonl",
+          "count": 300,
+          "sha256": "6b613c9b5766aeeb60b32ebaa8538607e549fa976eea95088ef4b398a15a39d9"
+        },
+        "edge": {
+          "file": "tax-booking/round1/edge.jsonl",
+          "count": 150,
+          "sha256": "5dd80105c3b819f24577419b634f9a5b20d6a804a6d504453080e6d5a03a77ca"
+        }
+      }
+    }
+  ]
 }
