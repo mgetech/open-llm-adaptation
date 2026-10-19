@@ -1,0 +1,93 @@
+{
+  "run_id": "tax-booking-qwen3-4b-r2-0",
+  "platform": "tax-booking",
+  "model": "qwen3-4b",
+  "model_hf_id": "Qwen/Qwen3-4B",
+  "model_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+  "seed": 0,
+  "smoke": false,
+  "max_steps": null,
+  "config": {
+    "quantisation": {
+      "quant_type": "nf4",
+      "double_quant": true,
+      "compute_dtype": "float16"
+    },
+    "lora": {
+      "r": 16,
+      "alpha": 32,
+      "dropout": 0.05,
+      "target_modules": "all-linear"
+    },
+    "optimiser": {
+      "learning_rate": 0.0002,
+      "lr_scheduler": "cosine",
+      "warmup_ratio": 0.03,
+      "epochs": 2,
+      "optim": "paged_adamw_8bit",
+      "batch_size": 4,
+      "gradient_accumulation_steps": 4,
+      "gradient_checkpointing": true
+    },
+    "data": {
+      "max_length": 1024
+    },
+    "checkpoint": {
+      "save_steps": 100,
+      "keep": 2
+    },
+    "logging_steps": 10,
+    "smoke": {
+      "steps": 2,
+      "examples": 16,
+      "tokenizer_examples": 200,
+      "batch_size": 2,
+      "max_length": 4096,
+      "save_steps": 1,
+      "vocab_size": 1000,
+      "hidden_size": 64,
+      "intermediate_size": 128,
+      "layers": 2,
+      "heads": 4,
+      "kv_heads": 2,
+      "head_dim": 16
+    }
+  },
+  "prompt_sha256": "2f3789f30dd9234c912df016d6c5687b85920d701c0bdf5d4dffe1f1e13edcb7",
+  "data": {
+    "round": 2,
+    "generator": 2,
+    "train_file": "train.jsonl",
+    "train_sha256": "fec651d4ced13b28607d9df2f1a8b5d5965bc1d38bb29cd53da4a381c33794ae",
+    "examples": 3000,
+    "longest_example_tokens": 983,
+    "max_length": 1024
+  },
+  "git_commit": "72b6670d359aba210bcd58b808c35f324eef3b68",
+  "git_dirty": false,
+  "gpu": "Tesla T4",
+  "gpu_count": 2,
+  "num_gpus": 2,
+  "per_device_batch_size": 4,
+  "gradient_accumulation_steps": 2,
+  "effective_batch_size": 16,
+  "peak_gpu_memory_gib": 4.9921875,
+  "versions": {
+    "python": "3.12.15",
+    "torch": "2.13.0",
+    "transformers": "5.20.0",
+    "trl": "1.16.0",
+    "peft": "0.21.2",
+    "bitsandbytes": "0.50.2",
+    "datasets": "5.1.0",
+    "tokenizers": "0.23.3"
+  },
+  "steps": 376,
+  "resumed_from_step": null,
+  "train_loss": 0.021193999482846344,
+  "trainable_parameters": 33030144,
+  "wall_seconds": 5861.255762151,
+  "gpu_hours": 3.2562532011950003,
+  "adapter_dir": "/kaggle/working/open-llm-adaptation/adapters/tax-booking/qwen3-4b-r2-0",
+  "adapter_sha256": "e71c0e0c65c16efeb4daf9b460541cc600e5d170857a5bd504cbda2eff687d3b"
+}
