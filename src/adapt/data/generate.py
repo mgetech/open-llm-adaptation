@@ -11,18 +11,19 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, get_args
 
-from adapt.config import Layout, Rules, SupplierItem, SupplierType
+from adapt.config import Layout, Rules, SupplierItem, SupplierNames, SupplierType
 from adapt.schema import MAX_REASON_LENGTH
 
 CURRENCY = "EUR"
 MAX_ITEMS = 6
 MIXED_SHARE = 0.4
-SUPPLIER_COUNT = 200
+SUPPLIER_COUNT = 400
+WORD_NAME_SHARE = 0.35  # share of supplier names built from a plain word
 YEAR = 2026
 
 CREDIT_NOTE_LAYOUT = "credit_note"
 REVERSE_CHARGE_LAYOUT = "eu_invoice"
-RECEIPT_LAYOUTS = ("till_receipt", "short_receipt")
+RECEIPT_LAYOUTS = ("till_receipt", "short_receipt", "tax_code_receipt", "quantity_receipt")
 
 
 @dataclass(frozen=True)
@@ -62,13 +63,19 @@ def make_suppliers(rules: Rules, seed: int, count: int = SUPPLIER_COUNT) -> list
     used: set[str] = set()
     while len(suppliers) < count:
         supplier_type = rules.supplier_types[len(suppliers) % len(rules.supplier_types)]
-        base = "".join(rng.sample(names.syllables, rng.choice((2, 3)))).capitalize()
+        base = _draw_name(names, rng)
         if base in used:
             continue
         used.add(base)
         suffix = rng.choice(names.suffixes[supplier_type.country])
         suppliers.append(Supplier(f"{base} {suffix}", supplier_type.key))
     return suppliers
+
+
+def _draw_name(names: SupplierNames, rng: random.Random) -> str:
+    if names.words and rng.random() < WORD_NAME_SHARE:
+        return rng.choice(names.words).capitalize()
+    return "".join(rng.sample(names.syllables, rng.choice((2, 3)))).capitalize()
 
 
 def generate_invoices(
@@ -79,11 +86,14 @@ def generate_invoices(
     *,
     layouts: Collection[str] | None = None,
     mixed_share: float = MIXED_SHARE,
+    prefer: str | None = None,
+    prefer_share: float = 0.0,
 ) -> list[Invoice]:
     """Generate `count` invoices.
 
     `mixed_share` is the share of documents with more than one VAT rate. Only layouts
-    in `layouts` are used (all layouts when it is None).
+    in `layouts` are used (all layouts when it is None). A supplier that can use the layout
+    `prefer` uses it in `prefer_share` of its documents.
     """
     types = {t.key: t for t in rules.supplier_types}
     allowed = set(layouts) if layouts is not None else set(get_args(Layout))
@@ -94,7 +104,9 @@ def generate_invoices(
     if mixed_share > 0 and not mixable:
         raise ValueError("no supplier can have mixed VAT rates")
     return [
-        _generate_one(rules, usable, mixable, allowed, seed, index, mixed_share)
+        _generate_one(
+            rules, usable, mixable, allowed, seed, index, mixed_share, prefer, prefer_share
+        )
         for index in range(count)
     ]
 
@@ -107,10 +119,20 @@ def _generate_one(
     seed: int,
     index: int,
     mixed_share: float,
+    prefer: str | None,
+    prefer_share: float,
 ) -> Invoice:
     rng = random.Random(f"{seed}/invoice/{index}")
     mixed = rng.random() < mixed_share
-    return draw_invoice(rules, mixable if mixed else usable, allowed, rng, mixed=mixed)
+    return draw_invoice(
+        rules,
+        mixable if mixed else usable,
+        allowed,
+        rng,
+        mixed=mixed,
+        prefer=prefer,
+        prefer_share=prefer_share,
+    )
 
 
 def draw_invoice(
@@ -120,16 +142,20 @@ def draw_invoice(
     rng: random.Random,
     *,
     mixed: bool = False,
+    prefer: str | None = None,
+    prefer_share: float = 0.0,
 ) -> Invoice:
     """Draw one invoice for one of `suppliers`. Every supplier needs an allowed layout.
 
     With `mixed` the items have more than one VAT rate, so every supplier needs several rates.
+    The layout `prefer` is chosen in `prefer_share` of the documents of a supplier that has it.
     """
     types = {t.key: t for t in rules.supplier_types}
     weights = [types[s.type_key].weight for s in suppliers]
     supplier = rng.choices(suppliers, weights)[0]
     supplier_type = types[supplier.type_key]
-    layout = rng.choice([x for x in supplier_type.layouts if x in allowed])
+    options = [x for x in supplier_type.layouts if x in allowed]
+    layout = prefer if prefer in options and rng.random() < prefer_share else rng.choice(options)
 
     sign = -1 if layout == CREDIT_NOTE_LAYOUT else 1
     items = tuple(
@@ -158,7 +184,7 @@ def make_invoice(
 ) -> Invoice:
     """Build an invoice from its items. Total, reverse charge and target follow from them."""
     doc_type = document_type(layout)
-    reverse_charge = layout == REVERSE_CHARGE_LAYOUT
+    reverse_charge = is_foreign(rules, supplier)
     total = sum((item.amount for item in items), Decimal(0))
     return Invoice(
         supplier=supplier,
@@ -171,6 +197,11 @@ def make_invoice(
         reverse_charge=reverse_charge,
         target=_target(rules, supplier, invoice_date, doc_type, items, total, reverse_charge),
     )
+
+
+def is_foreign(rules: Rules, supplier: Supplier) -> bool:
+    """Whether the supplier is in the EU or outside it. Its invoices are net, reverse charge."""
+    return next(t for t in rules.supplier_types if t.key == supplier.type_key).country != "DE"
 
 
 def _rates(supplier_type: SupplierType) -> list[str]:

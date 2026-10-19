@@ -1,11 +1,17 @@
+import json
 from collections import Counter
 from decimal import Decimal
 
 import pytest
 from jsonschema import Draft202012Validator
 
-from adapt.config import load_platform
-from adapt.data.generate import generate_invoices, make_reason, make_suppliers
+from adapt.config import PLATFORMS_DIR, load_platform
+from adapt.data.generate import (
+    SUPPLIER_COUNT,
+    generate_invoices,
+    make_reason,
+    make_suppliers,
+)
 from adapt.schema import MAX_REASON_LENGTH, build_output_schema
 
 SEED = 7
@@ -29,9 +35,29 @@ def invoices(rules, suppliers):
 
 def test_suppliers_have_distinct_names(suppliers):
     names = [s.name for s in suppliers]
-    assert len(names) == 200
-    assert len(set(names)) == 200
-    assert len({name.split()[0] for name in names}) == 200
+    assert len(names) == SUPPLIER_COUNT
+    assert len(set(names)) == SUPPLIER_COUNT
+    assert len({name.split()[0] for name in names}) == SUPPLIER_COUNT
+
+
+def test_some_names_are_plain_words_and_some_are_made_up(rules, suppliers):
+    words = {word.capitalize() for word in rules.supplier_names.words}
+    from_words = [s for s in suppliers if s.name.split()[0] in words]
+    assert 0.1 * len(suppliers) < len(from_words) < 0.5 * len(suppliers)
+
+
+def test_supplier_names_never_equal_a_hand_written_supplier(rules):
+    written = set()
+    for name in ("gold", "gold_v2", "dev_real"):
+        path = PLATFORMS_DIR / "tax-booking" / "evals" / f"{name}.jsonl"
+        if path.exists():
+            lines = path.read_text(encoding="utf-8").splitlines()
+            written |= {json.loads(line)["target"]["supplier"].lower() for line in lines}
+    first_words = {name.split()[0] for name in written}
+    for seed in range(5):
+        for supplier in make_suppliers(rules, seed):
+            assert supplier.name.lower() not in written
+            assert supplier.name.split()[0].lower() not in first_words
 
 
 def test_suppliers_are_spread_over_all_types(rules, suppliers):
@@ -111,6 +137,8 @@ def test_document_type_follows_the_layout(invoices):
             "credit_note": "credit_note",
             "till_receipt": "receipt",
             "short_receipt": "receipt",
+            "tax_code_receipt": "receipt",
+            "quantity_receipt": "receipt",
         }.get(invoice.layout, "invoice")
         assert invoice.document_type == expected
         assert invoice.target["document_type"] == expected
@@ -130,8 +158,14 @@ def test_reverse_charge_only_on_foreign_invoices(rules, invoices):
     types = {t.key: t for t in rules.supplier_types}
     for invoice in invoices:
         foreign = types[invoice.supplier.type_key].country != "DE"
-        assert invoice.reverse_charge == (invoice.layout == "eu_invoice") == foreign
+        assert invoice.reverse_charge == foreign
         assert invoice.target["reverse_charge"] == invoice.reverse_charge
+
+
+def test_foreign_suppliers_use_several_layouts(invoices):
+    layouts = {i.layout for i in invoices if i.reverse_charge}
+    assert "eu_invoice" in layouts
+    assert len(layouts) >= 4
 
 
 def test_every_layout_is_generated(invoices):
@@ -142,7 +176,22 @@ def test_every_layout_is_generated(invoices):
         "credit_note",
         "eu_invoice",
         "short_receipt",
+        "column_invoice",
+        "service_invoice",
+        "email_invoice",
+        "statement",
+        "tax_code_receipt",
+        "quantity_receipt",
     }
+
+
+def test_a_preferred_layout_is_used_more_often(rules, suppliers):
+    plain = generate_invoices(rules, suppliers, SEED, 1000)
+    wanted = generate_invoices(
+        rules, suppliers, SEED, 1000, prefer="letter_invoice", prefer_share=0.5
+    )
+    count = lambda invoices: sum(i.layout == "letter_invoice" for i in invoices)  # noqa: E731
+    assert count(wanted) > 2 * count(plain)
 
 
 def test_layouts_can_be_limited(rules, suppliers):

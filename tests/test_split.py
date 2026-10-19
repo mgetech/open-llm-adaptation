@@ -7,7 +7,7 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from adapt.config import load_platform
-from adapt.data.edge import CATEGORIES
+from adapt.data.edge import CATEGORIES, EDGE_WEIGHTS, edge_counts
 from adapt.data.generate import make_suppliers
 from adapt.data.pseudonymise import pseudonymise
 from adapt.data.split import (
@@ -21,7 +21,9 @@ from adapt.data.split import (
     split_suppliers,
     write_data,
 )
+from adapt.pipeline import document_problems
 from adapt.schema import build_output_schema
+from adapt.vat_check import vat_mismatch
 
 SEED = 0
 FIELDS = [
@@ -129,7 +131,19 @@ def test_letter_invoice_is_only_in_test_ood(splits):
 
 
 def test_every_other_layout_is_in_train_and_test_ood(splits):
-    others = {"table_invoice", "till_receipt", "credit_note", "eu_invoice", "short_receipt"}
+    others = {
+        "table_invoice",
+        "till_receipt",
+        "credit_note",
+        "eu_invoice",
+        "short_receipt",
+        "column_invoice",
+        "service_invoice",
+        "email_invoice",
+        "statement",
+        "tax_code_receipt",
+        "quantity_receipt",
+    }
     assert {r["layout"] for r in splits["train"]} == others
     assert {r["layout"] for r in splits["test_ood"]} == others | {"letter_invoice"}
 
@@ -139,10 +153,17 @@ def test_edge_split_has_every_category(splits):
     assert counts == {category: 15 for category in CATEGORIES}
 
 
-def test_other_splits_hold_a_tenth_of_edge_documents(splits):
+def test_other_splits_hold_a_seventh_of_edge_documents(splits):
     for name, per_category in (("train", 30), ("dev", 3), ("test_iid", 5), ("test_ood", 3)):
         counts = Counter(r["category"] for r in splits[name] if r["category"])
-        assert counts == {category: per_category for category in CATEGORIES}, name
+        assert counts == edge_counts(per_category, EDGE_WEIGHTS), name
+        assert counts["business_private_mixed"] == 3 * per_category, name
+        assert sum(counts.values()) == 14 * per_category, name
+
+
+def test_letters_are_a_large_share_of_test_ood(splits):
+    letters = sum(r["layout"] == "letter_invoice" for r in splits["test_ood"])
+    assert letters >= 0.15 * len(splits["test_ood"])
 
 
 def test_canaries_are_in_train_only_and_unique(splits):
@@ -423,3 +444,29 @@ def test_the_command_line_keeps_a_round(tmp_path, capsys):
     assert [entry["round"] for entry in manifest["rounds"]] == [1]
     with pytest.raises(SystemExit, match="already kept"):
         main([*arguments, "--keep-round", "1"])
+
+
+def test_a_clean_document_is_never_flagged_by_a_pipeline_rule(platform, splits):
+    for name in ("train", "dev", "test_iid", "test_ood"):
+        for record in splits[name]:
+            if record["category"] or record["noise"] != "none":
+                continue
+            target = record["target"]
+            text = record["document_text"]
+            assert document_problems(text, record["chart"], platform) == [], text
+            assert not vat_mismatch(text, target["items"], target["reverse_charge"]), text
+
+
+def test_rules_rarely_flag_a_noisy_document_that_should_be_booked(platform, splits):
+    noisy = [
+        r
+        for name in ("train", "dev", "test_iid", "test_ood")
+        for r in splits[name]
+        if not r["category"] and r["noise"] != "none"
+    ]
+    flagged = sum(
+        bool(document_problems(r["document_text"], r["chart"], platform))
+        or vat_mismatch(r["document_text"], r["target"]["items"], r["target"]["reverse_charge"])
+        for r in noisy
+    )
+    assert flagged <= 0.005 * len(noisy)

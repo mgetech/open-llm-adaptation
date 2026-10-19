@@ -11,8 +11,9 @@ Suppliers are divided per supplier type, so every group has every type:
 
 The layout letter_invoice appears only in test_ood. Five canary documents with
 unusual supplier names are part of train. Edge-style documents (the categories in
-`edge.py`) make up a tenth of every generated split, so the model is trained and
-tested on flagging documents too. The edge split is made only of them.
+`edge.py`) make up about a seventh of every generated split, with more documents for the
+categories that were missed most often, so the model is trained and tested on flagging
+documents too. The edge split is made only of them, the same number for every category.
 
 Every round has its own folder, `data/<platform>/round<N>/`. `make data` writes the current round
 (the one after the kept rounds) and keeps the `rounds` list of the manifest. `make keep-round
@@ -31,7 +32,7 @@ from pathlib import Path
 from typing import Any, get_args
 
 from adapt.config import Layout, Platform, load_platform
-from adapt.data.edge import CATEGORIES, generate_edge_documents
+from adapt.data.edge import CATEGORIES, EDGE_WEIGHTS, edge_counts, generate_edge_documents
 from adapt.data.generate import Supplier, draw_invoice, generate_invoices, make_suppliers
 from adapt.data.layouts import render_document
 from adapt.data.noise import add_noise
@@ -39,9 +40,10 @@ from adapt.data.pseudonymise import pseudonymise
 
 # Raised when a change to the generator or the rules changes the data it makes from a seed.
 # The manifest records it. A manifest without it comes from version 1.
-GENERATOR_VERSION = 2
+GENERATOR_VERSION = 3
 SPLIT_SIZES = {"train": 3000, "dev": 300, "test_iid": 500, "test_ood": 300, "edge": 150}
 HELD_OUT_LAYOUT = "letter_invoice"
+HELD_OUT_SHARE = 0.4  # how often a supplier that can write a letter does, where letters are allowed
 ALL_LAYOUTS = frozenset(get_args(Layout))
 TRAIN_LAYOUTS = ALL_LAYOUTS - {HELD_OUT_LAYOUT}
 EDGE_SHARE_DIVISOR = 100  # a split of N documents holds N // 100 edge documents per category
@@ -162,11 +164,21 @@ def _build_split(
 ) -> list[dict[str, Any]]:
     split_seed = _split_seed(seed, name)
     per_category = count // EDGE_SHARE_DIVISOR
-    normal = count - per_category * len(CATEGORIES) - len(canaries)
+    edge_total = sum(edge_counts(per_category, EDGE_WEIGHTS).values())
+    normal = count - edge_total - len(canaries)
     levels, weights = zip(*NOISE_LEVELS, strict=True)
 
     records = list(canaries)
-    invoices = generate_invoices(platform.rules, suppliers, split_seed, normal, layouts=layouts)
+    held_out = HELD_OUT_LAYOUT if HELD_OUT_LAYOUT in layouts else None
+    invoices = generate_invoices(
+        platform.rules,
+        suppliers,
+        split_seed,
+        normal,
+        layouts=layouts,
+        prefer=held_out,
+        prefer_share=HELD_OUT_SHARE,
+    )
     for index, invoice in enumerate(invoices):
         rng = random.Random(f"{split_seed}/render/{index}")
         text = pseudonymise(render_document(invoice, rng))
@@ -186,7 +198,9 @@ def _build_split(
                 noise=level,
             )
         )
-    edge = generate_edge_documents(platform, suppliers, split_seed, per_category, layouts=layouts)
+    edge = generate_edge_documents(
+        platform, suppliers, split_seed, per_category, layouts=layouts, weights=EDGE_WEIGHTS
+    )
     records += [_edge_record(platform, document) for document in edge]
     return _finish(name, seed, records)
 
