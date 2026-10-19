@@ -184,7 +184,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--dry-run", action="store_true", help="use the fake server, not vLLM")
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     parser.add_argument(
-        "--splits", nargs="+", default=list(SPLITS), help="default: all splits, not gold_v2"
+        "--splits",
+        nargs="+",
+        default=list(SPLITS),
+        help="default: all splits, not gold_v2 or dev_real",
     )
     args = parser.parse_args(argv)
 

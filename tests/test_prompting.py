@@ -100,7 +100,9 @@ def test_the_examples_are_not_documents_or_suppliers_of_any_split(examples):
         *DATA_DIR.joinpath("tax-booking").glob("round*/*.jsonl"),
         gold_path("tax-booking"),
         gold_path("tax-booking", name="gold_v2"),
+        gold_path("tax-booking", name="dev_real"),
     ]
+    files = [path for path in files if path.exists()]
     records = [
         json.loads(line) for path in files for line in path.read_text(encoding="utf-8").splitlines()
     ]

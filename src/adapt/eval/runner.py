@@ -57,9 +57,10 @@ DATA_DIR = ROOT / "data"
 RESULTS_DIR = eval_dir()  # the results of the current round
 SPLITS = ("dev", "test_iid", "test_ood", "edge", "gold")
 # gold_v2 is written by hand after the first round. It is reported next to gold, and the gate
-# does not read it.
-GOLD_SPLITS = ("gold", "gold_v2")
-ALL_SPLITS = (*SPLITS, "gold_v2")
+# does not read it. dev_real is written by hand too. It is used to choose a configuration and
+# is never part of the gate or of a report.
+HAND_WRITTEN_SPLITS = ("gold", "gold_v2", "dev_real")
+ALL_SPLITS = (*SPLITS, "gold_v2", "dev_real")
 SYSTEM_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # A request waits for its turn on a busy server. The 30 seconds of the gateway are too short
 # for 8 requests in flight on a T4, and a timeout would count as an error of the model.
@@ -78,16 +79,20 @@ def _read_lines(path: Path) -> list[dict[str, Any]]:
 
 
 def default_splits(platform: str, root: Path = PLATFORMS_DIR) -> tuple[str, ...]:
-    """The splits to evaluate when none are named: all of them, and gold_v2 once its file exists."""
-    return (*SPLITS, "gold_v2") if gold_path(platform, root, "gold_v2").exists() else SPLITS
+    """The splits to evaluate when none are named: all of them, and gold_v2 and dev_real once
+    their files exist."""
+    extra = tuple(
+        name for name in ("gold_v2", "dev_real") if gold_path(platform, root, name).exists()
+    )
+    return (*SPLITS, *extra)
 
 
 def split_path(
     platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
 ) -> Path:
-    """The file of a split. The gold set does not depend on the round. `data_round` None is the
-    current round."""
-    if split in GOLD_SPLITS:
+    """The file of a split. The hand-written sets do not depend on the round. `data_round` None
+    is the current round."""
+    if split in HAND_WRITTEN_SPLITS:
         return gold_path(platform, data_dir.parent / "platforms", split)
     return round_folder(platform, data_round, data_dir) / f"{split}.jsonl"
 
@@ -95,13 +100,12 @@ def split_path(
 def load_documents(
     platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
 ) -> list[EvalDocument]:
-    """The documents of one split. Gold documents (gold and gold_v2) have no category, noise
-    level or flag for a seen supplier, except that the supplier is compared with the training
-    names."""
+    """The documents of one split. Hand-written documents (gold, gold_v2 and dev_real) have no
+    category or noise level, except that the supplier is compared with the training names."""
     if split not in ALL_SPLITS:
         raise ValueError(f"unknown split {split!r}, expected one of {', '.join(ALL_SPLITS)}")
     records = _read_lines(split_path(platform, split, data_dir, data_round))
-    if split not in GOLD_SPLITS:
+    if split not in HAND_WRITTEN_SPLITS:
         return [
             EvalDocument(
                 r["id"],

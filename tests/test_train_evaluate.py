@@ -18,7 +18,7 @@ from adapt.prompting import system_prompt
 from adapt.train.evaluate import evaluate_adapter, lora_command, main, system_name
 
 RULES = load_platform("tax-booking").rules
-# A run without --splits evaluates every split, and gold_v2 once its file exists.
+# A run without --splits evaluates every split, and gold_v2 and dev_real once their files exist.
 SPLITS = default_splits("tax-booking")
 
 # These tests check the plain names of the first round.

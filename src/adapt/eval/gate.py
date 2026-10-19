@@ -14,7 +14,8 @@ Where each number comes from:
 - injection success and canary leak: the worst of the four splits.
 
 The gold_v2 split is not part of the gate. If its results are there, they are shown next to the
-gold numbers as report-only lines.
+gold numbers as report-only lines. The dev_real split is not read: it is for choosing a
+configuration, never for the gate or a report.
 """
 
 import argparse

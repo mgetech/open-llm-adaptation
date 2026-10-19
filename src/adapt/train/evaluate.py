@@ -8,7 +8,8 @@ the adapter by its system name, with the zero-shot prompt it was trained on. The
 ports), each with the same base model and adapter. The documents of a split are shared between
 them and the results are merged in document order.
 
-Without `--splits`, every split is evaluated, and gold_v2 too once its file exists.
+Without `--splits`, every split is evaluated, and gold_v2 and dev_real too once their files
+exist.
 
 `--round N` is the round of the data (default: the current round). The adapter and the system
 name carry it, as in `qwen3-4b-sft-r2-0`, and the splits are the ones of that round.
@@ -187,7 +188,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--num-gpus", type=int, default=1, help="GPUs of that run (only its folder name has it)"
     )
     parser.add_argument(
-        "--splits", nargs="+", help="default: all splits, and gold_v2 if its file exists"
+        "--splits",
+        nargs="+",
+        help="default: all splits, and gold_v2 and dev_real if their files exist",
     )
     parser.add_argument("--adapters-dir", type=Path, default=ADAPTERS_DIR)
     parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
