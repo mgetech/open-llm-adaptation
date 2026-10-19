@@ -14,6 +14,8 @@ from adapt.data.split import (
     CANARY_NAMES,
     SPLIT_SIZES,
     LeakageError,
+    apply_rewrites,
+    build_rewritten,
     build_splits,
     check_leakage,
     keep_round,
@@ -470,3 +472,44 @@ def test_rules_rarely_flag_a_noisy_document_that_should_be_booked(platform, spli
         for r in noisy
     )
     assert flagged <= 0.005 * len(noisy)
+
+
+def test_rewrites_change_only_the_text(platform, splits, tmp_path):
+    clean = build_splits(platform, SEED, keep_clean=True)
+    assert all("facts" in r and "clean_text" in r for rs in clean.values() for r in rs)
+    chosen = [r for r in clean["dev"] if not r["category"]][:3]
+    rewrites = {
+        r["id"]: f"{r['supplier']} rewritten text with enough length to be a document"
+        for r in chosen
+    }
+    out = apply_rewrites(clean, rewrites, SEED)
+    for name, records in out.items():
+        assert len(records) == len(splits[name])
+        for new, old in zip(records, splits[name], strict=True):
+            assert {k: v for k, v in new.items() if k not in ("document_text", "rewritten")} == {
+                k: v for k, v in old.items() if k != "document_text"
+            }
+            assert new["rewritten"] == (new["id"] in rewrites)
+            if new["id"] not in rewrites:
+                assert new["document_text"] == old["document_text"]
+    with pytest.raises(ValueError, match="do not exist"):
+        apply_rewrites(clean, {"dev-99999": "x"}, SEED)
+
+
+def test_a_rewrite_is_used_only_for_the_text_it_was_made_for(platform, tmp_path):
+    clean = build_splits(platform, SEED, keep_clean=True)
+    record = next(r for r in clean["dev"] if not r["category"])
+    digest = hashlib.sha256(record["clean_text"].encode("utf-8")).hexdigest()
+    task = {"id": record["id"], "draft_sha256": digest}
+    text = f"{record['supplier']} rewritten text with enough length to be a document"
+    (tmp_path / "tasks.jsonl").write_text(json.dumps(task) + "\n", encoding="utf-8")
+    (tmp_path / "accepted.jsonl").write_text(
+        json.dumps({"id": record["id"], "document_text": text}) + "\n", encoding="utf-8"
+    )
+    splits_out, entry = build_rewritten(platform, SEED, SPLIT_SIZES, tmp_path)
+    assert entry["rewrite"]["documents"] == 1 and entry["rewrite"]["rewriter"] == "external model"
+    assert sum(r["rewritten"] for rs in splits_out.values() for r in rs) == 1
+    task["draft_sha256"] = "0" * 64
+    (tmp_path / "tasks.jsonl").write_text(json.dumps(task) + "\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="another generated text"):
+        build_rewritten(platform, SEED, SPLIT_SIZES, tmp_path)

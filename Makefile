@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data keep-round validate-gold models-check baseline train eval-sft eval pair rescore gate lint format test requirements
+.PHONY: help setup install-vllm data rewrite-export rewrite-check keep-round validate-gold models-check baseline train eval-sft eval pair rescore gate lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -16,8 +16,14 @@ setup:  ## Create the virtual environment and install dependencies
 install-vllm:  ## Install the vLLM version pinned in configs/models.yaml (Linux GPU machines)
 	uv pip install --python .venv/bin/python "vllm==$$(uv run python -m adapt.models --vllm-version)"
 
-data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=)
-	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED)
+data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=, optional TRAIN_SIZE=, REWRITES=folder)
+	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED) $(if $(TRAIN_SIZE),--train-size $(TRAIN_SIZE)) $(if $(REWRITES),--rewrites $(REWRITES))
+
+rewrite-export:  ## Make the tasks and the folder (and zip) for the rewriter (SEED=, optional SHARE=0.5, TRAIN_SIZE=, OUT=)
+	uv run python -m adapt.data.rewrite_export --platform $(PLATFORM) --seed $(SEED) $(if $(SHARE),--share $(SHARE)) $(if $(TRAIN_SIZE),--train-size $(TRAIN_SIZE)) $(if $(OUT),--out $(OUT))
+
+rewrite-check:  ## Check the replies of the rewriter and write accepted.jsonl (optional DIR=data/rewrite/round3)
+	uv run python -m adapt.data.rewrite_check check --dir $(if $(DIR),$(DIR),data/rewrite/round3)
 
 keep-round:  ## Copy the current data to round<N>/ and record it in the manifest (ROUND=, optional NOTE=)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --keep-round $(ROUND) $(if $(NOTE),--note "$(NOTE)")

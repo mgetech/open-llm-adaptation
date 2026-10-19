@@ -21,6 +21,7 @@ configs/keys.yaml
 
 # Local files
 .idea/
+data/rewrite/
 
 # Model files
 adapters/

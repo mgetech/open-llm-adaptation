@@ -166,6 +166,24 @@ def draw_invoice(
     return make_invoice(rules, supplier, layout, invoice_date, rng.randint(1, 9999), items)
 
 
+def invoice_facts(invoice: Invoice, currency: str = CURRENCY) -> dict[str, Any]:
+    """What a document says, whatever its label is: the items as printed, the total and so on."""
+    return {
+        "supplier": invoice.supplier.name,
+        "supplier_type": invoice.supplier.type_key,
+        "date": invoice.date.isoformat(),
+        "kind": invoice.document_type,
+        "currency": currency,
+        "reverse_charge": invoice.reverse_charge,
+        "items": [
+            {"description": item.description, "amount": float(item.amount)}
+            for item in invoice.items
+        ],
+        "rates": [item.vat_rate for item in invoice.items],
+        "total": float(invoice.total),
+    }
+
+
 def document_type(layout: str) -> str:
     if layout == CREDIT_NOTE_LAYOUT:
         return "credit_note"

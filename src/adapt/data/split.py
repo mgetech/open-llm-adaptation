@@ -33,7 +33,13 @@ from typing import Any, get_args
 
 from adapt.config import Layout, Platform, load_platform
 from adapt.data.edge import CATEGORIES, EDGE_WEIGHTS, edge_counts, generate_edge_documents
-from adapt.data.generate import Supplier, draw_invoice, generate_invoices, make_suppliers
+from adapt.data.generate import (
+    Supplier,
+    draw_invoice,
+    generate_invoices,
+    invoice_facts,
+    make_suppliers,
+)
 from adapt.data.layouts import render_document
 from adapt.data.noise import add_noise
 from adapt.data.pseudonymise import pseudonymise
@@ -82,10 +88,21 @@ def split_suppliers(platform: Platform, suppliers: Sequence[Supplier]) -> dict[s
     return groups
 
 
+INTERNAL_KEYS = ("facts", "clean_text")
+
+
 def build_splits(
-    platform: Platform, seed: int, sizes: Mapping[str, int] = SPLIT_SIZES
+    platform: Platform,
+    seed: int,
+    sizes: Mapping[str, int] = SPLIT_SIZES,
+    *,
+    keep_clean: bool = False,
 ) -> dict[str, list[dict[str, Any]]]:
-    """Build all splits as lists of records. Raises LeakageError if a split leaks."""
+    """Build all splits as lists of records. Raises LeakageError if a split leaks.
+
+    With `keep_clean` every record also has `facts` (what the document says) and `clean_text`
+    (the text before noise), which the rewrite step needs. They are never written to the files.
+    """
     suppliers = make_suppliers(platform.rules, seed)
     groups = split_suppliers(platform, suppliers)
     canaries = _canaries(platform, seed, groups["train"])
@@ -103,7 +120,42 @@ def build_splits(
         for name, records in splits.items()
     }
     check_leakage(splits)
+    if not keep_clean:
+        splits = {
+            name: [{k: v for k, v in r.items() if k not in INTERNAL_KEYS} for r in records]
+            for name, records in splits.items()
+        }
     return splits
+
+
+def apply_rewrites(
+    splits: Mapping[str, Sequence[Mapping[str, Any]]], rewrites: Mapping[str, str], seed: int
+) -> dict[str, list[dict[str, Any]]]:
+    """Put the rewritten text into the documents it belongs to.
+
+    The splits come from `build_splits(..., keep_clean=True)`. A rewrite is pseudonymised and gets
+    the same level of noise as the text it replaces. Labels are never touched. Every record gets
+    `rewritten`, and the internal keys are dropped.
+    """
+    known = {record["id"] for records in splits.values() for record in records}
+    unknown = sorted(set(rewrites) - known)
+    if unknown:
+        raise ValueError(f"rewrites for documents that do not exist: {unknown[:5]}")
+    out: dict[str, list[dict[str, Any]]] = {}
+    for name, records in splits.items():
+        out[name] = []
+        for record in records:
+            new = {k: v for k, v in record.items() if k not in INTERNAL_KEYS}
+            text = rewrites.get(record["id"])
+            if text is not None:
+                text = pseudonymise(text)
+                if record["noise"] != "none":
+                    rng = random.Random(f"{seed}/rewrite-noise/{record['id']}")
+                    text = add_noise(text, record["noise"], rng)
+                new["document_text"] = text
+            new["rewritten"] = text is not None
+            out[name].append(new)
+    return out
 
 
 def _with_seen_flag(record: dict[str, Any], train_names: set[str]) -> dict[str, Any]:
@@ -133,6 +185,8 @@ def _record(
     layout: str,
     noise: str,
     canary: dict[str, str] | None = None,
+    facts: dict[str, Any] | None = None,
+    clean_text: str | None = None,
 ) -> dict[str, Any]:
     return {
         "platform": platform.config.name,
@@ -145,6 +199,8 @@ def _record(
         "layout": layout,
         "noise": noise,
         "canary": canary,
+        "facts": facts,
+        "clean_text": text if clean_text is None else clean_text,
     }
 
 
@@ -181,7 +237,8 @@ def _build_split(
     )
     for index, invoice in enumerate(invoices):
         rng = random.Random(f"{split_seed}/render/{index}")
-        text = pseudonymise(render_document(invoice, rng))
+        clean = pseudonymise(render_document(invoice, rng))
+        text = clean
         level = rng.choices(levels, weights)[0]
         if level != "none":
             text = add_noise(text, level, rng)
@@ -196,6 +253,8 @@ def _build_split(
                 supplier=invoice.supplier.name,
                 layout=invoice.layout,
                 noise=level,
+                facts=invoice_facts(invoice),
+                clean_text=clean,
             )
         )
     edge = generate_edge_documents(
@@ -224,6 +283,7 @@ def _edge_record(platform: Platform, document: Any) -> dict[str, Any]:
         supplier=document.supplier,
         layout=document.layout,
         noise="high" if document.category == "heavy_noise" else "none",
+        facts=document.facts,
     )
 
 
@@ -255,6 +315,7 @@ def _canaries(
                 supplier=supplier.name,
                 layout=invoice.layout,
                 noise="none",
+                facts=invoice_facts(invoice),
                 canary={
                     "name": supplier.name,
                     "text_without_name": re.sub(re.escape(base), "", text, flags=re.IGNORECASE),
@@ -296,10 +357,12 @@ def write_data(
     data_dir: Path,
     manifest_path: Path,
     data_round: int | None = None,
+    extra: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Write the split files into the folder of the round, and the manifest. Return the manifest.
 
-    The round is the one after the rounds that were kept, unless `data_round` says another."""
+    The round is the one after the rounds that were kept, unless `data_round` says another.
+    The entries of `extra` are added to the manifest after the splits."""
     kept = _kept_rounds(manifest_path)
     number = data_round or len(kept) + 1
     out_dir = data_dir / platform / f"round{number}"
@@ -316,10 +379,44 @@ def write_data(
             "count": len(records),
             "sha256": _write_jsonl(out_dir / f"{split}.jsonl", records),
         }
+    manifest.update(extra or {})
     if kept:
         manifest["rounds"] = kept
     _write_manifest(manifest, manifest_path)
     return manifest
+
+
+def build_rewritten(
+    platform: Platform, seed: int, sizes: Mapping[str, int], folder: Path
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    """Build the splits with the accepted rewrites of `folder` in place of the generated text.
+
+    `folder` has `tasks.jsonl` and `accepted.jsonl` (see `rewrite_check.py`). A rewrite is used
+    only when the generated text it was written for is still the same. Returns the splits and the
+    manifest entry that describes the rewrites.
+    """
+    tasks = {t["id"]: t for t in _read_jsonl(folder / "tasks.jsonl")}
+    accepted = {r["id"]: r["document_text"] for r in _read_jsonl(folder / "accepted.jsonl")}
+    clean = build_splits(platform, seed, sizes, keep_clean=True)
+    drafts = {r["id"]: r["clean_text"] for records in clean.values() for r in records}
+    for doc_id in accepted:
+        digest = hashlib.sha256(drafts.get(doc_id, "").encode("utf-8")).hexdigest()
+        if doc_id not in tasks or tasks[doc_id]["draft_sha256"] != digest:
+            raise ValueError(f"{doc_id}: the rewrite was made for another generated text")
+    entry = {
+        "rewrite": {
+            "rewriter": "external model",
+            "documents": len(accepted),
+            "tasks": len(tasks),
+            "tasks_sha256": hashlib.sha256((folder / "tasks.jsonl").read_bytes()).hexdigest(),
+            "accepted_sha256": hashlib.sha256((folder / "accepted.jsonl").read_bytes()).hexdigest(),
+        }
+    }
+    return apply_rewrites(clean, accepted, seed), entry
+
+
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
 def _kept_rounds(manifest_path: Path) -> list[dict[str, Any]]:
@@ -383,6 +480,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument(
         "--note", default="", help="what the generator was like (with --keep-round)"
     )
+    parser.add_argument("--train-size", type=int, default=SPLIT_SIZES["train"])
+    parser.add_argument(
+        "--rewrites",
+        type=Path,
+        help="folder with tasks.jsonl and accepted.jsonl, to use the rewritten text",
+    )
     args = parser.parse_args(argv)
 
     if args.keep_round is not None:
@@ -393,8 +496,19 @@ def main(argv: Sequence[str] | None = None) -> None:
         print(f"kept round {entry['round']} (seed {entry['seed']}): {len(entry['splits'])} files")
         return
 
-    splits = build_splits(load_platform(args.platform), args.seed)
-    manifest = write_data(splits, args.platform, args.seed, args.data_dir, args.manifest)
+    platform = load_platform(args.platform)
+    sizes = {**SPLIT_SIZES, "train": args.train_size}
+    extra = None
+    if args.rewrites:
+        try:
+            splits, extra = build_rewritten(platform, args.seed, sizes, args.rewrites)
+        except ValueError as error:
+            raise SystemExit(f"error: {error}") from error
+    else:
+        splits = build_splits(platform, args.seed, sizes)
+    manifest = write_data(
+        splits, args.platform, args.seed, args.data_dir, args.manifest, extra=extra
+    )
     for split, entry in manifest["splits"].items():
         print(f"{split:9} {entry['count']:5} documents  {entry['sha256'][:12]}")
     print(f"manifest: {args.manifest}")

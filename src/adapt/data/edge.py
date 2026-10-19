@@ -28,6 +28,7 @@ from adapt.data.generate import (
     document_type,
     draw_amount,
     draw_invoice,
+    invoice_facts,
     make_invoice,
 )
 from adapt.data.layouts import NUMBER_STYLES, format_money, render_document
@@ -318,6 +319,7 @@ class EdgeDocument:
     expected_review: bool
     supplier: str
     layout: str
+    facts: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -419,6 +421,7 @@ def _document(
         expected_review=target["needs_review"] if expected_review is None else expected_review,
         supplier=invoice.supplier.name,
         layout=invoice.layout,
+        facts=invoice_facts(invoice, target["currency"]),
     )
 
 

@@ -1,0 +1,52 @@
+# How the generated documents are rewritten.
+#
+# A rewriter, a model run outside this repository, writes the text of a share of the
+# generated documents in its own words. The labels never change, and a check rejects any
+# rewrite where a fact changed (see src/adapt/data/rewrite_check.py).
+
+rewriter:
+  kind: external
+
+# Documents handed out in one step, and how often a rejected document is tried again.
+batch_size: 40
+max_attempts: 3
+pilot_size: 40
+
+# Categories whose damage in the text would be repaired by a rewrite, so they are never sent.
+never_rewritten: [heavy_noise, missing_total]
+
+# The look of a rewritten document. Each style fits some kinds of document:
+# `kinds` lists them, `foreign` is "only" for suppliers outside Germany, "never" for suppliers
+# in Germany and "any" for both, `payment` means the document has a cash and change line, and
+# `types` limits the style to some kinds of supplier (it is never given to the rewriter).
+styles:
+  - {text: "narrow thermal receipt, shortened item names in capitals", kinds: [receipt], foreign: never}
+  - {text: "supermarket receipt, one tax letter at the end of each item line and a tax table at the bottom", kinds: [receipt], foreign: never}
+  - {text: "receipt with a quantity line under each item", kinds: [receipt], foreign: never}
+  - {text: "receipt with cash and change lines at the bottom", kinds: [receipt], foreign: never, payment: true}
+  - {text: "restaurant bill with a table number and a service line without an amount", kinds: [receipt], foreign: never, types: [restaurant, caterer]}
+  - {text: "fuel station slip with a pump number", kinds: [receipt], foreign: never, types: [fuel_station]}
+  - {text: "taxi or parking slip, very short", kinds: [receipt], foreign: never, types: [taxi_company, parking_operator, rail_operator]}
+  - {text: "small shop receipt written as one block of text", kinds: [receipt], foreign: never}
+  - {text: "formal business invoice with a sender block, a customer number and payment terms", kinds: [invoice], foreign: any}
+  - {text: "invoice with a simple table of aligned columns", kinds: [invoice, credit_note], foreign: any}
+  - {text: "invoice with the columns cut into separate lines (headings first and the values below)", kinds: [invoice, credit_note], foreign: any}
+  - {text: "invoice with pipe-separated rows and position numbers", kinds: [invoice], foreign: any}
+  - {text: "invoice written as a short email with a subject line", kinds: [invoice], foreign: any}
+  - {text: "invoice as a bullet list in a chat message", kinds: [invoice], foreign: any}
+  - {text: "one-paragraph letter that mentions every item in a sentence", kinds: [invoice], foreign: any}
+  - {text: "online shop order confirmation with an order number", kinds: [invoice], foreign: any}
+  - {text: "monthly statement with a short date in front of each line", kinds: [invoice], foreign: any}
+  - {text: "service invoice with hours or sessions, position numbers and a short note", kinds: [invoice], foreign: any}
+  - {text: "utility or telephone bill with a billing period line", kinds: [invoice], foreign: never, types: [utility_provider, telecom_provider]}
+  - {text: "rent or insurance notice, short and formal", kinds: [invoice], foreign: never, types: [office_landlord, insurance_company]}
+  - {text: "credit note with a reference to an earlier invoice (invent its number and a date before the document date)", kinds: [credit_note], foreign: never}
+  - {text: "credit note for returned goods as a simple list", kinds: [credit_note], foreign: never}
+  - {text: "pro-forma style document with a delivery note number and a delivery date", kinds: [invoice], foreign: any}
+  - {text: "invoice from a foreign supplier with a VAT ID line, net amounts and no VAT lines", kinds: [invoice], foreign: only}
+  - {text: "very short invoice of three or four lines", kinds: [invoice], foreign: any}
+  - {text: "long invoice with many small extras such as notes, a page line and a footer", kinds: [invoice], foreign: any}
+  - {text: "fax-like invoice with ragged spacing but clean text", kinds: [invoice, credit_note], foreign: any}
+  - {text: "invoice with lines of the form item - amount and a closing line", kinds: [invoice], foreign: any}
+  - {text: "bank or service fee notice", kinds: [invoice], foreign: never, types: [bank]}
+  - {text: "subscription or licence invoice with a period line", kinds: [invoice], foreign: any, types: [software_vendor, it_service_provider, web_agency, telecom_provider, eu_cloud_hosting, us_software_subscription]}
