@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data keep-round validate-gold models-check baseline train eval-sft eval gate lint format test requirements
+.PHONY: help setup install-vllm data keep-round validate-gold models-check baseline train eval-sft eval pair gate lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -50,6 +50,9 @@ eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINTS=; optional RO
 
 baseline:  ## Few-shot baseline of one model, with its own server (MODEL=; optional ROUND=, SPLITS=, OUT_DIR=, DRY_RUN=1)
 	uv run python -m adapt.baseline --platform $(PLATFORM) --model $(MODEL) 		$(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
+
+pair:  ## Combine the saved results of two systems into one pair configuration (FIRST=, SECOND=, NAME=; optional CONFIDENCE=each|ignore, SPLITS=, ROUND=, OUT_DIR=)
+	uv run python -m adapt.eval.configuration --platform $(PLATFORM) --first $(FIRST) --second $(SECOND) --name $(NAME) 		$(if $(CONFIDENCE),--confidence $(CONFIDENCE)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR))
 
 gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=, ROUND=, OUT_DIR=)
 	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE)) $(if $(ROUND),--round $(ROUND)) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))

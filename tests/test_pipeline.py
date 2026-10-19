@@ -229,6 +229,27 @@ def test_a_reverse_charge_answer_is_not_compared_with_printed_vat(pipe, server):
     assert "vat_mismatch" not in result.reasons
 
 
+def test_the_heavy_noise_check_flags_exactly_the_heavy_noise_documents(platform):
+    """Over train, dev, test_iid, test_ood and edge: no other document is flagged, and every
+    document made with illegible amounts is. The gold sets are not read."""
+    records = [
+        json.loads(line)
+        for line in split_path("tax-booking", "train").read_text("utf-8").splitlines()
+    ]
+    for split in ("dev", "test_iid", "test_ood", "edge"):
+        records += [
+            json.loads(line)
+            for line in split_path("tax-booking", split).read_text("utf-8").splitlines()
+        ]
+    flagged = {
+        r["id"]
+        for r in records
+        if "heavy_noise" in document_problems(r["document_text"], r["chart"], platform)
+    }
+    made = {r["id"] for r in records if r["category"] == "heavy_noise"}
+    assert made and flagged == made
+
+
 def test_only_the_document_checks_set_by_rule(pipe, server):
     assert pipe.process("", "SKR03").by_rule
     assert not run(pipe, server, output=FLAGGED).by_rule

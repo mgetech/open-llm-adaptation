@@ -5,9 +5,10 @@ import pytest
 
 from adapt.config import load_platform
 from adapt.data.split import build_splits
-from adapt.eval.runner import SPLITS, load_documents, split_path
+from adapt.eval.runner import load_documents, split_path
 from adapt.vat_check import parse_amount, vat_mismatch
 
+GENERATED = ("dev", "test_iid", "test_ood", "edge")
 ITEMS = [
     {"description": "Printer paper A4", "amount": 23.8, "account": "4930", "vat_rate": "19"},
     {"description": "Tax handbook 2026", "amount": 21.4, "account": "4940", "vat_rate": "7"},
@@ -134,12 +135,16 @@ def test_the_amounts_may_differ_by_a_cent_from_rounding():
 
 
 def test_the_reference_answers_never_differ_from_the_printed_vat():
-    """Over every generated document, noisy ones included, the correct answer is never flagged."""
+    """Over every generated document, noisy ones included, the correct answer is never flagged.
+
+    Only the generated splits are read here. The gold sets are not."""
     train = [
         (json.loads(line)["document_text"], json.loads(line)["target"])
         for line in split_path("tax-booking", "train").read_text("utf-8").splitlines()
     ]
-    others = [(d.text, d.target) for split in SPLITS for d in load_documents("tax-booking", split)]
+    others = [
+        (d.text, d.target) for split in GENERATED for d in load_documents("tax-booking", split)
+    ]
     documents = [pair for pair in train + others if pair[1]["items"]]
     assert len(documents) > 3000
     flagged = [
