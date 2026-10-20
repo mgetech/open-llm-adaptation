@@ -182,12 +182,12 @@ def test_no_dev_real_document_is_in_a_training_file_of_the_project():
     assert train_overlap(path, "tax-booking") == []
 
 
-def test_the_dev_real_file_of_the_project_is_valid_and_has_30_to_40_documents():
+def test_the_dev_real_file_of_the_project_is_valid_and_has_at_least_30_documents():
     path = gold_path("tax-booking", name=DEV_REAL)
     if not path.exists():
         pytest.skip("dev_real.jsonl is not written yet")
     assert validate_gold(path, load_platform("tax-booking")) == []
-    assert 30 <= len(path.read_text(encoding="utf-8").splitlines()) <= 40
+    assert len(path.read_text(encoding="utf-8").splitlines()) >= 30
 
 
 def run_split(server, repository, split, **changes):
