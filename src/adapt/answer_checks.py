@@ -28,7 +28,9 @@ _REVERSE_CHARGE = re.compile(
             r"(?:recipient|customer|buyer|purchaser)",
             r"§\s*13b",
             r"\b13b\s+UStG",
-            r"\bart(?:icle)?\.?\s*196\b",
+            # An article number on an item line also looks like "Art. 196", so the number counts
+            # only when a legal reference follows.
+            r"\bart(?:icle)?\.?\s*196\b(?=\s*(?:of\b|VAT\b|Directive\b|Council\b|EU\b|EC\b|MwSt|2006))",
             r"2006/112",
             r"intra[\s-]*community\s+(?:supply|acquisition|delivery)",
             r"steuerschuldnerschaft",

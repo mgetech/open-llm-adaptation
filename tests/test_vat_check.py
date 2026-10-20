@@ -93,6 +93,54 @@ def test_a_word_merged_into_the_number_before_it_is_still_read():
     assert vat_mismatch(text, [{**item, "vat_rate": "19"}])
 
 
+@pytest.mark.parametrize(
+    "vat_text",
+    [
+        "Included VAT 19% 1.90 and 7% 0.70.",
+        "VAT 19% 1.90 and 7% 0.70",
+        "including VAT 19% 1.90, 7% 0.70",
+        "VAT 19% 1.90\n7% 0.70",
+        "VAT 19% 1.90 / 7% 0.70",
+        "VAT 19% 1.90 andVAT 7% 0.70",
+        "VAT19% 1.90 and7% 0.70 inc1uded",
+    ],
+)
+def test_a_list_of_rates_after_one_vat_is_read(vat_text):
+    text = f"Shop\nTea 10.70\nCake 11.90\nTotal EUR 22.60\n{vat_text}"
+    items = [
+        {"description": "Tea", "amount": 10.7, "account": "3300", "vat_rate": "7"},
+        {"description": "Cake", "amount": 11.9, "account": "3400", "vat_rate": "19"},
+    ]
+    assert not vat_mismatch(text, items)
+    assert vat_mismatch(text, at_rate(items, 0, "19"))
+
+
+def test_the_net_after_the_vat_of_a_rate_is_read():
+    text = "Rent 51.01\nDesk 537.62\nTotal EUR 588.63\nVAT 19% 85.84 on net 451.78\nNet 0% 51.01"
+    items = [
+        {"description": "Rent", "amount": 51.01, "account": "4210", "vat_rate": "0"},
+        {"description": "Desk", "amount": 537.62, "account": "4210", "vat_rate": "19"},
+    ]
+    assert not vat_mismatch(text, items)
+    assert vat_mismatch(text, at_rate(items, 1, "7"))
+
+
+def test_a_rate_in_a_list_that_cannot_be_read_is_ignored():
+    text = "Shop\nTea 10.70\nCake 11.90\nVAT 19% 1.90 and 7% O.70"
+    items = [
+        {"description": "Tea", "amount": 10.7, "account": "3300", "vat_rate": "7"},
+        {"description": "Cake", "amount": 11.9, "account": "3400", "vat_rate": "19"},
+    ]
+    assert not vat_mismatch(text, items)
+
+
+def test_an_amount_with_a_look_alike_letter_inside_is_not_read_as_a_shorter_one():
+    text = "Shop\nTea 10.70\nNet 7%: 10.00  VAT 7%: 0.7l"
+    item = {"description": "Tea", "amount": 10.7, "account": "3300", "vat_rate": "7"}
+    assert not vat_mismatch(text, [item])
+    assert not vat_mismatch("Shop\nTea 10.70\nNet 7%: 10.00  VAT 7%: 0.70l", [item])
+
+
 @pytest.mark.parametrize("items", [ITEMS, []])
 def test_a_document_without_printed_vat_is_not_checked(items):
     assert not vat_mismatch("Shop\nTea 10.70\nTotal 10.70", items)

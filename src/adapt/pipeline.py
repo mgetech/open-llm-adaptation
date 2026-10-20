@@ -25,11 +25,12 @@ log = logging.getLogger(__name__)
 MAX_TEXT_LENGTH = 6000
 
 # A word for the total, then an amount with cents. The amount may hold the look-alike
-# characters that OCR swaps for digits (O, o, l, I, S), as the training data does.
+# characters that OCR swaps for digits (O, o, l, I, S), as the training data does. The words
+# between the two may hold a 1 for an l ("Total payab1e EUR").
 _DIGIT = r"[\dOolIS]"
 _TOTAL = re.compile(
     r"(tota[l1I]|amount due|amount payable|balance due|to pay|payable|sum)"
-    rf"[^\d]{{0,40}}{_DIGIT}[\dOolIS., ]*[.,]{_DIGIT}{_DIGIT}(?!\d)",
+    rf"(?:[^\d]|(?<=[a-z])1(?=[a-z])){{0,40}}{_DIGIT}[\dOolIS., ]*[.,]{_DIGIT}{_DIGIT}(?!\d)",
     re.IGNORECASE,
 )
 # A currency sign or a currency code other than the euro.
@@ -37,9 +38,10 @@ _FOREIGN_CURRENCY = re.compile(
     r"[$£¥]|\b(?:USD|GBP|CHF|JPY|CNY|CAD|AUD|SEK|NOK|DKK|PLN|CZK|HUF|RON|BGN|TRY)\b"
 )
 # An amount, with a `?`, `#` or `*` where a digit could not be read. A bare `#1234` is an invoice
-# number, not an amount, so the shape must have a decimal separator and two decimals.
+# number, not an amount, so the shape must have a decimal separator and two decimals. It may
+# follow leader dots or touch a word after it, but not be the end of a longer number.
 _AMOUNT_SHAPE = re.compile(
-    r"(?<![\w?#*.,])(?:[\d?#*]{1,3}[.,])*[\d?#*]{1,3}[.,][\d?#*]{2}(?![\w?#*])"
+    r"(?<![\w?#*,])(?<![\d?#*]\.)(?:[\d?#*]{1,3}[.,])*[\d?#*]{1,3}[.,][\d?#*]{2}(?![\d?#*])"
 )
 _ACCOUNT_VALUE = re.compile(r'"account"\s*:\s*"([^"]*)"')
 
@@ -84,11 +86,15 @@ class Result:
     by_rule: bool = False
 
 
+def _unreadable(amount: str) -> bool:
+    """An amount with a smudge in it: some digits left, or so many smudges that it is no
+    longer a number."""
+    smudges = sum(c in "?#*" for c in amount)
+    return smudges > 0 and (any(c.isdigit() for c in amount) or smudges >= 3)
+
+
 def _has_unreadable_amount(text: str) -> bool:
-    return any(
-        any(c.isdigit() for c in match) and any(c in "?#*" for c in match)
-        for match in map(re.Match.group, _AMOUNT_SHAPE.finditer(text))
-    )
+    return any(_unreadable(match.group()) for match in _AMOUNT_SHAPE.finditer(text))
 
 
 def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewReason]:

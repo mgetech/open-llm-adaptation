@@ -165,6 +165,14 @@ def test_a_currency_code_inside_a_word_is_not_a_currency(platform):
     assert document_problems(text, "SKR03", platform) == []
 
 
+@pytest.mark.parametrize(
+    "line",
+    ["Total payab1e EUR 297.49", "Totalpayab1e EUR 311,21", "Tota1 sa1e EUR 53,4S"],
+)
+def test_a_one_for_an_l_in_the_words_before_the_total_is_still_a_total(platform, line):
+    assert document_problems(f"Nordpaper GmbH\n{line}", "SKR03", platform) == []
+
+
 def test_the_rule_flags_exactly_the_documents_labelled_with_another_currency(platform):
     train = [
         (record["id"], record["document_text"], record["chart"], record["target"])
@@ -194,6 +202,9 @@ def test_the_rule_flags_exactly_the_documents_labelled_with_another_currency(pla
         "Printer paper A4 ... #3.80",
         "Printer paper A4 ... 2*,80",
         "Printer paper A4 ... 1.2?4,00",
+        "Printer paper A4 ...12,*8PRINTER PAPER",
+        "Printer paper A4 ... ??,?#",
+        "Printer paper A4 ... *,#*",
     ],
 )
 def test_an_amount_that_cannot_be_read_needs_review_without_the_model(pipe, server, line):
