@@ -36,7 +36,7 @@ def test_the_optimiser_settings(config):
 
 
 def test_the_length_limit_and_the_checkpoint_interval(config):
-    assert config.data.max_length == 1024
+    assert config.data.max_length == 1280
     assert config.checkpoint.save_steps == 50
 
 

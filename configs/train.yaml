@@ -23,7 +23,7 @@ optimiser:
   gradient_checkpointing: true
 
 data:
-  max_length: 1024  # tokens of prompt and answer together. A longer example stops the run.
+  max_length: 1280  # tokens of prompt and answer together. A longer example stops the run.
 
 checkpoint:
   save_steps: 50  # the dev_real loss is measured each time a checkpoint is saved
