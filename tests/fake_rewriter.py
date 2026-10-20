@@ -9,7 +9,7 @@ def money(amount: float) -> str:
 
 def rewrite(task: dict, variant: int = 0) -> str:
     """A text that keeps every fact of `task` and is not close to its draft."""
-    lines = [task["supplier"].upper(), f"Style {variant}: {task['style'][:30]}"]
+    lines = [task["supplier"].upper(), f"Document variant {variant}"]
     day = task["date"].split("-")
     lines.append(f"Date {day[2]}.{day[1]}.{day[0]}")
     for item in task["items"]:

@@ -372,3 +372,17 @@ def test_the_first_reply_is_numbered_one_and_the_next_follows(tmp_path, capsys):
     write_tasks(tmp_path, make_tasks(1))
     main(["next", "--dir", str(tmp_path)])
     assert "out/reply-0001.jsonl" in capsys.readouterr().out
+
+
+def test_filler_lines_are_rejected():
+    for filler in ("Qty: not specified", "Hours: not applicable", "Ref: n/a", "Colour unknown"):
+        assert has_reason(reasons(GOOD + "\n" + filler), "filler text"), filler
+
+
+def test_a_purpose_word_is_rejected_unless_the_task_already_has_it():
+    for word in ("office", "private", "business", "goods", "household", "resale"):
+        assert has_reason(reasons(GOOD + f"\nThis covers {word} items"), "word that hints"), word
+    assert reasons(GOOD + "\nThis is a sentence about nothing in particular") == []
+    named = task(items=[{"description": "Office chair", "amount": 9.7}], total=9.7, vat=[])
+    text = "Fenwick Trading GmbH 09.05.2026\nOffice chair 9.70\nTotal 9.70 EUR, thanks again"
+    assert not has_reason(check_rewrite(named, text), "word that hints")

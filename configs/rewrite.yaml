@@ -28,7 +28,7 @@ styles:
   - {text: "fuel station slip with a pump number", kinds: [receipt], foreign: never, types: [fuel_station]}
   - {text: "taxi or parking slip, very short", kinds: [receipt], foreign: never, types: [taxi_company, parking_operator, rail_operator]}
   - {text: "small shop receipt written as one block of text", kinds: [receipt], foreign: never}
-  - {text: "formal business invoice with a sender block, a customer number and payment terms", kinds: [invoice], foreign: any}
+  - {text: "formal invoice with a sender block, a customer number and payment terms", kinds: [invoice], foreign: any}
   - {text: "invoice with a simple table of aligned columns", kinds: [invoice, credit_note], foreign: any}
   - {text: "invoice with the columns cut into separate lines (headings first and the values below)", kinds: [invoice, credit_note], foreign: any}
   - {text: "invoice with pipe-separated rows and position numbers", kinds: [invoice], foreign: any}
@@ -41,7 +41,7 @@ styles:
   - {text: "utility or telephone bill with a billing period line", kinds: [invoice], foreign: never, types: [utility_provider, telecom_provider]}
   - {text: "rent or insurance notice, short and formal", kinds: [invoice], foreign: never, types: [office_landlord, insurance_company]}
   - {text: "credit note with a reference to an earlier invoice (invent its number and a date before the document date)", kinds: [credit_note], foreign: never}
-  - {text: "credit note for returned goods as a simple list", kinds: [credit_note], foreign: never}
+  - {text: "credit note for returned items as a simple list", kinds: [credit_note], foreign: never}
   - {text: "pro-forma style document with a delivery note number and a delivery date", kinds: [invoice], foreign: any}
   - {text: "invoice from a foreign supplier with a VAT ID line, net amounts and no VAT lines", kinds: [invoice], foreign: only}
   - {text: "very short invoice of three or four lines", kinds: [invoice], foreign: any}

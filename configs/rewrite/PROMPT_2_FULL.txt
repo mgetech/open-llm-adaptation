@@ -8,7 +8,7 @@ Repeat this loop until the program prints DONE:
 
 Important:
 - You write every text yourself. Never write a program, a template, a loop or a text replacement that makes the texts. Programs are only for running rewrite.py.
-- Do not skip documents and do not shorten the work. Keep the texts different from each other, as RULES.md says.
+- Do not skip documents and do not shorten the work. Keep the texts different from each other, as RULES.md says. About every 10 batches, read RULES.md again (also the part "Common mistakes") and check that your last answers do not repeat the same headings, openings or closing lines.
 - Your progress is saved in the out/ folder. If your session ends or your memory of this conversation is cut, nothing is lost: read RULES.md again and run  python rewrite.py next  to go on.
 - Do not stop to report. Do not ask for a decision. If a document is rejected three times, the program gives it up. That is fine.
 

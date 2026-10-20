@@ -185,15 +185,67 @@ def choose_pilot(tasks: Sequence[Mapping[str, Any]], records_by_id: Mapping[str,
     return picked[:size]
 
 
+WEAK_CATEGORIES = (
+    "business_private_mixed",
+    "ambiguous_purpose",
+    "prompt_injection",
+    "reverse_charge_free_text",
+)
+
+
+def choose_extra_tasks(
+    splits: Mapping[str, Sequence[Mapping[str, Any]]],
+    done: set[str],
+    seed: int,
+    config: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Tasks for the training documents of the weak categories that no task has yet."""
+    return [
+        make_task(record, config["styles"], seed)
+        for record in splits["train"]
+        if record["category"] in WEAK_CATEGORIES and record["id"] not in done
+    ]
+
+
+def export_extra(
+    platform: str, seed: int, train_size: int, main: Path, out: Path
+) -> dict[str, Any]:
+    """Write a folder with tasks for the weak categories that the main export left out."""
+    config = load_config()
+    sizes = {**SPLIT_SIZES, "train": train_size}
+    splits = build_splits(load_platform(platform, PLATFORMS_DIR), seed, sizes, keep_clean=True)
+    done = {
+        json.loads(line)["id"] for line in (main / "tasks.jsonl").read_text("utf-8").splitlines()
+    }
+    tasks = choose_extra_tasks(splits, done, seed, config)
+    write_package(out, tasks, [], config, templates=("RULES.md",), checker=False, archive=False)
+    return {"tasks": len(tasks), "folder": out}
+
+
 def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     text = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows)
     path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def write_package(
-    folder: Path, tasks: Sequence[Mapping[str, Any]], pilot: Sequence[Mapping[str, Any]], config
-) -> Path:
-    """Write the folder the rewriter works in, and a zip file of it. Return the zip path."""
+    folder: Path,
+    tasks: Sequence[Mapping[str, Any]],
+    pilot: Sequence[Mapping[str, Any]],
+    config,
+    *,
+    templates: Sequence[str] = (
+        "README.txt",
+        "RULES.md",
+        "PROMPT_1_PILOT.txt",
+        "PROMPT_2_FULL.txt",
+    ),
+    checker: bool = True,
+    archive: bool = True,
+) -> Path | None:
+    """Write the folder the rewriter works in, and a zip file of it. Return the zip path.
+
+    `templates` are the text files copied from `configs/rewrite/`, `checker` says whether the
+    check program is copied as `rewrite.py`."""
     if folder.exists():
         shutil.rmtree(folder)
     (folder / "out").mkdir(parents=True)
@@ -201,9 +253,12 @@ def write_package(
     _write_jsonl(folder / "pilot.jsonl", pilot)
     settings = {"batch_size": config["batch_size"], "max_attempts": config["max_attempts"]}
     (folder / "config.json").write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
-    shutil.copyfile(CHECK_SOURCE, folder / "rewrite.py")
-    for name in ("README.txt", "RULES.md", "PROMPT_1_PILOT.txt", "PROMPT_2_FULL.txt"):
+    if checker:
+        shutil.copyfile(CHECK_SOURCE, folder / "rewrite.py")
+    for name in templates:
         shutil.copyfile(TEMPLATES / name, folder / name)
+    if not archive:
+        return None
     archive_path = folder.with_name(folder.name + ".zip")
     with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(f"{folder.name}/out/", "")

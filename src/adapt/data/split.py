@@ -387,16 +387,23 @@ def write_data(
 
 
 def build_rewritten(
-    platform: Platform, seed: int, sizes: Mapping[str, int], folder: Path
+    platform: Platform, seed: int, sizes: Mapping[str, int], folders: Path | Sequence[Path]
 ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
-    """Build the splits with the accepted rewrites of `folder` in place of the generated text.
+    """Build the splits with the accepted rewrites of `folders` in place of the generated text.
 
-    `folder` has `tasks.jsonl` and `accepted.jsonl` (see `rewrite_check.py`). A rewrite is used
-    only when the generated text it was written for is still the same. Returns the splits and the
-    manifest entry that describes the rewrites.
+    Each folder has `tasks.jsonl` and `accepted.jsonl` (see `rewrite_check.py`). A rewrite is used
+    only when the generated text it was written for is still the same, and no document may be in
+    two folders. Returns the splits and the manifest entry that describes the rewrites.
     """
-    tasks = {t["id"]: t for t in _read_jsonl(folder / "tasks.jsonl")}
-    accepted = {r["id"]: r["document_text"] for r in _read_jsonl(folder / "accepted.jsonl")}
+    folders = [folders] if isinstance(folders, Path) else list(folders)
+    tasks: dict[str, dict[str, Any]] = {}
+    accepted: dict[str, str] = {}
+    for folder in folders:
+        for task in _read_jsonl(folder / "tasks.jsonl"):
+            if task["id"] in tasks:
+                raise ValueError(f"{task['id']}: the document is in two rewrite folders")
+            tasks[task["id"]] = task
+        accepted |= {r["id"]: r["document_text"] for r in _read_jsonl(folder / "accepted.jsonl")}
     clean = build_splits(platform, seed, sizes, keep_clean=True)
     drafts = {r["id"]: r["clean_text"] for records in clean.values() for r in records}
     for doc_id in accepted:
@@ -408,11 +415,18 @@ def build_rewritten(
             "rewriter": "external model",
             "documents": len(accepted),
             "tasks": len(tasks),
-            "tasks_sha256": hashlib.sha256((folder / "tasks.jsonl").read_bytes()).hexdigest(),
-            "accepted_sha256": hashlib.sha256((folder / "accepted.jsonl").read_bytes()).hexdigest(),
+            "tasks_sha256": _digest(folders, "tasks.jsonl"),
+            "accepted_sha256": _digest(folders, "accepted.jsonl"),
         }
     }
     return apply_rewrites(clean, accepted, seed), entry
+
+
+def _digest(folders: Sequence[Path], name: str) -> str:
+    digest = hashlib.sha256()
+    for folder in folders:
+        digest.update((folder / name).read_bytes())
+    return digest.hexdigest()
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -484,7 +498,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument(
         "--rewrites",
         type=Path,
-        help="folder with tasks.jsonl and accepted.jsonl, to use the rewritten text",
+        nargs="+",
+        help="folders with tasks.jsonl and accepted.jsonl, to use the rewritten text",
     )
     args = parser.parse_args(argv)
 

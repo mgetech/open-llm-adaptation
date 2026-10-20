@@ -1,0 +1,9 @@
+You are going to write new evaluation documents (invoices, receipts, credit notes) for a data project. This is job A of three. All documents are invented. Do not ask me anything and do not stop until you are done. Use "python3" instead of "python" if "python" does not work.
+
+This is a fresh session on purpose. Do NOT open any file in the folders B_label and C_rewrite. You must write the new documents from your own knowledge, not from other documents.
+
+1. Read README.txt, then GUIDE.md (the booking rules and the record format), then A_write/WRITE_GUIDE.md (what to write). WRITE_GUIDE.md says: 60 records in three batches of 20, with the ids real-037 to real-096.
+2. Write the records yourself, batch by batch, and append each batch to A_write/new_records.jsonl (one JSON object per line). Never write a program that makes the documents. Make them look like real documents, as WRITE_GUIDE.md says, and check every sum and every VAT line before you save a batch.
+3. Run:  cd A_write  and  python ../tools/records_check.py
+   It lists every problem. Fix the records and run it again until it says "all records are good".
+4. Then tell me that job A is done. Do not start jobs B or C.

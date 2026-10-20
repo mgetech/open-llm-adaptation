@@ -50,6 +50,22 @@ MONTHS = (
     "december",
 )
 ALLOWED_NON_ASCII = "€£"
+# Words that say what a purchase is for. They may appear only when the supplier name, an item
+# name or the generated draft already has them, because they would teach a shortcut that real
+# documents do not offer.
+HINT_WORDS = (
+    "office",
+    "private",
+    "personal",
+    "household",
+    "resale",
+    "business",
+    "goods",
+    "merchandise",
+)
+FILLER = re.compile(
+    r"\b(?:not specified|not applicable|not available|unspecified|n/a|unknown)\b", re.IGNORECASE
+)
 GERMAN_WORDS = (
     "rechnung",
     "gutschrift",
@@ -289,6 +305,11 @@ def check_rewrite(task: dict, text: object) -> list[str]:
     if found:
         reasons.append(f"German word: {found[0]}")
     reasons += identifier_problems(task, text)
+    if FILLER.search(rest):
+        reasons.append(
+            "filler text such as 'not specified': leave a line out when there is no data"
+        )
+    reasons += hint_problems(task, rest)
 
     draft = task.get("draft") or ""
     if draft:
@@ -297,6 +318,19 @@ def check_rewrite(task: dict, text: object) -> list[str]:
         elif difflib.SequenceMatcher(None, draft, text, autojunk=False).ratio() > CLOSE_TO_DRAFT:
             reasons.append("the text is too close to the draft, write it in your own words")
     return reasons
+
+
+def hint_problems(task: dict, rest: str) -> list[str]:
+    """Purpose words in the text that neither the task nor its draft has."""
+    known = " ".join(
+        [task["supplier"], task.get("draft") or ""] + [i["description"] for i in task["items"]]
+    ).lower()
+    found = [
+        w
+        for w in HINT_WORDS
+        if re.search(rf"\b{w}\b", rest.lower()) and not re.search(rf"\b{w}\b", known)
+    ]
+    return [f"word that hints at the purpose of the purchase: {w}" for w in found]
 
 
 def rate_problems(task: dict, text: str) -> list[str]:
