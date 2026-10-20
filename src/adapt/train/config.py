@@ -46,9 +46,15 @@ class Checkpoint(_Model):
     keep: int = Field(gt=0)
 
 
+class EarlyStopping(_Model):
+    patience: int = Field(gt=0)
+    min_delta: float = Field(ge=0)
+
+
 class Smoke(_Model):
     steps: int = Field(gt=0)
     examples: int = Field(gt=0)
+    eval_examples: int = Field(gt=0)
     tokenizer_examples: int = Field(gt=0)
     batch_size: int = Field(gt=0)
     max_length: int = Field(gt=0)
@@ -68,6 +74,7 @@ class TrainConfig(_Model):
     optimiser: Optimiser
     data: Data
     checkpoint: Checkpoint
+    early_stopping: EarlyStopping
     logging_steps: int = Field(gt=0)
     smoke: Smoke
 

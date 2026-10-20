@@ -28,7 +28,7 @@ def test_the_optimiser_settings(config):
     assert optimiser.learning_rate == 2e-4
     assert optimiser.lr_scheduler == "cosine"
     assert optimiser.warmup_ratio == 0.03
-    assert optimiser.epochs == 2
+    assert optimiser.epochs == 1
     assert optimiser.optim == "paged_adamw_8bit"
     assert optimiser.batch_size * optimiser.gradient_accumulation_steps == 16
     assert (optimiser.batch_size, optimiser.gradient_accumulation_steps) == (4, 4)
@@ -37,11 +37,16 @@ def test_the_optimiser_settings(config):
 
 def test_the_length_limit_and_the_checkpoint_interval(config):
     assert config.data.max_length == 1024
-    assert config.checkpoint.save_steps == 100
+    assert config.checkpoint.save_steps == 50
+
+
+def test_early_stopping_waits_for_three_checkpoints_without_a_better_loss(config):
+    assert (config.early_stopping.patience, config.early_stopping.min_delta) == (3, 0.0)
 
 
 def test_a_smoke_run_is_two_steps(config):
     assert config.smoke.steps == 2
+    assert config.smoke.eval_examples > 0
 
 
 def test_the_tiny_model_fits_the_tiny_attention_layout(config):

@@ -16,7 +16,7 @@ optimiser:
   learning_rate: 0.0002
   lr_scheduler: cosine
   warmup_ratio: 0.03
-  epochs: 2
+  epochs: 1  # round 3 has 6000 training documents, the same passes as 2 epochs of 3000
   optim: paged_adamw_8bit
   batch_size: 4
   gradient_accumulation_steps: 4
@@ -26,8 +26,14 @@ data:
   max_length: 1024  # tokens of prompt and answer together. A longer example stops the run.
 
 checkpoint:
-  save_steps: 100
+  save_steps: 50  # the dev_real loss is measured each time a checkpoint is saved
   keep: 2
+
+# The loss on the dev_real documents decides when to stop and which checkpoint is kept. The
+# documents are never trained on. Without a dev_real file the run trains all its steps.
+early_stopping:
+  patience: 3  # checkpoints in a row without a better loss
+  min_delta: 0.0  # how much lower the loss must be to count as better
 
 logging_steps: 10
 
@@ -36,6 +42,7 @@ logging_steps: 10
 smoke:
   steps: 2
   examples: 16
+  eval_examples: 4  # dev_real documents the loss is measured on
   tokenizer_examples: 200  # records the tiny tokenizer is trained on
   batch_size: 2
   max_length: 4096  # the tiny tokenizer has few merges, so the same text is longer

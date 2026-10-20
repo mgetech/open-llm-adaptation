@@ -160,8 +160,18 @@ def test_the_notebook_trains_on_the_current_round_and_passes_it_to_every_step(co
 
 def test_a_later_round_runs_its_own_baseline_on_test_ood_before_the_gate(code):
     baseline = next(s for s in code if '"baseline"' in s)
-    assert baseline.startswith("if ROUND > 1:") and '"SPLITS=dev test_ood"' in baseline
+    assert baseline.startswith("if FINAL and ROUND > 1:")
+    assert '"SPLITS=dev test_ood"' in baseline
     assert code.index(baseline) < next(i for i, s in enumerate(code) if 'make("gate"' in s)
+
+
+def test_the_notebook_evaluates_dev_and_dev_real_only_until_the_final_run(code):
+    assert settings_of(code[0])["FINAL"] is False
+    assert 'SPLITS = [] if FINAL else ["SPLITS=dev dev_real"]' in code[0]
+    evaluation = next(s for s in code if '"eval-sft"' in s and "MAX_STEPS" not in s)
+    assert "*SPLITS" in evaluation
+    gate = next(s for s in code if 'make("gate"' in s)
+    assert gate.startswith("if FINAL:")
 
 
 def test_the_last_cell_zips_the_files_to_copy_and_the_adapter_and_is_skipped_in_a_dry_run(code):
