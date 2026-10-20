@@ -14,6 +14,7 @@ from adapt.data.gold import (
     train_overlap,
     validate_gold,
 )
+from adapt.data.rounds import current_round
 from adapt.eval.gate import GATE_SPLITS, REPORT_SPLITS, load_results
 from adapt.eval.rescore import ALL_SPLITS as RESCORE_SPLITS
 from adapt.eval.runner import (
@@ -63,8 +64,8 @@ def write_lines(path, records):
 def repository(tmp_path):
     """A copy of the current round with a one-document dev_real file, laid out like the project."""
     shutil.copy(DATA_DIR.parent / "results" / "data_manifest.json", _results(tmp_path))
-    source = DATA_DIR / "tax-booking" / "round2"
-    shutil.copytree(source, tmp_path / "data" / "tax-booking" / "round2")
+    folder = f"round{current_round()}"
+    shutil.copytree(DATA_DIR / "tax-booking" / folder, tmp_path / "data" / "tax-booking" / folder)
     write_lines(gold_path("tax-booking", tmp_path / "platforms", DEV_REAL), [RECORD])
     return tmp_path
 

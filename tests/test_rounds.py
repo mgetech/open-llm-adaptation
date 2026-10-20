@@ -1,6 +1,6 @@
 """Choosing the round of the data for training, evaluation and the baseline.
 
-These tests use the real data folder: round 2 is the current round and round 1 is kept in
+These tests use the real data folder: the last round is the current one and round 1 is kept in
 `data/tax-booking/round1/`. They use the fake server, so they need no GPU.
 """
 
@@ -96,7 +96,7 @@ def make_adapter(adapters_dir, name):
 
 
 def test_an_adapter_is_evaluated_on_the_data_of_its_round(tmp_path):
-    make_adapter(tmp_path, "qwen3-1.7b-r2-0")
+    make_adapter(tmp_path, f"qwen3-1.7b{round_tag(current_round())}-0")
     make_adapter(tmp_path, "qwen3-1.7b-0")
     base = ["--model", "qwen3-1.7b", "--dry-run", "--splits", "dev", "test_ood"]
     base += ["--adapters-dir", str(tmp_path)]
@@ -105,7 +105,10 @@ def test_an_adapter_is_evaluated_on_the_data_of_its_round(tmp_path):
 
     later = json.loads(
         results_file(
-            tmp_path / "later", "tax-booking", "qwen3-1.7b-sft-r2-0", "test_ood"
+            tmp_path / "later",
+            "tax-booking",
+            f"qwen3-1.7b-sft{round_tag(current_round())}-0",
+            "test_ood",
         ).read_text(encoding="utf-8")
     )
     first = json.loads(
@@ -124,14 +127,16 @@ def test_an_adapter_is_evaluated_on_the_data_of_its_round(tmp_path):
 def test_an_adapter_of_another_round_is_not_found(tmp_path, capsys):
     make_adapter(tmp_path, "qwen3-1.7b-0")  # round 1 only
     arguments = ["--model", "qwen3-1.7b", "--dry-run", "--adapters-dir", str(tmp_path)]
-    with pytest.raises(SystemExit, match="no adapter in .*qwen3-1.7b-r2-0"):
+    with pytest.raises(
+        SystemExit, match=f"no adapter in .*qwen3-1.7b{round_tag(current_round())}-0"
+    ):
         evaluate_main(arguments)
 
 
 def test_the_baseline_of_a_later_round_has_its_own_name_and_can_be_limited_to_a_split(tmp_path):
     arguments = ["--model", "qwen3-1.7b", "--dry-run", "--out-dir", str(tmp_path)]
     assert baseline_main([*arguments, "--splits", "dev", "test_ood"]) == 0
-    folder = tmp_path / "tax-booking" / "qwen3-1.7b-fewshot-r2"
+    folder = tmp_path / "tax-booking" / f"qwen3-1.7b-fewshot{round_tag(current_round())}"
     assert sorted(path.name for path in folder.iterdir()) == ["dev.json", "test_ood.json"]
     results = json.loads((folder / "test_ood.json").read_text(encoding="utf-8"))
     assert results["manifest"]["data_round"] == current_round()
