@@ -532,3 +532,20 @@ def test_the_gate_with_gold_v2_runs_from_real_results_files(results_dir, capsys)
 def test_the_gold_set_must_be_gold_or_gold_v2():
     with pytest.raises(SystemExit):
         main(["--system", "good", "--gold", "dev_real"])
+
+
+def test_the_rule_report_names_the_private_mix_and_the_reverse_charge_cue():
+    results = {
+        "gold": {
+            "documents": rule_rows(
+                (True, True, True, ["mixed_private"]),
+                (True, True, True, ["reverse_charge_cue"]),
+                (False, False, False, []),
+            )
+        }
+    }
+    shown = dict(rule_report(results))
+    assert shown["documents flagged by a pipeline rule"] == (
+        "2 of 3 (66.7%), 0 of them for foreign currency, "
+        "1 for private and business items together, 1 for a reverse-charge cue"
+    )

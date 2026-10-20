@@ -2,13 +2,18 @@
 
 Run with `make rescore SYSTEMS="..." ROUND=2`. A saved row holds the answer of the model, so the
 checks that need no model can be applied to it again: `heavy_noise` (a document check, which
-would have stopped the model from being called) and `vat_mismatch` (a check on the answer). No
-model runs. The results go to `results/round<N>/rescored/`, in the layout of `eval/`, and the
-files in `eval/` stay as they were run. The confidence thresholds are the ones of the run.
+would have stopped the model from being called) and the checks on the answer in
+`adapt.answer_checks` (`vat_mismatch`, `mixed_private`, `reverse_charge_cue`). No model runs. The
+results go to `results/round<N>/rescored/`, in the layout of `eval/`, and the files in `eval/`
+stay as they were run. The confidence thresholds are the ones of the run.
 
 For each system and split the run prints what the checks changed: documents they sent to review
 that had a wrong answer (caught) and documents they sent to review that had a right answer
 (false flags).
+
+It also prints the effect of each of the two newest rules alone and together, on `dev`,
+`dev_real` and `test_ood` only: automation, review recall, critical errors and accuracy on the
+automated documents, next to the numbers without them. The gold sets are not part of that table.
 """
 
 import argparse
@@ -19,9 +24,16 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from adapt.answer_checks import ANSWER_RULES, answer_flags, private_accounts
 from adapt.config import Platform, load_platform
 from adapt.data.rounds import rescored_dir, resolve_round
-from adapt.eval.metrics import account_groups
+from adapt.eval.metrics import (
+    account_groups,
+    accuracy_on_automated,
+    automation_rate,
+    critical_error_rate,
+    review_recall,
+)
 from adapt.eval.runner import (
     ALL_SPLITS,
     DATA_DIR,
@@ -40,16 +52,24 @@ from adapt.eval.scoring import (
     score,
 )
 from adapt.pipeline import document_problems
-from adapt.vat_check import vat_mismatch
 
-CHECKS = ("heavy_noise", "vat_mismatch")
+CHECKS = ("heavy_noise", *ANSWER_RULES)
 CONFIDENCE_REASONS = ("no_confidence", "low_confidence")
+# The rules whose effect is shown one by one, and the splits they are shown on. The gold sets are
+# left out on purpose.
+NEW_RULES = ("mixed_private", "reverse_charge_cue")
+EFFECT_SPLITS = ("dev", "dev_real", "test_ood")
 
 
 def rescore_row(
-    row: Mapping[str, Any], document: EvalDocument, platform: Platform
+    row: Mapping[str, Any],
+    document: EvalDocument,
+    platform: Platform,
+    rules: Sequence[str] = ANSWER_RULES,
 ) -> dict[str, Any]:
-    """The row as the pipeline would have produced it with the checks of today."""
+    """The row as the pipeline would have produced it with the checks of today.
+
+    `rules` are the checks on the answer to apply. The default is all of them."""
     problems = document_problems(document.text, document.chart, platform)
     if problems:
         # A document check stops the pipeline before the model is called.
@@ -63,20 +83,23 @@ def rescore_row(
             "by_rule": True,
         }
     output = row["output"]
-    if (
-        output
-        and output["items"]
-        and vat_mismatch(document.text, output["items"], bool(output.get("reverse_charge")))
-    ):
-        reasons = [r for r in row["reasons"] if r not in CONFIDENCE_REASONS]
-        reasons.append("vat_mismatch")
-        reasons += [r for r in row["reasons"] if r in CONFIDENCE_REASONS]
-        return {
-            **row,
-            "needs_review": True,
-            "reasons": reasons,
-            "by_rule": "model_flagged" not in reasons,
-        }
+    if output and output["items"]:
+        private = private_accounts(platform.rules.accounts)
+        found = [
+            rule
+            for rule in answer_flags(document.text, output, private, rules)
+            if rule not in row["reasons"]
+        ]
+        if found:
+            reasons = [r for r in row["reasons"] if r not in CONFIDENCE_REASONS]
+            reasons += found
+            reasons += [r for r in row["reasons"] if r in CONFIDENCE_REASONS]
+            return {
+                **row,
+                "needs_review": True,
+                "reasons": reasons,
+                "by_rule": "model_flagged" not in reasons,
+            }
     return dict(row)
 
 
@@ -129,6 +152,65 @@ def rescore(
     return rescored, changes(rows, rescored["documents"])
 
 
+def rule_effects(
+    results: Mapping[str, Any], documents: Sequence[EvalDocument], platform: Platform
+) -> list[dict[str, Any]]:
+    """The numbers of one split without the newest rules, with each alone, and with both.
+
+    The first line is the base: the checks that were there before, so each later line shows what
+    its rule adds. `caught` counts the documents the rule sent to review that had a wrong answer
+    or should have gone to review, and `false` those that had a right answer."""
+    groups = account_groups(platform.rules)
+    base_rules = tuple(rule for rule in ANSWER_RULES if rule not in NEW_RULES)
+    variants = [("without them", ()), *[(rule, (rule,)) for rule in NEW_RULES]]
+    variants.append(("both", NEW_RULES))
+    rows = results["documents"]
+    base_rows: list[dict[str, Any]] = []
+    lines = []
+    for label, added in variants:
+        new_rows = [
+            rescore_row(row, d, platform, (*base_rules, *added))
+            for row, d in zip(rows, documents, strict=True)
+        ]
+        if not added:
+            base_rows = new_rows
+        scored = score(
+            documents, [result_from_row(row, results["system"]) for row in new_rows], groups
+        )
+        cases = [s.case for s in scored]
+        counted = changes(base_rows, new_rows)
+        lines.append(
+            {
+                "label": label,
+                "automation_rate": automation_rate(cases),
+                "review_recall": review_recall(cases),
+                "critical_error_rate": critical_error_rate(cases, groups),
+                "accuracy_on_automated": accuracy_on_automated(cases),
+                "caught": sum(v for k, v in counted.items() if k.endswith(" caught")),
+                "false": sum(v for k, v in counted.items() if k.endswith(" false")),
+            }
+        )
+    return lines
+
+
+def format_effects(system: str, split: str, count: int, lines: Sequence[Mapping[str, Any]]) -> str:
+    """The effect table of one system and split, as text."""
+
+    def number(value: float | None) -> str:
+        return "n/a" if value is None else f"{value:.3f}"
+
+    columns = "automation  review recall  critical errors  accuracy on automated  caught  false"
+    out = [f"{system} {split} ({count} documents)", f"  {'':20}{columns}"]
+    for line in lines:
+        out.append(
+            f"  {line['label']:20}"
+            f"{number(line['automation_rate']):>10}  {number(line['review_recall']):>13}"
+            f"  {number(line['critical_error_rate']):>15}  "
+            f"{number(line['accuracy_on_automated']):>21}  {line['caught']:>6}  {line['false']:>5}"
+        )
+    return "\n".join(out)
+
+
 def _load(path: Path) -> dict[str, Any] | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
@@ -154,6 +236,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     platform = load_platform(args.platform)
 
     written = 0
+    effects: list[str] = []
+    effect_splits: set[str] = set()
     for system in args.systems:
         for split in args.splits or ALL_SPLITS:
             results = _load(results_file(in_dir, args.platform, system, split))
@@ -168,9 +252,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             written += 1
             shown = ", ".join(f"{key} {value}" for key, value in sorted(counted.items()))
             print(f"{system} {split}: {shown or 'no change'}")
+            if split in EFFECT_SPLITS:
+                effect_splits.add(split)
+                lines = rule_effects(results, documents, platform)
+                effects.append(format_effects(system, split, len(documents), lines))
     if not written:
         sys.exit("error: no results found")
     print(f"{written} results files written to {out_dir}")
+    if effects:
+        print("\nEffect of the newest rules (the gold sets are not shown):\n")
+        print("\n\n".join(effects))
+    wanted = [split for split in EFFECT_SPLITS if not args.splits or split in args.splits]
+    missing = [split for split in wanted if split not in effect_splits]
+    if missing:
+        print(f"\nNo saved results for: {', '.join(missing)}. Run them to see the effect there.")
     return 0
 
 

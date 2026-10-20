@@ -6,7 +6,14 @@ from pathlib import Path
 import pytest
 
 from adapt.config import load_platform
-from adapt.eval.rescore import changes, main, rescore, rescore_row
+from adapt.eval.rescore import (
+    changes,
+    format_effects,
+    main,
+    rescore,
+    rescore_row,
+    rule_effects,
+)
 from adapt.eval.runner import DATA_DIR, load_documents, results_file
 from adapt.eval.scoring import EvalDocument
 
@@ -139,5 +146,55 @@ def test_saved_round_2_results_can_only_lose_automated_documents(tmp_path):
     was = {r["id"] for r in old["documents"] if not r["needs_review"]}
     now = {r["id"] for r in new["documents"] if not r["needs_review"]}
     assert now <= was and now != was
-    assert new["manifest"]["rescored"]["checks"] == ["heavy_noise", "vat_mismatch"]
+    assert new["manifest"]["rescored"]["checks"] == [
+        "heavy_noise",
+        "vat_mismatch",
+        "mixed_private",
+        "reverse_charge_cue",
+    ]
     assert len(new["documents"]) == len(load_documents("tax-booking", "dev", DATA_DIR, 2))
+
+
+def mixed_answer():
+    output = copy.deepcopy(TARGET)
+    output["items"][1]["account"] = "1800"
+    return output
+
+
+def test_an_answer_with_a_private_and_a_business_account_goes_to_review_by_rule(platform):
+    new = rescore_row(row(mixed_answer()), document(), platform)
+    assert new["needs_review"] and new["reasons"] == ["mixed_private"] and new["by_rule"]
+
+
+def test_only_the_rules_asked_for_are_applied(platform):
+    saved = row(mixed_answer())
+    assert rescore_row(saved, document(), platform, ("vat_mismatch",)) == saved
+    new = rescore_row(saved, document(), platform, ("mixed_private",))
+    assert new["reasons"] == ["mixed_private"]
+
+
+def test_a_reason_the_row_already_has_is_not_added_again(platform):
+    saved = row(mixed_answer(), reasons=["mixed_private"], review=True)
+    assert rescore_row(saved, document(), platform) == saved
+
+
+def test_the_effect_of_each_new_rule_is_shown_alone_and_together(platform):
+    mixed = row(mixed_answer())
+    mixed["answer_correct"] = False
+    mixed["correct"] = False
+    wanted = EvalDocument("d1", TEXT, "SKR03", TARGET, True)
+    results = {"system": "s", "documents": [mixed]}
+    lines = rule_effects(results, [wanted], platform)
+    assert [line["label"] for line in lines] == [
+        "without them",
+        "mixed_private",
+        "reverse_charge_cue",
+        "both",
+    ]
+    by_label = {line["label"]: line for line in lines}
+    assert by_label["without them"]["review_recall"] == 0.0
+    assert by_label["mixed_private"]["review_recall"] == 1.0
+    assert by_label["mixed_private"]["caught"] == 1 and by_label["mixed_private"]["false"] == 0
+    assert by_label["reverse_charge_cue"]["review_recall"] == 0.0
+    assert by_label["both"]["review_recall"] == 1.0
+    assert "mixed_private" in format_effects("s", "dev", 1, lines)

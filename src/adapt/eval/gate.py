@@ -275,7 +275,12 @@ def rule_report(results: Results, gold: str = "gold") -> list[tuple[str, str]]:
     flagged = [row for row in rows if row["by_rule"]]
     currency = sum("foreign_currency" in row["reasons"] for row in flagged)
     detail = f"{currency} of them for foreign currency"
-    for reason, label in (("heavy_noise", "heavy noise"), ("vat_mismatch", "a VAT mismatch")):
+    for reason, label in (
+        ("heavy_noise", "heavy noise"),
+        ("vat_mismatch", "a VAT mismatch"),
+        ("mixed_private", "private and business items together"),
+        ("reverse_charge_cue", "a reverse-charge cue"),
+    ):
         count = sum(reason in row["reasons"] for row in flagged)
         if count:
             detail += f", {count} for {label}"

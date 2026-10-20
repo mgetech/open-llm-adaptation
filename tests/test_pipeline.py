@@ -522,3 +522,38 @@ def test_documents_from_the_dev_split_end_as_the_data_says(pipe, server, platfor
         if result.needs_review:
             assert result.reasons, r["id"]
     assert len(records) > 250
+
+
+MIXED_ITEMS = [
+    {"description": "Printer paper A4", "amount": 23.8, "account": "4930", "vat_rate": "19"},
+    {"description": "Tax handbook 2026", "amount": 21.4, "account": "1800", "vat_rate": "7"},
+]
+CUE_TEXT = PLAIN + "\nReverse charge: tax liability of the recipient"
+ONE_ITEM = [{"description": "Item", "amount": 100.0, "account": "4930", "vat_rate": "19"}]
+
+
+def test_an_answer_that_mixes_private_and_business_accounts_goes_to_review_by_rule(pipe, server):
+    result = run(pipe, server, output=output_with(items=MIXED_ITEMS))
+    assert result.needs_review and result.reasons == ["mixed_private"]
+    assert result.by_rule
+    assert len(result.booking_lines) == 2
+
+
+def test_a_text_that_names_the_reverse_charge_needs_review_when_the_answer_has_none(pipe, server):
+    answer = output_with(items=ONE_ITEM, total=100.0)
+    result = run(pipe, server, output=answer, text=CUE_TEXT)
+    assert result.needs_review and result.reasons == ["reverse_charge_cue"]
+    assert result.by_rule
+
+
+def test_an_answer_with_the_reverse_charge_is_not_flagged_for_the_cue(pipe, server):
+    answer = output_with(items=ONE_ITEM, total=100.0, reverse_charge=True)
+    result = run(pipe, server, output=answer, text=CUE_TEXT)
+    assert "reverse_charge_cue" not in result.reasons
+
+
+def test_the_new_rules_are_not_rule_flags_when_the_model_flagged_the_document(pipe, server):
+    answer = output_with(items=MIXED_ITEMS, needs_review=True, reason="unsure")
+    result = run(pipe, server, output=answer)
+    assert result.reasons == ["model_flagged", "mixed_private"]
+    assert not result.by_rule

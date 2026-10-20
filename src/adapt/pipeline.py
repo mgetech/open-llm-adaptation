@@ -12,13 +12,13 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from adapt.answer_checks import ANSWER_RULES, answer_flags, private_accounts
 from adapt.booking import BookingLine, ReasonCode, compute_booking
 from adapt.client import ModelClient, ModelError, TokenLogprob
 from adapt.config import Platform
 from adapt.data.pseudonymise import pseudonymise
 from adapt.prompting import build_messages, system_prompt
 from adapt.schema import build_output_schema
-from adapt.vat_check import vat_mismatch
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +52,8 @@ ReviewReason = (
         "foreign_currency",
         "heavy_noise",
         "vat_mismatch",
+        "mixed_private",
+        "reverse_charge_cue",
         "model_unavailable",
         "invalid_output",
         "model_flagged",
@@ -78,7 +80,7 @@ class Result:
     output: dict[str, Any] | None = field(default=None, repr=False)
     item_confidences: list[float] | None = field(default=None, repr=False)
     # True when a rule sent the document to review: a document check (the model was not called),
-    # or the printed-VAT check on an answer the model did not flag itself.
+    # or a check on an answer the model did not flag itself (`ANSWER_RULES`).
     by_rule: bool = False
 
 
@@ -161,6 +163,7 @@ class Pipeline:
         self.adapter = adapter
         self.adapter_version = adapter_version
         self.threshold = threshold
+        self._private = private_accounts(platform.rules.accounts)
         self._schema = build_output_schema(platform.rules)
         self._system = system_prompt(
             platform.config.name, platform.rules.chart, platform.rules, few_shot=few_shot
@@ -221,8 +224,7 @@ class Pipeline:
         if output["items"]:
             booking = compute_booking(output, chart, self.platform)
             lines, reasons = booking.lines, reasons + booking.reasons
-            if vat_mismatch(document_text, output["items"], output["reverse_charge"]):
-                reasons.append("vat_mismatch")
+            reasons += answer_flags(document_text, output, self._private)
             item_confidences = account_confidences(
                 completion.content, completion.tokens, len(output["items"])
             )
@@ -233,7 +235,7 @@ class Pipeline:
                 reasons.append("low_confidence")
         elif not output["needs_review"]:
             reasons.append("no_items")
-        by_rule = "vat_mismatch" in reasons and "model_flagged" not in reasons
+        by_rule = any(rule in reasons for rule in ANSWER_RULES) and "model_flagged" not in reasons
         return self._review(
             request_id, reasons, output, lines, confidence, item_confidences, by_rule=by_rule
         )
