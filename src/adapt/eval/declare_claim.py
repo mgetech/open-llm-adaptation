@@ -6,9 +6,11 @@ configuration is one adapter, or two that must agree, joined with `+`:
     qwen3-4b-sft-r4-0=qwen3-4b-sft-r4-0:adapters/tax-booking/qwen3-4b-r4-0
     agree=a:adapters/tax-booking/a+b:adapters/tax-booking/b
 
-The adapter folders are hashed, so the claim names the exact weights. The shipped one is chosen
-on dev and dev_real, before the final run. See `adapt.eval.final_lock` for what the lock then
-allows. `--status` shows the claim on the current files and which results exist for it.
+The adapter folders are hashed over `adapter_config.json` and `adapter_model.safetensors`, so the
+claim names the exact weights, and a readme or a tokenizer in the folder does not matter. The
+shipped configuration is chosen on dev and dev_real, before the final run. See
+`adapt.eval.final_lock` for what the lock then allows. `--status` shows the claim on the current
+files and which results exist for it.
 """
 
 import argparse
@@ -18,7 +20,7 @@ from pathlib import Path
 
 from adapt.data.rounds import eval_dir, resolve_round
 from adapt.eval.final_lock import CLAIM_SPLITS, declare, read_claims
-from adapt.eval.runner import RESULTS_ROOT, final_files, hash_directory, results_file
+from adapt.eval.runner import ADAPTER_FILES, RESULTS_ROOT, final_files, hash_directory, results_file
 
 LOCK = RESULTS_ROOT / "final.lock.json"
 
@@ -36,7 +38,7 @@ def parse_configuration(text: str) -> tuple[str, list[dict[str, str]]]:
         path = Path(folder)
         if not (path / "adapter_config.json").exists():
             raise ValueError(f"no adapter in {path}")
-        adapters.append({"system": system, "adapter_hash": hash_directory(path)})
+        adapters.append({"system": system, "adapter_hash": hash_directory(path, ADAPTER_FILES)})
     return name, adapters
 
 
@@ -47,7 +49,7 @@ def status(platform: str, data_round: int, lock: Path = LOCK) -> str:
         None,
     )
     if found is None:
-        return "no claim is declared for the test_ood and gold files of this round"
+        return "no claim is declared for the test and gold files of this round"
     out_dir = eval_dir(data_round)
     lines = [
         f"claim of round {found['round']}, started: {found['started']}, shipped: {found['shipped']}"

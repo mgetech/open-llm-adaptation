@@ -15,7 +15,18 @@ from adapt.models import load_registry
 from adapt.train import evaluate as train_evaluate
 from adapt.train.evaluate import evaluate_adapter
 
-FILES = {"test_ood_sha256": "aaa", "gold_sha256": {"gold": "g1", "gold_v2": "g2"}}
+FILES = {
+    "test_iid_sha256": "iii",
+    "test_ood_sha256": "aaa",
+    "edge_sha256": "eee",
+    "gold_sha256": {"gold": "g1", "gold_v2": "g2"},
+}
+FRESH = {
+    "test_iid_sha256": "jjj",
+    "test_ood_sha256": "bbb",
+    "edge_sha256": "fff",
+    "gold_sha256": {"gold": "g1", "gold_v2": "g2", "gold_v3": "g3"},
+}
 SINGLE = {"demo": [{"system": "demo", "adapter_hash": "h1"}]}
 PAIR = {
     "demo": [{"system": "demo", "adapter_hash": "h1"}],
@@ -111,11 +122,38 @@ def test_new_files_need_their_own_declaration(tmp_path):
     path = tmp_path / "final.lock.json"
     declare(path, FILES, 3, SINGLE, "demo")
     start_run(path, FILES, "demo", "h1")
-    fresh = {**FILES, "test_ood_sha256": "bbb"}
     with pytest.raises(FinalLockError, match="no claim is declared"):
-        start_run(path, fresh, "demo", "h1")
-    declare(path, fresh, 4, SINGLE, "demo")
-    start_run(path, fresh, "demo", "h1")
+        start_run(path, FRESH, "demo", "h1")
+    declare(path, FRESH, 4, SINGLE, "demo")
+    start_run(path, FRESH, "demo", "h1")
+    assert len(read_claims(path)) == 2
+
+
+@pytest.mark.parametrize("key", ["test_iid_sha256", "test_ood_sha256", "edge_sha256"])
+def test_a_test_file_that_backs_a_started_claim_cannot_back_another(tmp_path, key):
+    path = tmp_path / "final.lock.json"
+    declare(path, FILES, 3, SINGLE, "demo")
+    start_run(path, FILES, "demo", "h1")
+    reused = {**FRESH, key: FILES[key]}
+    with pytest.raises(FinalLockError, match=f"{key.removesuffix('_sha256')} already backs"):
+        declare(path, reused, 4, SINGLE, "demo")
+    assert len(read_claims(path)) == 1
+
+
+def test_a_new_claim_needs_a_gold_file_that_no_earlier_claim_used(tmp_path):
+    path = tmp_path / "final.lock.json"
+    declare(path, FILES, 3, SINGLE, "demo")
+    start_run(path, FILES, "demo", "h1")
+    same_gold = {**FRESH, "gold_sha256": FILES["gold_sha256"]}
+    with pytest.raises(FinalLockError, match="no gold file is new"):
+        declare(path, same_gold, 4, SINGLE, "demo")
+    declare(path, FRESH, 4, SINGLE, "demo")
+
+
+def test_a_claim_that_has_not_started_does_not_block_a_new_declaration(tmp_path):
+    path = tmp_path / "final.lock.json"
+    declare(path, FILES, 3, SINGLE, "demo")
+    declare(path, {**FRESH, "test_ood_sha256": FILES["test_ood_sha256"]}, 4, SINGLE, "demo")
     assert len(read_claims(path)) == 2
 
 
@@ -142,11 +180,11 @@ def declare_here(tmp_path, adapter_hash="h1"):
 
 
 def test_a_run_on_the_files_of_the_round_follows_the_declaration(tmp_path, monkeypatch):
-    monkeypatch.setattr("adapt.eval.runner.hash_directory", lambda path: "h1")
+    monkeypatch.setattr("adapt.eval.runner.hash_directory", lambda path, names=None: "h1")
     with pytest.raises(ValueError, match="no claim is declared"):
         run(tmp_path, "demo", adapter_path=tmp_path)
     declare_here(tmp_path)
-    for split in ("test_ood", "gold", "gold_v2"):
+    for split in ("test_iid", "test_ood", "edge", "gold", "gold_v2"):
         run(tmp_path, "demo", split, adapter_path=tmp_path)
         with pytest.raises(ValueError, match="other is not in the claim"):
             run(tmp_path, "other", split, adapter_path=tmp_path)
@@ -154,7 +192,7 @@ def test_a_run_on_the_files_of_the_round_follows_the_declaration(tmp_path, monke
 
 
 def test_other_splits_and_the_baseline_need_no_declaration(tmp_path):
-    for split in ("dev", "dev_real", "test_iid", "edge"):
+    for split in ("dev", "dev_real"):
         run(tmp_path, "demo", split)
     run(tmp_path, "demo-fewshot", "test_ood", few_shot=True)
     assert not (tmp_path / "results" / "final.lock.json").exists()
@@ -210,19 +248,29 @@ def test_the_adapter_evaluation_is_refused_before_any_server_starts(tmp_path, mo
 def make_adapter(folder):
     folder.mkdir(parents=True)
     (folder / "adapter_config.json").write_text("{}", encoding="utf-8")
-    (folder / "weights.bin").write_bytes(b"weights")
+    (folder / "adapter_model.safetensors").write_bytes(b"weights")
     return folder
 
 
 def test_a_configuration_is_read_from_its_text_with_the_hashes_of_the_folders(tmp_path):
     one = make_adapter(tmp_path / "one")
     two = make_adapter(tmp_path / "two")
-    (two / "weights.bin").write_bytes(b"other weights")
+    (two / "adapter_model.safetensors").write_bytes(b"other weights")
     name, adapters = parse_configuration(f"agree=first:{one}+second:{two}")
     assert name == "agree"
     assert [a["system"] for a in adapters] == ["first", "second"]
     assert adapters[0]["adapter_hash"] != adapters[1]["adapter_hash"]
     assert len(adapters[0]["adapter_hash"]) == 64
+
+
+def test_other_files_in_the_adapter_folder_do_not_change_its_hash(tmp_path):
+    plain = make_adapter(tmp_path / "plain")
+    extra = make_adapter(tmp_path / "extra")
+    (extra / "README.md").write_text("notes", encoding="utf-8")
+    (extra / "tokenizer.json").write_text("{}", encoding="utf-8")
+    assert parse_configuration(f"a=s:{plain}")[1] == parse_configuration(f"a=s:{extra}")[1]
+    (extra / "adapter_model.safetensors").write_bytes(b"changed weights")
+    assert parse_configuration(f"a=s:{plain}")[1] != parse_configuration(f"a=s:{extra}")[1]
 
 
 @pytest.mark.parametrize("text", ["no-equals", "name=", "name=nofolder", "name=a:/no/folder"])
@@ -236,7 +284,7 @@ def test_the_status_shows_the_claim_and_the_results_that_are_missing(tmp_path):
     declare(lock, final_files("tax-booking", data_round=3), 3, PAIR, "agree")
     text = status("tax-booking", 3, lock)
     assert "shipped: agree" in text and "started: False" in text
-    assert "first: results for none; missing test_ood, gold, gold_v2" in text
+    assert "first: results for none; missing test_iid, test_ood, edge, gold, gold_v2" in text
     assert status("tax-booking", 3, tmp_path / "other.json").startswith("no claim is declared")
 
 
@@ -252,4 +300,6 @@ def test_the_committed_lock_holds_the_round_3_claim_as_started():
     [claim] = claims
     assert claim["round"] == 3 and claim["started"] is True
     assert claim["shipped"] == "qwen3-4b-sft-r3-0"
+    assert claim["test_iid_sha256"] and claim["test_ood_sha256"] and claim["edge_sha256"]
+    assert set(claim["gold_sha256"]) == {"gold", "gold_v2"}
     assert [r["system"] for r in claim["runs"]] == ["qwen3-4b-sft-r3-0"]

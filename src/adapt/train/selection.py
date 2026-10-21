@@ -26,14 +26,13 @@ from typing import Any
 from adapt.baseline import START_TIMEOUT_SECONDS, free_port
 from adapt.data.rounds import eval_dir, resolve_round
 from adapt.data.rounds import runs_dir as round_runs_dir
-from adapt.eval.runner import hash_directory, hash_file, results_file, split_path
+from adapt.eval.runner import ADAPTER_FILES, hash_directory, hash_file, results_file, split_path
 from adapt.models import Registry, load_registry
 from adapt.train.config import load_train_config
 from adapt.train.evaluate import evaluate_adapters, system_name
 from adapt.train.run import ADAPTERS_DIR, TrainSettings, run_name
 
 SPLIT = "dev_real"
-ADAPTER_FILES = ("adapter_config.json", "adapter_model.safetensors")
 METHOD = "lowest critical error rate, then highest document accuracy, then the later step"
 NO_LIMIT = 0.0  # every answer that no rule and not the model sent to review is automated
 

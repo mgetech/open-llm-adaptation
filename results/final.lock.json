@@ -1,7 +1,9 @@
 {
   "claims": [
     {
+      "test_iid_sha256": "1a1c240d785d1a876ba3160276613776a9fa2ac4eb5924da99082e26cf03c7ee",
       "test_ood_sha256": "3efa974832dfc8819cea35b537a84eef1b134b00331f25135657b21538b4192a",
+      "edge_sha256": "ecd7bfa410686b13e4893b2f678ccf4b3b2747b6a588f2d41fbf8626a238e84e",
       "gold_sha256": {
         "gold": "6f23b0b597427269d87ccca4b0bca083196fc019432d49dff73b8c3b472412eb",
         "gold_v2": "fc056b474e76a972b49954f8fd190f2cb99a8f3f0c921f415615ac5591e6b694"
