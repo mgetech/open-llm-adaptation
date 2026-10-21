@@ -12,7 +12,9 @@ from adapt.eval.rescore import (
     main,
     rescore,
     rescore_row,
+    rows_without_limit,
     rule_effects,
+    tune_on_dev,
 )
 from adapt.eval.runner import DATA_DIR, load_documents, results_file
 from adapt.eval.scoring import EvalDocument
@@ -198,3 +200,94 @@ def test_the_effect_of_each_new_rule_is_shown_alone_and_together(platform):
     assert by_label["reverse_charge_cue"]["review_recall"] == 0.0
     assert by_label["both"]["review_recall"] == 1.0
     assert "mixed_private" in format_effects("s", "dev", 1, lines)
+
+
+ROUND_THREE = Path(__file__).resolve().parents[1] / "results" / "round3" / "eval"
+SYSTEM_THREE = "qwen3-4b-sft-r3-0"
+
+
+def asset_account():
+    output = copy.deepcopy(TARGET)
+    output["items"][0]["account"] = "0480"  # an asset account for an expense: critical
+    return output
+
+
+def dev_small():
+    """d1 and d3 are right, d2 has a critical error and a lower confidence than d1 and d3."""
+    documents = [EvalDocument(f"d{i}", TEXT, "SKR03", TARGET, False) for i in (1, 2, 3)]
+    outputs = [None, asset_account(), None]
+    confidences = [0.99, 0.90, 0.95]
+    rows = [
+        {**row(output), "id": f"d{i}", "confidence": confidence}
+        for i, output, confidence in zip((1, 2, 3), outputs, confidences, strict=True)
+    ]
+    rows[1]["answer_correct"] = False
+    rows[1]["correct"] = False
+    saved = {
+        "system": "x",
+        "documents": rows,
+        "metrics": {"canary_leak_rate": {"value": 0.0, "documents": 0}},
+        "manifest": {"threshold": 0.0},
+        "confidence_threshold": {"value": 0.0, "source": "given"},
+    }
+    return saved, documents
+
+
+def test_a_document_that_only_the_confidence_limit_stopped_gets_its_severity_back(platform):
+    saved, documents = dev_small()
+    saved["documents"][1].update(needs_review=True, reasons=["low_confidence"])
+    rows = rows_without_limit(saved, documents, platform)
+    assert [r["needs_review"] for r in rows] == [False, False, False]
+    assert [r["severity"] for r in rows] == [None, "critical", None]
+
+
+def test_the_threshold_is_chosen_again_so_that_the_critical_document_is_left_out(platform):
+    saved, documents = dev_small()
+    tuned = tune_on_dev(saved, documents, platform)
+    assert tuned.threshold == 0.95 and tuned.critical_reached
+
+
+def test_the_chosen_threshold_is_used_on_the_results_that_are_scored_again(platform):
+    saved, documents = dev_small()
+    tuned = tune_on_dev(saved, documents, platform)
+    dev, _ = rescore(saved, documents, platform, tuned, "dev")
+    assert dev["manifest"]["threshold"] == 0.95
+    assert [r["needs_review"] for r in dev["documents"]] == [False, True, False]
+    assert dev["documents"][1]["reasons"] == ["low_confidence"]
+    assert dev["metrics"]["critical_error_rate"]["value"] == 0.0
+    assert dev["confidence_threshold"]["source"] == "tuned again on dev"
+    assert dev["confidence_threshold"]["curve"]
+    other, _ = rescore(saved, documents, platform, tuned, "dev_real")
+    assert other["manifest"]["threshold"] == 0.95 and "curve" not in other["confidence_threshold"]
+
+
+def test_without_a_new_threshold_the_one_of_the_run_stays(platform):
+    saved, documents = dev_small()
+    kept, _ = rescore(saved, documents, platform)
+    assert kept["confidence_threshold"] == saved["confidence_threshold"]
+    assert kept["manifest"]["threshold"] == 0.0
+
+
+def test_the_command_chooses_the_threshold_on_dev_and_uses_it_on_dev_real(tmp_path):
+    for split in ("dev", "dev_real"):
+        copied = results_file(tmp_path / "in", "tax-booking", SYSTEM_THREE, split)
+        copied.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(results_file(ROUND_THREE, "tax-booking", SYSTEM_THREE, split), copied)
+    arguments = ["--systems", SYSTEM_THREE, "--splits", "dev", "dev_real", "--round", "3"]
+    out = tmp_path / "out"
+    assert (
+        main([*arguments, "--in-dir", str(tmp_path / "in"), "--out-dir", str(out), "--retune"]) == 0
+    )
+    dev, dev_real = (
+        json.loads(results_file(out, "tax-booking", SYSTEM_THREE, s).read_text(encoding="utf-8"))
+        for s in ("dev", "dev_real")
+    )
+    assert dev["manifest"]["threshold"] == dev_real["manifest"]["threshold"] > 0.9
+    assert dev["metrics"]["critical_error_rate"]["value"] <= 0.005
+    assert dev["metrics"]["accuracy_on_automated"]["value"] >= 0.95
+    assert dev["metrics"]["automation_rate"]["value"] >= 0.6
+
+
+def test_retuning_needs_the_saved_dev_results(tmp_path):
+    with pytest.raises(SystemExit, match="needs the saved dev results"):
+        main(["--systems", SYSTEM_THREE, "--round", "3", "--in-dir", str(tmp_path), "--retune"])

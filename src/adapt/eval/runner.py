@@ -359,11 +359,17 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
 
     confidence_threshold: dict[str, Any] = {"value": threshold, "source": source}
     if threshold is None:
-        target = platform.config.gate.accuracy_automated_min
-        tuned = tune_threshold(document_rows(score(documents, results, groups)), target)
+        gate = platform.config.gate
+        tuned = tune_threshold(
+            document_rows(score(documents, results, groups)),
+            gate.accuracy_automated_min,
+            gate.critical_error_rate_max,
+        )
         threshold = tuned.threshold if tuned.threshold is not None else 0.0
         if tuned.threshold is None:
             confidence_threshold["source"] = "dev target not reached, no confidence limit"
+        elif not tuned.critical_reached:
+            confidence_threshold["source"] = "tuned on dev, critical-error limit not reached"
         confidence_threshold |= tuning_record(tuned)
         results = [apply_threshold(result, threshold) for result in results]
 

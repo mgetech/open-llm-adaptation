@@ -16,13 +16,14 @@ from adapt.pipeline import Pipeline, Result
 from fake_model import Model
 
 
-def row(confidence, right, *, expected_review=False, reasons=()):
+def row(confidence, right, *, expected_review=False, reasons=(), severity=None):
     """One dev document. `right` says whether the answer matches the expected output."""
     return {
         "expected_review": expected_review,
         "reasons": list(reasons),
         "confidence": confidence,
         "answer_correct": right,
+        "severity": severity,
     }
 
 
@@ -168,6 +169,8 @@ def test_the_tuning_record_can_be_written_as_json():
         "automated": 10,
         "automation_rate": 1.0,
         "accuracy_on_automated": 0.5,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0,
     }
 
 
@@ -246,3 +249,58 @@ def test_applying_a_threshold_afterwards_gives_what_the_pipeline_gives_directly(
                     expected.reasons,
                 ), threshold
             assert any("low_confidence" in r.reasons for r in direct), threshold
+
+
+# Six documents. The one at 0.9 has a critical error, the others are right.
+WITH_CRITICAL = [
+    row(0.99, True),
+    row(0.95, True),
+    row(0.90, False, severity="critical"),
+    row(0.80, True),
+    row(0.70, True),
+    row(0.60, True),
+]
+
+
+def test_without_a_limit_on_critical_errors_the_accuracy_target_alone_decides():
+    tuned = tune_threshold(WITH_CRITICAL, 0.75)
+    assert tuned.threshold == 0.0 and tuned.chosen.critical_errors == 1
+
+
+def test_the_limit_on_critical_errors_raises_the_threshold_above_the_critical_document():
+    tuned = tune_threshold(WITH_CRITICAL, 0.75, 0.0)
+    assert tuned.threshold == 0.95 and tuned.critical_reached
+    assert tuned.chosen.automated == 2 and tuned.chosen.critical_errors == 0
+    assert tuned.chosen.critical_error_rate == 0.0
+
+
+def test_a_critical_error_is_counted_among_automated_documents_only():
+    rows = [*WITH_CRITICAL, row(0.5, False, reasons=["vat_mismatch"], severity="critical")]
+    assert coverage_curve(rows)[0].critical_errors == 1
+
+
+def test_one_critical_error_is_within_a_limit_of_one_in_two_hundred_automated_documents():
+    rows = [row(0.99, True) for _ in range(199)] + [row(0.98, False, severity="critical")]
+    assert tune_threshold(rows, 0.95, 0.005).threshold == 0.0
+    assert tune_threshold(rows[1:], 0.95, 0.005).threshold == 0.99
+
+
+def test_when_no_threshold_meets_the_critical_limit_the_accuracy_target_alone_is_used():
+    rows = [row(0.99, False, severity="critical"), row(0.9, True), row(0.8, True)]
+    tuned = tune_threshold(rows, 0.6, 0.005)
+    assert tuned.threshold == 0.0 and not tuned.critical_reached
+    record = tuning_record(tuned)
+    assert record["target_reached"] is True and record["critical_target_reached"] is False
+    assert record["target_critical_error_rate"] == 0.005
+    assert record["critical_error_rate"] == pytest.approx(1 / 3)
+
+
+def test_the_record_says_that_both_targets_were_reached():
+    record = tuning_record(tune_threshold(WITH_CRITICAL, 0.75, 0.0))
+    assert record["target_reached"] and record["critical_target_reached"]
+    assert record["critical_error_rate"] == 0.0 and json.loads(json.dumps(record)) == record
+
+
+def test_rows_without_a_severity_have_no_critical_errors():
+    plain = [{k: v for k, v in r.items() if k != "severity"} for r in SYNTHETIC]
+    assert coverage_curve(plain)[0].critical_errors == 0
