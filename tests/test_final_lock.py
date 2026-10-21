@@ -8,8 +8,16 @@ import pytest
 
 from adapt.eval import final_lock
 from adapt.eval.declare_claim import main as declare_main
-from adapt.eval.declare_claim import parse_configuration, status
-from adapt.eval.final_lock import FinalLockError, declare, lock_file, read_claims, start_run
+from adapt.eval.declare_claim import parse_configuration, seal_file, sealed_lines, status
+from adapt.eval.final_lock import (
+    FinalLockError,
+    declare,
+    lock_file,
+    read_claims,
+    read_sealed,
+    seal,
+    start_run,
+)
 from adapt.eval.runner import RESULTS_ROOT, claim_final_split, final_files, main
 from adapt.models import load_registry
 from adapt.train import evaluate as train_evaluate
@@ -303,3 +311,68 @@ def test_the_committed_lock_holds_the_round_3_claim_as_started():
     assert claim["test_iid_sha256"] and claim["test_ood_sha256"] and claim["edge_sha256"]
     assert set(claim["gold_sha256"]) == {"gold", "gold_v2"}
     assert [r["system"] for r in claim["runs"]] == ["qwen3-4b-sft-r3-0"]
+
+
+def test_a_file_is_sealed_with_its_hash_and_the_date_next_to_the_claims(tmp_path):
+    path = tmp_path / "final.lock.json"
+    declare(path, FILES, 3, SINGLE, "demo")
+    assert seal(path, "gold_v3", "evals/gold_v3.jsonl", "abc", "2026-10-22") is True
+    assert read_sealed(path) == {
+        "gold_v3": {"file": "evals/gold_v3.jsonl", "sha256": "abc", "sealed": "2026-10-22"}
+    }
+    assert len(read_claims(path)) == 1
+    assert list(json.loads(path.read_text(encoding="utf-8"))) == ["claims", "sealed"]
+
+
+def test_sealing_the_same_hash_again_changes_nothing_and_another_hash_is_refused(tmp_path):
+    path = tmp_path / "final.lock.json"
+    seal(path, "gold_v3", "evals/gold_v3.jsonl", "abc", "2026-10-22")
+    before = path.read_text(encoding="utf-8")
+    assert seal(path, "gold_v3", "evals/gold_v3.jsonl", "abc", "2026-10-30") is False
+    assert path.read_text(encoding="utf-8") == before
+    with pytest.raises(FinalLockError, match="sealed on 2026-10-22 with another hash"):
+        seal(path, "gold_v3", "evals/gold_v3.jsonl", "changed", "2026-10-30")
+
+
+def test_claims_written_later_keep_the_sealed_files(tmp_path):
+    path = tmp_path / "final.lock.json"
+    seal(path, "gold_v3", "evals/gold_v3.jsonl", "abc", "2026-10-22")
+    declare(path, FILES, 3, SINGLE, "demo")
+    start_run(path, FILES, "demo", "h1")
+    assert read_sealed(path)["gold_v3"]["sha256"] == "abc"
+    assert read_claims(path)[0]["started"] is True
+
+
+def test_the_command_seals_a_file_by_its_hash_and_says_if_it_still_matches(tmp_path):
+    lock = tmp_path / "final.lock.json"
+    target = tmp_path / "gold_v9.jsonl"
+    target.write_text("one line", encoding="utf-8")
+    first = seal_file(target, lock, today="2026-10-22")
+    assert first.startswith("sealed: gold_v9 ") and first.endswith("on 2026-10-22")
+    assert seal_file(target, lock, today="2026-11-01").startswith("already sealed: gold_v9 ")
+    target.write_text("another line", encoding="utf-8")
+    with pytest.raises(ValueError, match="cannot change"):
+        seal_file(target, lock, today="2026-11-01")
+    with pytest.raises(ValueError, match="is not a file"):
+        seal_file(tmp_path / "missing.jsonl", lock)
+
+
+def test_the_status_lists_sealed_files_and_whether_they_match(tmp_path, monkeypatch):
+    lock = tmp_path / "final.lock.json"
+    seal(lock, "gold_v9", "gold_v9.jsonl", "0" * 64, "2026-10-22")
+    monkeypatch.setattr("adapt.eval.declare_claim.ROOT", tmp_path)
+    assert sealed_lines(lock) == ["sealed 2026-10-22: gold_v9 000000000000 (missing)"]
+    (tmp_path / "gold_v9.jsonl").write_text("x", encoding="utf-8")
+    assert sealed_lines(lock)[0].endswith("(CHANGED)")
+
+
+def test_the_committed_lock_seals_gold_v3_and_the_file_has_not_changed():
+    from adapt.eval.runner import ROOT, hash_file
+
+    sealed = read_sealed(RESULTS_ROOT / "final.lock.json")
+    assert sealed["gold_v3"]["file"] == "platforms/tax-booking/evals/gold_v3.jsonl"
+    assert len(sealed["gold_v3"]["sha256"]) == 64 and sealed["gold_v3"]["sealed"]
+    path = ROOT / sealed["gold_v3"]["file"]
+    if not path.is_file():
+        pytest.skip("gold_v3.jsonl is not in this checkout yet")
+    assert hash_file(path) == sealed["gold_v3"]["sha256"]

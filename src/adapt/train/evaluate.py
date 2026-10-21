@@ -213,6 +213,7 @@ def evaluate_adapter(
     timeout: float = START_TIMEOUT_SECONDS,
     data_round: int | None = None,
     override_final_lock: bool = False,
+    threshold: float | None = None,
 ) -> list[Path]:
     """Evaluate the adapter of a run on `splits`. Returns the results files."""
     splits = default_splits(platform) if splits is None else splits
@@ -243,6 +244,7 @@ def evaluate_adapter(
         timeout=timeout,
         data_round=data_round,
         override_final_lock=override_final_lock,
+        threshold=threshold,
     )
     return written[system]
 
@@ -272,6 +274,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     parser.add_argument("--dry-run", action="store_true", help="use the fake server, not vLLM")
     parser.add_argument(
+        "--threshold",
+        type=float,
+        help="confidence threshold for every split (default: chosen on dev during the run)",
+    )
+    parser.add_argument(
         "--override-final-lock",
         action="store_true",
         help="run on test_ood or gold files that already back a final claim",
@@ -299,6 +306,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             workers=args.workers,
             data_round=args.round,
             override_final_lock=args.override_final_lock,
+            threshold=args.threshold,
         )
     except (RuntimeError, ValueError) as error:
         sys.exit(f"error: {error}")

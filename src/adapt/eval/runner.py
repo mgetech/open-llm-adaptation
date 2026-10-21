@@ -378,6 +378,8 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
             confidence_threshold["source"] = "dev target not reached, no confidence limit"
         elif not tuned.critical_reached:
             confidence_threshold["source"] = "tuned on dev, critical-error limit not reached"
+        elif not tuned.accuracy_reached:
+            confidence_threshold["source"] = "tuned on dev, accuracy target not reached"
         confidence_threshold |= tuning_record(tuned)
         results = [apply_threshold(result, threshold) for result in results]
 

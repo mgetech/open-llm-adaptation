@@ -6,8 +6,9 @@ not chosen again there. For each split the table shows, at a few thresholds and 
 one, how many documents are automated and how many of them have a critical error, next to the
 gate limits. The checks of today are applied to the saved answers and no model runs.
 
-Neither split is part of the gate. dev_real is the check that a threshold chosen on dev also holds
-on documents it was not chosen on.
+Neither split is part of the gate. With `--tune-on dev dev_real` the threshold is chosen on both
+splits together, so no split is left over to check it on. With the default it is chosen on dev, and
+dev_real is the check that it also holds on documents it was not chosen on.
 """
 
 import argparse
@@ -19,7 +20,7 @@ from typing import Any
 
 from adapt.config import Platform, load_platform
 from adapt.data.rounds import resolve_round
-from adapt.eval.rescore import rows_without_limit, tune_on_dev
+from adapt.eval.rescore import rows_without_limit, tune_pooled
 from adapt.eval.runner import DATA_DIR, load_documents, results_file
 from adapt.eval.threshold import CurvePoint, Tuned, point_at
 
@@ -89,9 +90,11 @@ def format_split(
 
 def describe(tuned: Tuned) -> str:
     if tuned.chosen is None:
-        return "no threshold reaches the accuracy target, so there is no confidence limit"
+        return "no threshold meets either target, so there is no confidence limit"
     if not tuned.critical_reached:
         return "the accuracy target is met, the limit on critical errors is not"
+    if not tuned.accuracy_reached:
+        return "the limit on critical errors is met, the accuracy target is not"
     return "meets the accuracy target and the limit on critical errors"
 
 
@@ -103,6 +106,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--system", required=True)
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     parser.add_argument("--splits", nargs="+", choices=SPLITS, default=list(SPLITS))
+    parser.add_argument(
+        "--tune-on",
+        nargs="+",
+        choices=SPLITS,
+        default=["dev"],
+        help="the splits the threshold is chosen on together (default: dev)",
+    )
     parser.add_argument("--in-dir", type=Path, help="default: results/round<N>/eval")
     args = parser.parse_args(argv)
     try:
@@ -114,7 +124,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     gate = platform.config.gate
 
     saved = {}
-    for split in dict.fromkeys(["dev", *args.splits]):
+    for split in dict.fromkeys([*args.tune_on, *args.splits]):
         path = results_file(in_dir, args.platform, args.system, split)
         if not path.exists():
             sys.exit(f"error: no saved {split} results for {args.system} in {in_dir}")
@@ -122,22 +132,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             _load(path),
             load_documents(args.platform, split, DATA_DIR, data_round),
         )
-    results, documents = saved["dev"]
+    chosen_on = " and ".join(args.tune_on)
     try:
-        tuned = tune_on_dev(results, documents, platform)
+        tuned = tune_pooled([saved[name] for name in args.tune_on], platform)
     except ValueError as error:
-        sys.exit(f"error: dev: {error}")
+        sys.exit(f"error: {chosen_on}: {error}")
     threshold = tuned.threshold if tuned.threshold is not None else 0.0
     print(f"threshold report for {args.system}, round {data_round}")
     print(
         f"limits: automation rate >= {gate.automation_rate_min:g}, accuracy on automated >= "
         f"{gate.accuracy_automated_min:g}, critical-error rate <= {gate.critical_error_rate_max:g}"
     )
-    print(f"threshold chosen on dev: {threshold:.4f}, {describe(tuned)}")
+    print(f"threshold chosen on {chosen_on}: {threshold:.4f}, {describe(tuned)}")
     for split in args.splits:
         results, documents = saved[split]
         rows = rows_without_limit(results, documents, platform)
-        note = "chosen on dev" if split == "dev" else "from dev, not chosen again"
+        note = (
+            f"chosen on {chosen_on}"
+            if split in args.tune_on
+            else f"from {chosen_on}, not chosen again"
+        )
         print()
         print(format_split(split, len(documents), rows, threshold, platform, note))
     return 0

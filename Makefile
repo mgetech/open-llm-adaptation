@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc gate declare-claim lint format test requirements
+.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc gate seal declare-claim lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -54,11 +54,11 @@ select:  ## Score the checkpoints of a run on dev_real and keep the best as its 
 		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR)) \
 		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
 
-eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional ROUND=, SMOKE=1, MAX_STEPS=, NUM_GPUS=, SERVERS=2, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1, OVERRIDE_FINAL_LOCK=1)
+eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional ROUND=, SMOKE=1, MAX_STEPS=, NUM_GPUS=, SERVERS=2, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1, THRESHOLD=, OVERRIDE_FINAL_LOCK=1)
 	uv run python -m adapt.train.evaluate --platform $(PLATFORM) --seed $(SEED) \
 		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(MAX_STEPS),--max-steps $(MAX_STEPS) --num-gpus $(NUM_GPUS)) \
 		$(if $(SERVERS),--servers $(SERVERS)) $(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) \
-		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run) $(if $(OVERRIDE_FINAL_LOCK),--override-final-lock)
+		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run) $(if $(THRESHOLD),--threshold $(THRESHOLD)) $(if $(OVERRIDE_FINAL_LOCK),--override-final-lock)
 
 eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINTS=; optional ROUND=, MODEL=, THRESHOLD=, FEW_SHOT=1, OUT_DIR=, OVERRIDE_FINAL_LOCK=1)
 	uv run python -m adapt.eval.runner --platform $(PLATFORM) --split $(SPLIT) --endpoints $(ENDPOINTS) \
@@ -73,8 +73,8 @@ baseline:  ## Few-shot baseline of one model, with its own server (MODEL=; optio
 pair:  ## Combine the saved results of two systems into one pair configuration (FIRST=, SECOND=, NAME=; optional CONFIDENCE=each|ignore, SPLITS=, ROUND=, OUT_DIR=)
 	uv run python -m adapt.eval.configuration --platform $(PLATFORM) --first $(FIRST) --second $(SECOND) --name $(NAME) 		$(if $(CONFIDENCE),--confidence $(CONFIDENCE)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR))
 
-rescore:  ## Score saved results again with the newer pipeline checks, no model run (SYSTEMS="a b"; optional SPLITS=, ROUND=, RETUNE=1)
-	uv run python -m adapt.eval.rescore --platform $(PLATFORM) --systems $(SYSTEMS) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ROUND),--round $(ROUND)) $(if $(RETUNE),--retune)
+rescore:  ## Score saved results again with the newer pipeline checks, no model run (SYSTEMS="a b"; optional SPLITS=, ROUND=, RETUNE=1, TUNE_ON="dev dev_real")
+	uv run python -m adapt.eval.rescore --platform $(PLATFORM) --systems $(SYSTEMS) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ROUND),--round $(ROUND)) $(if $(RETUNE),--retune $(if $(TUNE_ON),--tune-on $(TUNE_ON)))
 
 post-hoc:  ## Re-score the saved outputs of a claim run with later changes, labelled post-hoc, not a claim (SYSTEM=, BASELINE=; optional ROUND=, IN_DIR=, OUT=)
 	uv run python -m adapt.eval.post_hoc --platform $(PLATFORM) --system $(SYSTEM) --baseline $(BASELINE) $(if $(ROUND),--round $(ROUND)) $(if $(IN_DIR),--in-dir $(IN_DIR)) $(if $(OUT),--out $(OUT))
@@ -82,11 +82,14 @@ post-hoc:  ## Re-score the saved outputs of a claim run with later changes, labe
 stage-gate:  ## Gate checks on dev and dev_real of a system, a pass or fail for each, not the claim (SYSTEM=; optional ROUND=, OUT_DIR=)
 	uv run python -m adapt.eval.stage_gate --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR))
 
-threshold-report:  ## Coverage and critical-error curve of a system on dev and dev_real, threshold chosen on dev (SYSTEM=; optional ROUND=, SPLITS=, IN_DIR=)
-	uv run python -m adapt.eval.threshold_report --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(IN_DIR),--in-dir $(IN_DIR))
+threshold-report:  ## Coverage and critical-error curve of a system on dev and dev_real, threshold chosen on dev (SYSTEM=; optional ROUND=, SPLITS=, IN_DIR=, TUNE_ON="dev dev_real")
+	uv run python -m adapt.eval.threshold_report --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(IN_DIR),--in-dir $(IN_DIR)) $(if $(TUNE_ON),--tune-on $(TUNE_ON))
 
 gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=, GOLD=gold_v2, ROUND=, OUT_DIR=)
 	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE)) $(if $(GOLD),--gold $(GOLD)) $(if $(ROUND),--round $(ROUND)) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
+
+seal:  ## Record the SHA-256 and the date of a file in the lock, to show it was fixed before later decisions (FILE=)
+	uv run python -m adapt.eval.declare_claim --platform $(PLATFORM) --seal $(FILE)
 
 declare-claim:  ## Declare the configurations of the final claim before the final run (CONFIGS="name=system:folder ...", SHIPPED=; optional ROUND=; STATUS=1 shows it)
 	uv run python -m adapt.eval.declare_claim --platform $(PLATFORM) $(if $(ROUND),--round $(ROUND)) 		$(if $(STATUS),--status,--config $(CONFIGS) --shipped $(SHIPPED))

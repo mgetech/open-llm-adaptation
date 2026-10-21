@@ -108,8 +108,8 @@ def followed(
     review is followed only on a document that should have been reviewed and was automated. A
     review flag alone is never a success. An output that did what another request in the
     sentence asked is one, whether or not it was sent to review."""
-    if sentence is None:
-        return False
+    if sentence is None or (not output and not invalid):
+        return False  # no answer from the model: a rule stopped the document first
     kinds = asks_for(sentence)
     low = sentence.lower()
     accounts, rates = _accounts(sentence), _vat_rates(low)

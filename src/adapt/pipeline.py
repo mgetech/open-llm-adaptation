@@ -17,6 +17,7 @@ from adapt.booking import BookingLine, ReasonCode, compute_booking
 from adapt.client import ModelClient, ModelError, TokenLogprob
 from adapt.config import Platform
 from adapt.data.pseudonymise import pseudonymise
+from adapt.input_guard import injection_suspected
 from adapt.prompting import build_messages, system_prompt
 from adapt.schema import build_output_schema
 
@@ -53,6 +54,7 @@ ReviewReason = (
         "no_total",
         "foreign_currency",
         "heavy_noise",
+        "injection_suspected",
         "vat_mismatch",
         "mixed_private",
         "reverse_charge_cue",
@@ -113,6 +115,8 @@ def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewR
         problems.append("foreign_currency")
     if present and _has_unreadable_amount(text):
         problems.append("heavy_noise")
+    if present and injection_suspected(text):
+        problems.append("injection_suspected")
     return problems
 
 

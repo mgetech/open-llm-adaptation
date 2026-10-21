@@ -42,7 +42,9 @@ def test_the_description_says_which_targets_the_threshold_meets():
     assert "meets the accuracy target and the limit" in describe(tune_threshold(ROWS, 0.75, 0.0))
     only_accuracy = [row(0.99, False, "critical"), row(0.9, True), row(0.8, True)]
     assert "limit on critical errors is not" in describe(tune_threshold(only_accuracy, 0.6, 0.0))
-    assert "no confidence limit" in describe(tune_threshold([row(0.9, False)], 0.95, 0.0))
+    assert "no confidence limit" in describe(
+        tune_threshold([row(0.9, False, "critical")], 0.95, 0.0)
+    )
 
 
 def test_the_report_on_the_saved_round_3_results_shows_both_splits(capsys):
@@ -56,3 +58,19 @@ def test_the_report_on_the_saved_round_3_results_shows_both_splits(capsys):
 def test_a_system_without_saved_results_is_refused(capsys):
     with pytest.raises(SystemExit, match="no saved dev results"):
         main(["--system", "nothing", "--round", "3"])
+
+
+def test_the_report_can_choose_the_threshold_on_both_splits_together(capsys):
+    arguments = ["--system", "qwen3-4b-sft-r3-0", "--round", "3", "--tune-on", "dev", "dev_real"]
+    assert main(arguments) == 0
+    out = capsys.readouterr().out
+    assert "threshold chosen on dev and dev_real:" in out
+    assert out.count("<- chosen on dev and dev_real") == 2
+    assert "not chosen again" not in out
+
+
+def test_the_description_names_the_target_that_is_missed():
+    only_critical = [row(0.99, False), row(0.9, False), row(0.8, True)]
+    assert "limit on critical errors is met, the accuracy target is not" in describe(
+        tune_threshold(only_critical, 0.95, 0.0)
+    )

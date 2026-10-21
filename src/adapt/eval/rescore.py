@@ -1,8 +1,9 @@
 """Score saved results again with the pipeline checks that were added after the run.
 
 Run with `make rescore SYSTEMS="..." ROUND=2`. A saved row holds the answer of the model, so the
-checks that need no model can be applied to it again: `heavy_noise` (a document check, which
-would have stopped the model from being called) and the checks on the answer in
+checks that need no model can be applied to it again: `heavy_noise` and `injection_suspected`
+(document checks, which would have stopped the model from being called) and the checks on the
+answer in
 `adapt.answer_checks` (`vat_mismatch`, `mixed_private`, `reverse_charge_cue`). No model runs. The
 results go to `results/round<N>/rescored/`, in the layout of `eval/`, and the files in `eval/`
 stay as they were run. The confidence thresholds are the ones of the run, unless `RETUNE=1` is
@@ -56,7 +57,7 @@ from adapt.eval.scoring import (
 from adapt.eval.threshold import Tuned, apply_threshold, tune_threshold, tuning_record
 from adapt.pipeline import document_problems
 
-CHECKS = ("heavy_noise", *ANSWER_RULES)
+CHECKS = ("heavy_noise", "injection_suspected", *ANSWER_RULES)
 CONFIDENCE_REASONS = ("no_confidence", "low_confidence")
 # The rules whose effect is shown one by one, and the splits they are shown on. The gold sets are
 # left out on purpose.
@@ -132,16 +133,25 @@ def rows_without_limit(
     return document_rows(score(documents, unlimited, account_groups(platform.rules)))
 
 
+def tune_pooled(
+    sources: Sequence[tuple[Mapping[str, Any], Sequence[EvalDocument]]], platform: Platform
+) -> Tuned:
+    """The threshold chosen again on the rows of several splits together (saved results and their
+    documents), with the gate's targets: the critical-error limit first, then the accuracy."""
+    gate = platform.config.gate
+    rows = [
+        row
+        for results, documents in sources
+        for row in rows_without_limit(results, documents, platform)
+    ]
+    return tune_threshold(rows, gate.accuracy_automated_min, gate.critical_error_rate_max)
+
+
 def tune_on_dev(
     results: Mapping[str, Any], documents: Sequence[EvalDocument], platform: Platform
 ) -> Tuned:
-    """The threshold chosen again on saved dev results, with the gate's targets."""
-    gate = platform.config.gate
-    return tune_threshold(
-        rows_without_limit(results, documents, platform),
-        gate.accuracy_automated_min,
-        gate.critical_error_rate_max,
-    )
+    """The threshold chosen again on saved dev results alone."""
+    return tune_pooled([(results, documents)], platform)
 
 
 def rescore(
@@ -150,6 +160,7 @@ def rescore(
     platform: Platform,
     tuned: Tuned | None = None,
     split: str | None = None,
+    tuned_on: Sequence[str] = ("dev",),
 ) -> tuple[dict[str, Any], Counter[str]]:
     """The saved results of one split scored again, and what the checks changed. With `tuned`,
     the threshold of those dev results is used instead of the one of the run."""
@@ -183,9 +194,10 @@ def rescore(
     }
     if tuned is not None:
         rescored["manifest"]["threshold"] = threshold
-        rescored["confidence_threshold"] = {"value": threshold, "source": "tuned again on dev"} | (
-            tuning_record(tuned) if split == "dev" else {}
-        )
+        rescored["confidence_threshold"] = {
+            "value": threshold,
+            "source": f"tuned again on {' and '.join(tuned_on)}",
+        } | (tuning_record(tuned) if split in tuned_on else {})
     # The rows keep the document check outcome of today, so the old rows are compared by value.
     return rescored, changes(rows, rescored["documents"])
 
@@ -264,7 +276,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--retune",
         action="store_true",
-        help="choose the confidence threshold again on dev and use it on every split",
+        help="choose the confidence threshold again and use it on every split",
+    )
+    parser.add_argument(
+        "--tune-on",
+        nargs="+",
+        choices=("dev", "dev_real"),
+        default=["dev"],
+        help="the splits the threshold is chosen on together (default: dev)",
     )
     args = parser.parse_args(argv)
     for system in args.systems:
@@ -284,22 +303,27 @@ def main(argv: Sequence[str] | None = None) -> int:
     for system in args.systems:
         tuned = None
         if args.retune:
-            dev = _load(results_file(in_dir, args.platform, system, "dev"))
-            if dev is None:
-                sys.exit(f"error: {system}: --retune needs the saved dev results")
+            sources = []
+            for name in args.tune_on:
+                saved = _load(results_file(in_dir, args.platform, system, name))
+                if saved is None:
+                    sys.exit(f"error: {system}: --retune needs the saved {name} results")
+                sources.append((saved, load_documents(args.platform, name, DATA_DIR, data_round)))
             try:
-                dev_documents = load_documents(args.platform, "dev", DATA_DIR, data_round)
-                tuned = tune_on_dev(dev, dev_documents, platform)
+                tuned = tune_pooled(sources, platform)
             except ValueError as error:
-                sys.exit(f"error: {system} dev: {error}")
-            print(f"{system}: threshold chosen again on dev: {tuned.threshold}")
+                sys.exit(f"error: {system} {' and '.join(args.tune_on)}: {error}")
+            chosen_on = " and ".join(args.tune_on)
+            print(f"{system}: threshold chosen again on {chosen_on}: {tuned.threshold}")
         for split in args.splits or ALL_SPLITS:
             results = _load(results_file(in_dir, args.platform, system, split))
             if results is None:
                 continue
             documents = load_documents(args.platform, split, DATA_DIR, data_round)
             try:
-                rescored, counted = rescore(results, documents, platform, tuned, split)
+                rescored, counted = rescore(
+                    results, documents, platform, tuned, split, tuple(args.tune_on)
+                )
             except ValueError as error:
                 sys.exit(f"error: {system} {split}: {error}")
             write_results(rescored, results_file(out_dir, args.platform, system, split))

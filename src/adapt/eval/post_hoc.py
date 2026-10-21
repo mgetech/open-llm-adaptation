@@ -135,12 +135,15 @@ def build(
             "rule": "lowest threshold with accuracy on automated documents at or above "
             f"{gate.accuracy_automated_min:g} and critical-error rate at or below "
             f"{gate.critical_error_rate_max:g}",
-            "both_targets_reached": tuned.chosen is not None and tuned.critical_reached,
+            "both_targets_reached": tuned.chosen is not None
+            and tuned.critical_reached
+            and tuned.accuracy_reached,
             "dev": tuning_record(tuned),
             "baseline": {
                 "value": base_tuned.threshold if base_tuned.threshold is not None else 0.0,
                 "chosen_on": "dev",
-                "accuracy_target_reached": base_tuned.threshold is not None,
+                "accuracy_target_reached": base_tuned.threshold is not None
+                and base_tuned.accuracy_reached,
             },
         },
         "inputs_sha256": inputs,

@@ -42,16 +42,49 @@ def lock_file(out_dir: Path, results_root: Path) -> Path | None:
     return results_root / LOCK_NAME
 
 
-def read_claims(path: Path) -> list[dict[str, Any]]:
+def read_lock(path: Path) -> dict[str, Any]:
+    """The whole lock file: the claims and the sealed files."""
     if not path.exists():
-        return []
-    return json.loads(path.read_text(encoding="utf-8"))["claims"]
+        return {"claims": []}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def read_claims(path: Path) -> list[dict[str, Any]]:
+    return read_lock(path)["claims"]
+
+
+def read_sealed(path: Path) -> dict[str, dict[str, str]]:
+    return read_lock(path).get("sealed", {})
+
+
+def _save(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ordered = {"claims": data["claims"], **{k: v for k, v in data.items() if k != "claims"}}
+    with path.open("w", encoding="utf-8", newline="\n") as file:
+        file.write(json.dumps(ordered, indent=2, ensure_ascii=False) + "\n")
 
 
 def _write(path: Path, claims: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as file:
-        file.write(json.dumps({"claims": claims}, indent=2, ensure_ascii=False) + "\n")
+    _save(path, {**read_lock(path), "claims": claims})
+
+
+def seal(path: Path, name: str, file: str, sha256: str, sealed_on: str) -> bool:
+    """Record that `file` had this hash on `sealed_on`, before the decisions that follow. Returns
+    False when the same hash is already sealed. A file sealed with another hash is refused: a
+    sealed file does not change."""
+    data = read_lock(path)
+    sealed = data.setdefault("sealed", {})
+    current = sealed.get(name)
+    if current is not None:
+        if current["sha256"] != sha256:
+            raise FinalLockError(
+                f"{name} was sealed on {current['sealed']} with another hash. "
+                "A sealed file cannot change."
+            )
+        return False
+    sealed[name] = {"file": file, "sha256": sha256, "sealed": sealed_on}
+    _save(path, data)
+    return True
 
 
 def _find(claims: Sequence[dict[str, Any]], files: Mapping[str, Any]) -> dict[str, Any] | None:

@@ -30,5 +30,12 @@
         }
       ]
     }
-  ]
+  ],
+  "sealed": {
+    "gold_v3": {
+      "file": "platforms/tax-booking/evals/gold_v3.jsonl",
+      "sha256": "02152f1ca6396e98cd544af0d66d256a52e73eca75104fcf2b0aaf286c9c6df6",
+      "sealed": "2026-10-22"
+    }
+  }
 }
