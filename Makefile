@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report gate declare-claim lint format test requirements
+.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate gate declare-claim lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -75,6 +75,9 @@ pair:  ## Combine the saved results of two systems into one pair configuration (
 
 rescore:  ## Score saved results again with the newer pipeline checks, no model run (SYSTEMS="a b"; optional SPLITS=, ROUND=, RETUNE=1)
 	uv run python -m adapt.eval.rescore --platform $(PLATFORM) --systems $(SYSTEMS) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ROUND),--round $(ROUND)) $(if $(RETUNE),--retune)
+
+stage-gate:  ## Gate checks on dev and dev_real of a system, a pass or fail for each, not the claim (SYSTEM=; optional ROUND=, OUT_DIR=)
+	uv run python -m adapt.eval.stage_gate --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR))
 
 threshold-report:  ## Coverage and critical-error curve of a system on dev and dev_real, threshold chosen on dev (SYSTEM=; optional ROUND=, SPLITS=, IN_DIR=)
 	uv run python -m adapt.eval.threshold_report --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(IN_DIR),--in-dir $(IN_DIR))

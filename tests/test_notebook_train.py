@@ -169,6 +169,7 @@ def test_every_make_target_the_notebook_calls_exists(code):
         "train",
         "select",
         "eval-sft",
+        "stage-gate",
         "baseline",
         "gate",
     }
@@ -254,3 +255,14 @@ def test_the_gate_compares_with_the_baseline_and_may_fail(code):
 
 def test_it_does_not_mention_local_planning_files(notebook):
     assert ".idea" not in json.dumps(notebook)
+
+
+def test_the_stage_report_follows_the_evaluation_whatever_the_final_setting_is(code):
+    stage = next(s for s in code if 'make("stage-gate"' in s)
+    assert not stage.startswith("if")  # it runs with FINAL False and True
+    assert 'f"SYSTEM={SYSTEM}"' in stage and "*ROUNDS" in stage and "OUT_DIR" in stage
+    assert "check=False" in stage  # a failing report does not stop the notebook
+    evaluation = next(i for i, s in enumerate(code) if '"eval-sft"' in s and "MAX_STEPS" not in s)
+    index = code.index(stage)
+    assert index == evaluation + 1
+    assert index < next(i for i, s in enumerate(code) if 'make("gate"' in s)
