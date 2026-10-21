@@ -6,35 +6,35 @@
     "train": {
       "file": "tax-booking/round3/train.jsonl",
       "count": 6000,
-      "sha256": "20a0f9bac5bf6baaa00fdb159e91917f8b41a39a4b2c9345fb8d401f334eb63a"
+      "sha256": "c602eb8764752d378150f7945feb9b17bcbba6b0f399a93ee7d0ec726fd1d457"
     },
     "dev": {
       "file": "tax-booking/round3/dev.jsonl",
       "count": 300,
-      "sha256": "7ae8040ec0e11bf70d92fb95a516f578b6e89dc9da266c6aca7c227b1bb81334"
+      "sha256": "10d4cb059366f4abd7208b89e721cfd2e988c3559f2f336b1bb8a432ff814c9d"
     },
     "test_iid": {
       "file": "tax-booking/round3/test_iid.jsonl",
       "count": 500,
-      "sha256": "f29ce156d12bb12a2f58fc0b70bba1df8a61bafb14affcacf7b1dbcac8874fcc"
+      "sha256": "1a1c240d785d1a876ba3160276613776a9fa2ac4eb5924da99082e26cf03c7ee"
     },
     "test_ood": {
       "file": "tax-booking/round3/test_ood.jsonl",
       "count": 300,
-      "sha256": "d7275fb47803c2edda42342223891eea44804a8a1bf2199602e5ea4394eeb0b5"
+      "sha256": "3efa974832dfc8819cea35b537a84eef1b134b00331f25135657b21538b4192a"
     },
     "edge": {
       "file": "tax-booking/round3/edge.jsonl",
       "count": 150,
-      "sha256": "6ce401b7d06fdec762add88096537ff5d2f660e87cfeb491b8c5f27b111a2458"
+      "sha256": "ecd7bfa410686b13e4893b2f678ccf4b3b2747b6a588f2d41fbf8626a238e84e"
     }
   },
   "rewrite": {
     "rewriter": "external model",
-    "documents": 3790,
+    "documents": 3480,
     "tasks": 3790,
     "tasks_sha256": "b5a9c9f0d012813f2a82ce72bfb317d94a6219366dfb9dcedc36ba168ac55181",
-    "accepted_sha256": "91b67d86bbf76e6016580a75f5656f340322b146730fb9173afcb01c6151cb11"
+    "accepted_sha256": "11ef0ee621520ac4ffa2479bde3ee1e0b608518f2735a87fde0de27201e9871c"
   },
   "rounds": [
     {
