@@ -1,0 +1,15 @@
+{
+  "claims": [
+    {
+      "test_ood_sha256": "3efa974832dfc8819cea35b537a84eef1b134b00331f25135657b21538b4192a",
+      "gold_sha256": {
+        "gold": "6f23b0b597427269d87ccca4b0bca083196fc019432d49dff73b8c3b472412eb",
+        "gold_v2": "fc056b474e76a972b49954f8fd190f2cb99a8f3f0c921f415615ac5591e6b694"
+      },
+      "system": "qwen3-4b-sft-r3-0",
+      "adapter_hash": "2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c",
+      "round": 3,
+      "override": false
+    }
+  ]
+}

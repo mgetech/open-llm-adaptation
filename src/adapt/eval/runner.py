@@ -34,6 +34,7 @@ from adapt.client import ModelClient, ssl_context
 from adapt.config import PLATFORMS_DIR, Platform, load_platform
 from adapt.data.gold import gold_path
 from adapt.data.rounds import eval_dir, generator_version, resolve_round, round_folder
+from adapt.eval.final_lock import CLAIM_SPLITS, claim, lock_file
 from adapt.eval.metrics import account_groups
 from adapt.eval.scoring import (
     EvalDocument,
@@ -55,6 +56,7 @@ from adapt.prompting import system_prompt
 ROOT = PLATFORMS_DIR.parent
 DATA_DIR = ROOT / "data"
 RESULTS_DIR = eval_dir()  # the results of the current round
+RESULTS_ROOT = ROOT / "results"
 SPLITS = ("dev", "test_iid", "test_ood", "edge", "gold")
 # gold_v2 is written by hand after the first round. It is reported next to gold, and the gate
 # does not read it. dev_real is written by hand too. It is used to choose a configuration and
@@ -408,6 +410,39 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
     }
 
 
+def claim_final_split(
+    platform: str,
+    system: str,
+    split: str,
+    out_dir: Path,
+    *,
+    adapter_path: Path | None = None,
+    data_dir: Path = DATA_DIR,
+    data_round: int | None = None,
+    few_shot: bool = False,
+    override: bool = False,
+    results_root: Path = RESULTS_ROOT,
+) -> None:
+    """Make the final claim for a run on test_ood or a gold set, or refuse it (see final_lock).
+    Other splits, the few-shot baseline and runs that write outside the results folder make no
+    claim."""
+    path = lock_file(out_dir, results_root)
+    if split not in CLAIM_SPLITS or few_shot or path is None:
+        return
+    data_round = resolve_round(data_round, data_dir)
+    gold = {
+        name: hash_file(gold_path(platform, data_dir.parent / "platforms", name))
+        for name in ("gold", "gold_v2")
+        if gold_path(platform, data_dir.parent / "platforms", name).exists()
+    }
+    files = {
+        "test_ood_sha256": hash_file(split_path(platform, "test_ood", data_dir, data_round)),
+        "gold_sha256": gold,
+    }
+    adapter_hash = hash_directory(adapter_path) if adapter_path else None
+    claim(path, files, system, adapter_hash, data_round, override)
+
+
 def results_file(out_dir: Path, platform: str, system: str, split: str) -> Path:
     return out_dir / platform / system / f"{split}.json"
 
@@ -460,6 +495,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--few-shot", action="store_true", help="add the examples to the prompt")
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
+    parser.add_argument(
+        "--override-final-lock",
+        action="store_true",
+        help="run on test_ood or gold files that already back a final claim (written to the lock)",
+    )
     args = parser.parse_args(argv)
     try:
         out_dir = args.out_dir or eval_dir(args.round)
@@ -481,6 +521,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         data_round=args.round,
     )
     try:
+        claim_final_split(
+            args.platform,
+            args.system,
+            args.split,
+            out_dir,
+            adapter_path=args.adapter_path,
+            data_round=args.round,
+            few_shot=args.few_shot,
+            override=args.override_final_lock,
+        )
         results = evaluate(settings)
     except ValueError as error:
         sys.exit(f"error: {error}")

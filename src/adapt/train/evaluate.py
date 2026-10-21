@@ -38,6 +38,7 @@ from adapt.data.rounds import eval_dir, resolve_round, round_tag
 from adapt.eval.runner import (
     ALL_SPLITS,
     RunSettings,
+    claim_final_split,
     default_splits,
     evaluate,
     results_file,
@@ -103,13 +104,18 @@ def evaluate_adapters(
     timeout: float = START_TIMEOUT_SECONDS,
     data_round: int | None = None,
     threshold: float | None = None,
+    override_final_lock: bool = False,
 ) -> dict[str, list[Path]]:
     """Serve the base model with every adapter in `adapters` (system name to folder) and
     evaluate each system on `splits`. Returns the results files of each system.
 
     `servers` servers are started, on `port` and the ports after it. A dry run takes a free
     port for each of the others, so that it never meets a port that is in use. A `threshold` is
-    used as given, and without one it is tuned on dev, as for any system."""
+    used as given, and without one it is tuned on dev, as for any system.
+
+    A run on test_ood or a gold set makes the final claim on those files, or is refused when
+    another system holds it (see `adapt.eval.final_lock`). The claim is made before any server
+    starts."""
     if smoke and not dry_run:
         raise ValueError("the adapter of a smoke run is random, evaluate it with --dry-run")
     if servers < 1:
@@ -123,6 +129,17 @@ def evaluate_adapters(
             raise ValueError(f"no adapter in {adapter_dir}, train it first ({system})")
 
     data_round = resolve_round(data_round)
+    for system, adapter_dir in adapters.items():
+        for split in splits:
+            claim_final_split(
+                platform,
+                system,
+                split,
+                out_dir,
+                adapter_path=adapter_dir,
+                data_round=data_round,
+                override=override_final_lock,
+            )
     if dry_run:
         ports = [port, *(free_port() for _ in range(servers - 1))]
     else:
@@ -195,6 +212,7 @@ def evaluate_adapter(
     workers: int = 8,
     timeout: float = START_TIMEOUT_SECONDS,
     data_round: int | None = None,
+    override_final_lock: bool = False,
 ) -> list[Path]:
     """Evaluate the adapter of a run on `splits`. Returns the results files."""
     splits = default_splits(platform) if splits is None else splits
@@ -224,6 +242,7 @@ def evaluate_adapter(
         workers=workers,
         timeout=timeout,
         data_round=data_round,
+        override_final_lock=override_final_lock,
     )
     return written[system]
 
@@ -252,6 +271,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--servers", type=int, default=1, help="servers, one per GPU")
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     parser.add_argument("--dry-run", action="store_true", help="use the fake server, not vLLM")
+    parser.add_argument(
+        "--override-final-lock",
+        action="store_true",
+        help="run on test_ood or gold files that already back a final claim",
+    )
     args = parser.parse_args(argv)
     if not args.smoke and not args.model:
         parser.error("--model is required unless --smoke is given")
@@ -274,6 +298,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             dry_run=args.dry_run,
             workers=args.workers,
             data_round=args.round,
+            override_final_lock=args.override_final_lock,
         )
     except (RuntimeError, ValueError) as error:
         sys.exit(f"error: {error}")

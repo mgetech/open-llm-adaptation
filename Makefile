@@ -54,18 +54,18 @@ select:  ## Score the checkpoints of a run on dev_real and keep the best as its 
 		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR)) \
 		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
 
-eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional ROUND=, SMOKE=1, MAX_STEPS=, NUM_GPUS=, SERVERS=2, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1)
+eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional ROUND=, SMOKE=1, MAX_STEPS=, NUM_GPUS=, SERVERS=2, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1, OVERRIDE_FINAL_LOCK=1)
 	uv run python -m adapt.train.evaluate --platform $(PLATFORM) --seed $(SEED) \
 		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(MAX_STEPS),--max-steps $(MAX_STEPS) --num-gpus $(NUM_GPUS)) \
 		$(if $(SERVERS),--servers $(SERVERS)) $(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) \
-		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
+		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run) $(if $(OVERRIDE_FINAL_LOCK),--override-final-lock)
 
-eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINTS=; optional ROUND=, MODEL=, THRESHOLD=, FEW_SHOT=1, OUT_DIR=)
+eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINTS=; optional ROUND=, MODEL=, THRESHOLD=, FEW_SHOT=1, OUT_DIR=, OVERRIDE_FINAL_LOCK=1)
 	uv run python -m adapt.eval.runner --platform $(PLATFORM) --split $(SPLIT) --endpoints $(ENDPOINTS) \
 		$(if $(SYSTEM),--system $(SYSTEM)) $(if $(MODEL),--model $(MODEL)) \
 		$(if $(THRESHOLD),--threshold $(THRESHOLD)) $(if $(WORKERS),--workers $(WORKERS)) \
 		$(if $(MODEL_REVISION),--model-revision $(MODEL_REVISION)) \
-		$(if $(ADAPTER_PATH),--adapter-path $(ADAPTER_PATH)) $(if $(ROUND),--round $(ROUND)) $(if $(FEW_SHOT),--few-shot) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
+		$(if $(ADAPTER_PATH),--adapter-path $(ADAPTER_PATH)) $(if $(ROUND),--round $(ROUND)) $(if $(FEW_SHOT),--few-shot) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(OVERRIDE_FINAL_LOCK),--override-final-lock)
 
 baseline:  ## Few-shot baseline of one model, with its own server (MODEL=; optional ROUND=, SPLITS=, OUT_DIR=, DRY_RUN=1)
 	uv run python -m adapt.baseline --platform $(PLATFORM) --model $(MODEL) 		$(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
