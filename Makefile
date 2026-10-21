@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train eval-sft eval pair rescore gate lint format test requirements
+.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore gate lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -46,6 +46,13 @@ train:  ## QLoRA fine-tuning of one model (MODEL=, SEED=; optional ROUND=, NUM_G
 		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(RESUME),--resume) \
 		$(if $(MAX_STEPS),--max-steps $(MAX_STEPS)) $(if $(ROUND),--round $(ROUND)) \
 		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR))
+
+select:  ## Score the checkpoints of a run on dev_real and keep the best as its adapter (MODEL=, SEED=; optional ROUND=, STEPS="150 225", SERVERS=2, SMOKE=1, ADAPTERS_DIR=, RUNS_DIR=, OUT_DIR=, DRY_RUN=1)
+	uv run python -m adapt.train.selection --platform $(PLATFORM) --seed $(SEED) \
+		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(STEPS),--steps $(STEPS)) \
+		$(if $(SERVERS),--servers $(SERVERS)) $(if $(ROUND),--round $(ROUND)) \
+		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR)) \
+		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
 
 eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional ROUND=, SMOKE=1, MAX_STEPS=, NUM_GPUS=, SERVERS=2, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1)
 	uv run python -m adapt.train.evaluate --platform $(PLATFORM) --seed $(SEED) \

@@ -1,10 +1,10 @@
 """The training settings of `configs/train.yaml`."""
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 TRAIN_FILE = Path(__file__).resolve().parents[3] / "configs" / "train.yaml"
 
@@ -43,18 +43,15 @@ class Data(_Model):
 
 class Checkpoint(_Model):
     save_steps: int = Field(gt=0)
-    keep: int = Field(gt=0)
 
 
-class EarlyStopping(_Model):
-    patience: int = Field(gt=0)
-    min_delta: float = Field(ge=0)
+class Selection(_Model):
+    steps: list[int] = Field(min_length=1)
 
 
 class Smoke(_Model):
     steps: int = Field(gt=0)
     examples: int = Field(gt=0)
-    eval_examples: int = Field(gt=0)
     tokenizer_examples: int = Field(gt=0)
     batch_size: int = Field(gt=0)
     max_length: int = Field(gt=0)
@@ -74,9 +71,17 @@ class TrainConfig(_Model):
     optimiser: Optimiser
     data: Data
     checkpoint: Checkpoint
-    early_stopping: EarlyStopping
+    selection: Selection
     logging_steps: int = Field(gt=0)
     smoke: Smoke
+
+    @model_validator(mode="after")
+    def _selection_steps_have_a_checkpoint(self) -> Self:
+        every = self.checkpoint.save_steps
+        missing = [step for step in self.selection.steps if step % every]
+        if missing:
+            raise ValueError(f"no checkpoint is saved at step {missing[0]}, only every {every}")
+        return self
 
 
 def load_train_config(path: Path = TRAIN_FILE) -> TrainConfig:

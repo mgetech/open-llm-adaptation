@@ -23,7 +23,7 @@ import argparse
 import os
 import subprocess
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from adapt.baseline import (
@@ -65,18 +65,116 @@ def system_name(
     return f"{name}-steps{max_steps}" if max_steps else name
 
 
+def lora_modules_command(
+    registry: Registry, key: str, port: int, modules: Mapping[str, Path], rank: int
+) -> list[str]:
+    """The base model command of the baseline, with the adapters loaded as LoRA modules. A server
+    that holds several adapters has a slot for each, so a request for any of them runs at once."""
+    command = [*serve_command(registry, key, port), "--enable-lora", "--max-lora-rank", str(rank)]
+    if len(modules) > 1:
+        command += ["--max-loras", str(len(modules))]
+    return [
+        *command,
+        "--lora-modules",
+        *(f"{name}={path.resolve()}" for name, path in modules.items()),
+    ]
+
+
 def lora_command(
     registry: Registry, key: str, port: int, system: str, adapter_dir: Path, rank: int
 ) -> list[str]:
     """The base model command of the baseline, with the adapter loaded as a LoRA module."""
-    return [
-        *serve_command(registry, key, port),
-        "--enable-lora",
-        "--max-lora-rank",
-        str(rank),
-        "--lora-modules",
-        f"{system}={adapter_dir.resolve()}",
-    ]
+    return lora_modules_command(registry, key, port, {system: adapter_dir}, rank)
+
+
+def evaluate_adapters(
+    registry: Registry,
+    key: str | None,
+    adapters: Mapping[str, Path],
+    out_dir: Path,
+    *,
+    platform: str = "tax-booking",
+    splits: Sequence[str],
+    smoke: bool = False,
+    port: int = 8000,
+    servers: int = 1,
+    dry_run: bool = False,
+    workers: int = 8,
+    timeout: float = START_TIMEOUT_SECONDS,
+    data_round: int | None = None,
+    threshold: float | None = None,
+) -> dict[str, list[Path]]:
+    """Serve the base model with every adapter in `adapters` (system name to folder) and
+    evaluate each system on `splits`. Returns the results files of each system.
+
+    `servers` servers are started, on `port` and the ports after it. A dry run takes a free
+    port for each of the others, so that it never meets a port that is in use. A `threshold` is
+    used as given, and without one it is tuned on dev, as for any system."""
+    if smoke and not dry_run:
+        raise ValueError("the adapter of a smoke run is random, evaluate it with --dry-run")
+    if servers < 1:
+        raise ValueError(f"the number of servers must be at least 1, not {servers}")
+    unknown = [split for split in splits if split not in ALL_SPLITS]
+    if unknown:
+        raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(ALL_SPLITS)}")
+    entry = None if smoke else trainable_entry(registry, key or "")
+    for system, adapter_dir in adapters.items():
+        if not (adapter_dir / "adapter_config.json").exists():
+            raise ValueError(f"no adapter in {adapter_dir}, train it first ({system})")
+
+    data_round = resolve_round(data_round)
+    if dry_run:
+        ports = [port, *(free_port() for _ in range(servers - 1))]
+    else:
+        ports = [port + index for index in range(servers)]
+    rank = load_train_config().lora.r
+    processes: list[subprocess.Popen] = []
+    written: dict[str, list[Path]] = {system: [] for system in adapters}
+    try:
+        for index, server_port in enumerate(ports):
+            if dry_run:
+                command = fake_command(server_port, data_round)
+            else:
+                command = lora_modules_command(registry, key or "", server_port, adapters, rank)
+            # With several servers, each one has a GPU of its own.
+            env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(index)} if servers > 1 else None
+            processes.append(subprocess.Popen(command, env=env))
+        endpoints = []
+        for process, server_port in zip(processes, ports, strict=True):
+            base_url = f"http://127.0.0.1:{server_port}"
+            wait_until_ready(base_url, process, timeout)
+            endpoint = f"{base_url}/v1"
+            version = server_version(endpoint)
+            pinned = registry.gates.vllm.version
+            if not dry_run and version != pinned:
+                raise ValueError(f"the server runs vllm {version}, the registry pins {pinned}")
+            endpoints.append(endpoint)
+        for system, adapter_dir in adapters.items():
+            for split in splits:
+                settings = RunSettings(
+                    platform,
+                    system,
+                    split,
+                    tuple(endpoints),
+                    system,
+                    threshold=threshold,
+                    workers=workers,
+                    model_revision=entry.revision if entry else None,
+                    adapter_path=adapter_dir,
+                    out_dir=out_dir,
+                    data_round=data_round,
+                )
+                results = evaluate(settings)
+                path = results_file(out_dir, platform, system, split)
+                write_results(results, path)
+                written[system].append(path)
+                print(
+                    f"{system} on {split}: {len(results['documents'])} documents, results in {path}"
+                )
+    finally:
+        for process in processes:
+            stop(process)
+    return written
 
 
 def evaluate_adapter(
@@ -98,20 +196,8 @@ def evaluate_adapter(
     timeout: float = START_TIMEOUT_SECONDS,
     data_round: int | None = None,
 ) -> list[Path]:
-    """Evaluate the adapter of a run on `splits`. Returns the results files.
-
-    `servers` servers are started, on `port` and the ports after it. A dry run takes a free
-    port for each of the others, so that it never meets a port that is in use."""
-    if smoke and not dry_run:
-        raise ValueError("the adapter of a smoke run is random, evaluate it with --dry-run")
-    if servers < 1:
-        raise ValueError(f"the number of servers must be at least 1, not {servers}")
+    """Evaluate the adapter of a run on `splits`. Returns the results files."""
     splits = default_splits(platform) if splits is None else splits
-    unknown = [split for split in splits if split not in ALL_SPLITS]
-    if unknown:
-        raise ValueError(f"unknown split {unknown[0]!r}, expected one of {', '.join(ALL_SPLITS)}")
-    entry = None if smoke else trainable_entry(registry, key or "")
-
     data_round = resolve_round(data_round)
     train = TrainSettings(
         platform,
@@ -123,58 +209,23 @@ def evaluate_adapter(
         data_round=data_round,
     )
     adapter_dir = adapters_dir / platform / run_name(train)
-    if not (adapter_dir / "adapter_config.json").exists():
-        raise ValueError(f"no adapter in {adapter_dir}, train it first")
     system = system_name(key, seed, smoke=smoke, max_steps=max_steps, data_round=data_round)
-
-    if dry_run:
-        ports = [port, *(free_port() for _ in range(servers - 1))]
-    else:
-        ports = [port + index for index in range(servers)]
-    rank = load_train_config().lora.r
-    processes: list[subprocess.Popen] = []
-    written = []
-    try:
-        for index, server_port in enumerate(ports):
-            if dry_run:
-                command = fake_command(server_port, data_round)
-            else:
-                command = lora_command(registry, key or "", server_port, system, adapter_dir, rank)
-            # With several servers, each one has a GPU of its own.
-            env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(index)} if servers > 1 else None
-            processes.append(subprocess.Popen(command, env=env))
-        endpoints = []
-        for process, server_port in zip(processes, ports, strict=True):
-            base_url = f"http://127.0.0.1:{server_port}"
-            wait_until_ready(base_url, process, timeout)
-            endpoint = f"{base_url}/v1"
-            version = server_version(endpoint)
-            pinned = registry.gates.vllm.version
-            if not dry_run and version != pinned:
-                raise ValueError(f"the server runs vllm {version}, the registry pins {pinned}")
-            endpoints.append(endpoint)
-        for split in splits:
-            settings = RunSettings(
-                platform,
-                system,
-                split,
-                tuple(endpoints),
-                system,
-                workers=workers,
-                model_revision=entry.revision if entry else None,
-                adapter_path=adapter_dir,
-                out_dir=out_dir,
-                data_round=data_round,
-            )
-            results = evaluate(settings)
-            path = results_file(out_dir, platform, system, split)
-            write_results(results, path)
-            written.append(path)
-            print(f"{system} on {split}: {len(results['documents'])} documents, results in {path}")
-    finally:
-        for process in processes:
-            stop(process)
-    return written
+    written = evaluate_adapters(
+        registry,
+        key,
+        {system: adapter_dir},
+        out_dir,
+        platform=platform,
+        splits=splits,
+        smoke=smoke,
+        port=port,
+        servers=servers,
+        dry_run=dry_run,
+        workers=workers,
+        timeout=timeout,
+        data_round=data_round,
+    )
+    return written[system]
 
 
 def main(argv: Sequence[str] | None = None) -> int:

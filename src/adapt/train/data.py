@@ -26,14 +26,6 @@ def load_train_records(
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
-def load_dev_real_records(platform: str, data_dir: Path = DATA_DIR) -> list[dict[str, Any]]:
-    """The dev_real documents, which only measure the loss. Empty if the file is not there."""
-    path = split_path(platform, "dev_real", data_dir)
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-
-
 def render_prompt(tokenizer: Any, system: str, document_text: str, enable_thinking: bool) -> str:
     """The text the model sees before it answers."""
     return tokenizer.apply_chat_template(

@@ -1,15 +1,15 @@
 """Fine-tune one model with QLoRA and write its adapter and a run manifest.
 
     adapters/<platform>/<model>-<seed>/            the adapter (not committed)
-    adapters/<platform>/<model>-<seed>-checkpoints/  checkpoints, for `--resume`
+    adapters/<platform>/<model>-<seed>-checkpoints/  every checkpoint
     results/round<N>/runs/<platform>-<model>-<seed>.json    the run manifest
 
 `--round N` trains on the data of round N (default: the current round). A run on a later round
 than the first has `-r<N>` after the model, as in `qwen3-4b-r2-0`.
 
-If `dev_real.jsonl` exists, the loss on its documents is measured each time a checkpoint is saved.
-The run stops when it has not improved for `early_stopping.patience` checkpoints, and the adapter
-is the one with the lowest loss. The documents are never trained on. The manifest has the losses.
+The run trains every step and keeps every checkpoint (`checkpoint.save_steps`). The adapter it
+writes is the last one. `make select` then scores some checkpoints on the dev_real documents, which
+are never trained on, and records the choice in the manifest.
 
 `--smoke` trains a tiny random model with a tiny tokenizer on the CPU for two steps. It checks the
 code path. It writes under `smoke-<seed>` and its manifest goes next to the adapter, not into
@@ -34,7 +34,7 @@ import platform as host
 import shutil
 import sys
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -46,7 +46,7 @@ from adapt.eval.runner import git_state, gpu_name, hash_directory, hash_file, sp
 from adapt.models import ModelEntry, Registry, check_model, load_registry
 from adapt.prompting import system_prompt
 from adapt.train.config import TrainConfig, load_train_config
-from adapt.train.data import encode_records, load_dev_real_records, load_train_records
+from adapt.train.data import encode_records, load_train_records
 
 ADAPTERS_DIR = Path("adapters")
 PACKAGES = ("torch", "transformers", "trl", "peft", "bitsandbytes", "datasets", "tokenizers")
@@ -137,29 +137,6 @@ def prepare_output(adapter_dir: Path, checkpoint_dir: Path, *, resume: bool, smo
             f"{adapter_dir} or its checkpoints exist. Use --resume to continue that run, "
             "or remove them to start again"
         )
-
-
-def selection_summary(
-    history: Sequence[Mapping[str, Any]],
-    best_checkpoint: str | None,
-    best_loss: float | None,
-    steps: int,
-    planned_steps: int,
-) -> dict[str, Any]:
-    """What the dev_real loss did during a run, for the manifest."""
-    best_step = None
-    if best_checkpoint:
-        best_step = int(Path(best_checkpoint).name.removeprefix("checkpoint-"))
-    return {
-        "eval_losses": [
-            {"step": entry["step"], "loss": entry["eval_loss"]}
-            for entry in history
-            if "eval_loss" in entry
-        ],
-        "best_step": best_step,
-        "best_loss": best_loss,
-        "stopped_early": steps < planned_steps,
-    }
 
 
 def lora_to_float32(model: Any) -> None:
@@ -274,21 +251,8 @@ def run(
         max_length=max_length,
     )
 
-    selection = load_dev_real_records(settings.platform)
-    if settings.smoke:
-        selection = selection[: smoke.eval_examples]
-    selection_examples = encode_records(
-        tokenizer,
-        settings.platform,
-        platform.rules,
-        selection,
-        enable_thinking=entry.chat_template.enable_thinking if entry else False,
-        max_length=max_length,
-    )
-
     from datasets import Dataset
     from peft import LoraConfig, get_peft_model
-    from transformers import EarlyStoppingCallback
     from trl import SFTConfig, SFTTrainer
 
     lora = config.lora
@@ -313,26 +277,6 @@ def run(
     )
     effective_batch = per_device_batch * accumulation * settings.num_gpus
     save_steps = smoke.save_steps if settings.smoke else config.checkpoint.save_steps
-    stopping = config.early_stopping
-    # The loss is measured when a checkpoint is saved, so that the best one can be kept.
-    selecting: dict[str, Any] = {}
-    if selection_examples:
-        selecting = {
-            "eval_strategy": "steps",
-            "eval_steps": save_steps,
-            "per_device_eval_batch_size": per_device_batch,
-            "load_best_model_at_end": True,
-            "metric_for_best_model": "eval_loss",
-            "greater_is_better": False,
-        }
-    callbacks = []
-    if selection_examples:
-        callbacks.append(
-            EarlyStoppingCallback(
-                early_stopping_patience=stopping.patience,
-                early_stopping_threshold=stopping.min_delta,
-            )
-        )
     arguments = SFTConfig(
         output_dir=str(checkpoint_dir),
         seed=settings.seed,
@@ -352,19 +296,16 @@ def run(
         ddp_find_unused_parameters=False,
         save_strategy="steps",
         save_steps=save_steps,
-        save_total_limit=config.checkpoint.keep,
+        save_total_limit=None,
         logging_steps=config.logging_steps,
         report_to="none",
         max_length=max_length,
         packing=False,
-        **selecting,
     )
     trainer = SFTTrainer(
         model=model,
         args=arguments,
         train_dataset=Dataset.from_list(examples),
-        eval_dataset=Dataset.from_list(selection_examples) if selection_examples else None,
-        callbacks=callbacks,
         processing_class=tokenizer,
     )
     lora_to_float32(trainer.model)
@@ -385,8 +326,6 @@ def run(
     peak_memory = None if settings.smoke else torch.cuda.max_memory_reserved() / 2**30
     commit, dirty = git_state()
     train_file = split_path(settings.platform, "train", data_round=data_round)
-    selection_file = split_path(settings.platform, "dev_real")
-    state = trainer.state
     manifest = {
         "run_id": run_id,
         "platform": settings.platform,
@@ -409,22 +348,7 @@ def run(
             "longest_example_tokens": max(len(e["input_ids"]) for e in examples),
             "max_length": max_length,
         },
-        "selection": {
-            "split": "dev_real",
-            "file": selection_file.name,
-            "sha256": hash_file(selection_file),
-            "examples": len(selection_examples),
-            "eval_steps": save_steps,
-            **selection_summary(
-                state.log_history,
-                state.best_model_checkpoint,
-                state.best_metric,
-                result.global_step,
-                state.max_steps,
-            ),
-        }
-        if selection_examples
-        else None,
+        "selection": None,  # `make select` fills it in
         "git_commit": commit,
         "git_dirty": dirty,
         "gpu": gpu_name(),

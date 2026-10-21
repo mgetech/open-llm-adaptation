@@ -9,17 +9,15 @@ import pytest
 from adapt.config import load_platform
 from adapt.eval.runner import hash_directory, hash_file, split_path
 from adapt.prompting import build_messages, system_prompt
-from adapt.train.config import load_train_config
 from adapt.train.data import (
     IGNORE,
     answer_text,
     encode_example,
     encode_records,
-    load_dev_real_records,
     load_train_records,
     render_prompt,
 )
-from adapt.train.run import TrainSettings, lora_to_float32, main, run, selection_summary
+from adapt.train.run import TrainSettings, lora_to_float32, main, run
 from adapt.train.smoke import tiny_tokenizer
 from chat_template import TEMPLATE, render_chat
 
@@ -271,63 +269,25 @@ def test_the_same_seed_gives_the_same_training(smoke, tmp_path):
     assert second["adapter_sha256"] == first["adapter_sha256"]
 
 
-def test_the_dev_real_documents_are_read_for_the_loss_and_none_is_in_the_training_file(records):
-    selection = load_dev_real_records("tax-booking")
-    assert selection
-    assert {r["document_text"] for r in selection}.isdisjoint(r["document_text"] for r in records)
-
-
-def test_a_platform_without_dev_real_documents_has_none_to_measure(tmp_path):
-    assert load_dev_real_records("tax-booking", data_dir=tmp_path / "data") == []
-
-
-def test_a_smoke_run_measures_the_loss_on_dev_real_and_keeps_the_best_checkpoint(smoke):
+def test_a_smoke_run_keeps_every_checkpoint_and_leaves_the_choice_to_the_selection(smoke):
     adapters, manifest = smoke
-    selection = manifest["selection"]
-    smoke_config = load_train_config().smoke
-    assert selection["split"] == "dev_real" and selection["file"] == "dev_real.jsonl"
-    assert selection["sha256"] == hash_file(split_path("tax-booking", "dev_real"))
-    assert selection["examples"] == smoke_config.eval_examples
-    assert [entry["step"] for entry in selection["eval_losses"]] == [1, 2]
-    assert all(entry["loss"] > 0 for entry in selection["eval_losses"])
-    best = min(selection["eval_losses"], key=lambda entry: entry["loss"])
-    assert selection["best_step"] == best["step"] and selection["best_loss"] == best["loss"]
-    assert selection["stopped_early"] is False
-    assert (adapters / "tax-booking" / f"smoke-0-checkpoints/checkpoint-{best['step']}").is_dir()
-
-
-def test_a_run_stops_when_the_dev_real_loss_does_not_improve(tmp_path):
-    base = load_train_config()
-    # A loss must drop by more than 100 to count as better, so the second checkpoint is the first
-    # one without an improvement and the run stops there.
-    stopping = base.early_stopping.model_copy(update={"patience": 1, "min_delta": 100})
-    config = base.model_copy(update={"early_stopping": stopping})
-    settings = TrainSettings("tax-booking", 0, smoke=True, max_steps=6, adapters_dir=tmp_path)
-    manifest = run(settings, config)
-    assert manifest["steps"] == 2
-    assert manifest["selection"]["stopped_early"] is True
-
-
-def test_the_summary_names_the_best_step_and_whether_the_run_stopped_early():
-    history = [
-        {"step": 10, "loss": 2.0},
-        {"step": 50, "eval_loss": 0.9},
-        {"step": 100, "eval_loss": 0.7},
-        {"step": 150, "eval_loss": 0.8},
+    folder = adapters / "tax-booking" / "smoke-0-checkpoints"
+    assert sorted(path.name for path in folder.glob("checkpoint-*")) == [
+        "checkpoint-1",
+        "checkpoint-2",
     ]
-    summary = selection_summary(history, "adapters/x-checkpoints/checkpoint-100", 0.7, 150, 375)
-    assert summary == {
-        "eval_losses": [
-            {"step": 50, "loss": 0.9},
-            {"step": 100, "loss": 0.7},
-            {"step": 150, "loss": 0.8},
-        ],
-        "best_step": 100,
-        "best_loss": 0.7,
-        "stopped_early": True,
-    }
-    assert not selection_summary(history, None, None, 375, 375)["stopped_early"]
-    assert selection_summary([], None, None, 3, 3)["best_step"] is None
+    for checkpoint in folder.glob("checkpoint-*"):
+        assert (checkpoint / "adapter_config.json").is_file()
+        assert (checkpoint / "adapter_model.safetensors").is_file()
+    assert manifest["selection"] is None
+
+
+def test_a_run_trains_every_step_whatever_the_loss_on_dev_real_does(tmp_path):
+    settings = TrainSettings("tax-booking", 0, smoke=True, max_steps=4, adapters_dir=tmp_path)
+    manifest = run(settings)
+    assert manifest["steps"] == 4
+    folder = tmp_path / "tax-booking" / "smoke-0-checkpoints"
+    assert len(list(folder.glob("checkpoint-*"))) == 4
 
 
 def test_a_run_continues_from_its_last_checkpoint(tmp_path):
