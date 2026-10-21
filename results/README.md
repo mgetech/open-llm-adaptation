@@ -6,6 +6,8 @@ The results are kept per round of data. Each round has its own folder:
 results/
   data_manifest.json    the rounds of data, with seed, generator version and SHA-256 of every file
   final.lock.json       the final claim: the files it stands on, the configurations declared for it and the runs
+  post_hoc/
+    round3_rescored.json                    post-hoc re-scoring of the round 3 claim run, not a claim
   round1/
     eval/<platform>/<system>/<split>.json    metrics, confidence intervals, slices and one row per document
     runs/<platform>-<model>-<seed>.json      manifest of one training run
@@ -36,6 +38,10 @@ It did not pass the gate. As run, accuracy on automated documents, the critical-
 An earlier 4B run of round 3 stopped training early on the `dev_real` loss and gave a much worse model. I dropped that rule. The results of that run are not kept here.
 
 The round 3 test splits and `gold_v2` were evaluated in that run, so they cannot back another claim. `final.lock.json` holds that claim. A run of a system on `test_ood` or on a gold file is refused unless a claim was declared before the run (`make declare-claim`) and the system is one of its configurations. The claim cannot change after the first run.
+
+### Post-hoc re-scoring of round 3
+
+`post_hoc/round3_rescored.json` scores the saved outputs of the round 3 claim run again with the changes below: the injection figure and a confidence threshold chosen on dev. It is post-hoc and not a claim. The test splits and `gold_v2` it reads were already evaluated in the claim run, and I made the changes after I saw that result. The threshold comes from dev only. I did not change it after looking at the other splits, and I do not choose anything from this report. The file carries the same label, the hashes of the saved results it read, and every gate check, once with `gold_v2` as the gold set and once with `gold`. `make post-hoc SYSTEM=qwen3-4b-sft-r3-0 BASELINE=qwen3-4b-fewshot-r3 ROUND=3` writes it again from the saved results without running a model. It did not pass the gate: with `gold_v2` as the gold set, the automation rate is below its limit, and the critical-error rate and prompt-injection success are over theirs.
 
 ### Changes made after the round 3 result
 
