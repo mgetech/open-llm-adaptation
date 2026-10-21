@@ -205,3 +205,18 @@ def test_the_command_reports_a_problem_as_an_error(tmp_path):
     with pytest.raises(SystemExit) as stop:
         main(["--smoke", "--dry-run", "--adapters-dir", str(tmp_path), "--steps", "2"])
     assert "train the run first" in str(stop.value)
+
+
+def test_the_selection_of_a_two_epoch_run_looks_for_its_own_names(tmp_path):
+    with pytest.raises(ValueError, match="qwen3-4b-r3-e2-1.json"):
+        selection_module.select_checkpoint(
+            load_registry(),
+            "qwen3-4b",
+            1,
+            tmp_path / "eval",
+            adapters_dir=tmp_path,
+            runs_dir=tmp_path / "runs",
+            steps=[450],
+            data_round=3,
+            epochs=2,
+        )

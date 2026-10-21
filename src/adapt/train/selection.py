@@ -94,14 +94,17 @@ def select_checkpoint(
     workers: int = 8,
     timeout: float = START_TIMEOUT_SECONDS,
     data_round: int | None = None,
+    epochs: int | None = None,
 ) -> dict[str, Any]:
     """Score the checkpoints, put the best one in the place of the adapter, write the choice into
     the manifest of the run, and return the `selection` entry."""
     steps = tuple(steps) if steps else tuple(load_train_config().selection.steps)
     data_round = resolve_round(data_round)
-    train = TrainSettings(platform, seed, model=key, smoke=smoke, data_round=data_round)
+    train = TrainSettings(
+        platform, seed, model=key, smoke=smoke, epochs=epochs, data_round=data_round
+    )
     name = run_name(train)
-    system = system_name(key, seed, smoke=smoke, data_round=data_round)
+    system = system_name(key, seed, smoke=smoke, data_round=data_round, epochs=epochs)
     adapter_dir = adapters_dir / platform / name
     checkpoint_dir = adapters_dir / platform / f"{name}-checkpoints"
     runs_dir = runs_dir or (adapter_dir.parent if smoke else round_runs_dir(data_round))
@@ -187,6 +190,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--model", help="key in configs/models.yaml")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--smoke", action="store_true", help="the checkpoints of a smoke run")
+    parser.add_argument("--epochs", type=int, help="the checkpoints of a run with this many epochs")
     parser.add_argument(
         "--steps", type=int, nargs="+", help="default: selection.steps of configs/train.yaml"
     )
@@ -218,6 +222,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             dry_run=args.dry_run,
             workers=args.workers,
             data_round=args.round,
+            epochs=args.epochs,
         )
     except (RuntimeError, ValueError) as error:
         sys.exit(f"error: {error}")

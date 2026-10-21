@@ -25,7 +25,7 @@ results/
 
 Neither model size passed the gate in round 2 either. `make gate` on the `-r2` systems (command below) shows which checks failed. No seeds beyond seed 0 were trained for round 2.
 
-**Round 3** is the data from generator v3 and seed 2. The wording and layout of a share of the documents of every split were rewritten by language models run outside this repository, because text from the generator is more regular than real documents. The labels still come from code, and a check rejects any rewrite in which an amount, total, rate, canary name or item name changed. The rewritten text cannot be rebuilt from the seed, so the data files are checked by hash. Names of round 3 systems and runs have `-r3`, for example `qwen3-4b-sft-r3-0`.
+**Round 3** is the data from generator v3 and seed 2. The wording and layout of a share of the documents of every split were rewritten by language models run outside this repository, because text from the generator is more regular than real documents. The labels still come from code, and a check rejects any rewrite in which an amount, total, rate, canary name or item name changed. The rewritten text cannot be rebuilt from the seed, so the data files are checked by hash. Names of round 3 systems and runs have `-r3`, for example `qwen3-4b-sft-r3-0`. A run that trains a set number of epochs (`EPOCHS=2`) has `-e2` after the round, for example `qwen3-4b-sft-r3-e2-0`, so it never shares a name with the run of the config.
 
 The gold files are the same for all rounds: `gold.jsonl` is the original set, and `gold_v2.jsonl` was written before any round 2 result existed. `dev_real.jsonl` is a set of realistic documents that I use only to choose settings. It is never trained on and is not part of the gate or of any report.
 

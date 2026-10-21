@@ -40,23 +40,23 @@ validate-gold:  ## Check the gold and dev_real files: schema, amounts, accounts 
 models-check:  ## Check the model gates and compare the pinned revisions with the Hub (OFFLINE=1, PIN=1)
 	uv run python -m adapt.models $(if $(OFFLINE),--offline) $(if $(PIN),--pin)
 
-train:  ## QLoRA fine-tuning of one model (MODEL=, SEED=; optional ROUND=, NUM_GPUS=2, SMOKE=1, RESUME=1, MAX_STEPS=, ADAPTERS_DIR=, RUNS_DIR=)
+train:  ## QLoRA fine-tuning of one model (MODEL=, SEED=; optional ROUND=, EPOCHS=2, NUM_GPUS=2, SMOKE=1, RESUME=1, MAX_STEPS=, ADAPTERS_DIR=, RUNS_DIR=)
 	uv run --group gpu $(if $(filter-out 1,$(NUM_GPUS)),accelerate launch --multi_gpu --num_processes $(NUM_GPUS) -m adapt.train,python -m adapt.train) \
 		--platform $(PLATFORM) --seed $(SEED) --num-gpus $(NUM_GPUS) \
 		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(RESUME),--resume) \
 		$(if $(MAX_STEPS),--max-steps $(MAX_STEPS)) $(if $(ROUND),--round $(ROUND)) \
 		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR))
 
-select:  ## Score the checkpoints of a run on dev_real and keep the best as its adapter (MODEL=, SEED=; optional ROUND=, STEPS="150 225", SERVERS=2, SMOKE=1, ADAPTERS_DIR=, RUNS_DIR=, OUT_DIR=, DRY_RUN=1)
+select:  ## Score the checkpoints of a run on dev_real and keep the best as its adapter (MODEL=, SEED=; optional ROUND=, EPOCHS=2, STEPS="150 225", SERVERS=2, SMOKE=1, ADAPTERS_DIR=, RUNS_DIR=, OUT_DIR=, DRY_RUN=1)
 	uv run python -m adapt.train.selection --platform $(PLATFORM) --seed $(SEED) \
-		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(STEPS),--steps $(STEPS)) \
+		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(EPOCHS),--epochs $(EPOCHS)) $(if $(STEPS),--steps $(STEPS)) \
 		$(if $(SERVERS),--servers $(SERVERS)) $(if $(ROUND),--round $(ROUND)) \
 		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR)) \
 		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
 
-eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional ROUND=, SMOKE=1, MAX_STEPS=, NUM_GPUS=, SERVERS=2, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1, THRESHOLD=, OVERRIDE_FINAL_LOCK=1)
+eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional ROUND=, EPOCHS=2, SMOKE=1, MAX_STEPS=, NUM_GPUS=, SERVERS=2, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1, THRESHOLD=, OVERRIDE_FINAL_LOCK=1)
 	uv run python -m adapt.train.evaluate --platform $(PLATFORM) --seed $(SEED) \
-		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(MAX_STEPS),--max-steps $(MAX_STEPS) --num-gpus $(NUM_GPUS)) \
+		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(EPOCHS),--epochs $(EPOCHS)) $(if $(MAX_STEPS),--max-steps $(MAX_STEPS) --num-gpus $(NUM_GPUS)) \
 		$(if $(SERVERS),--servers $(SERVERS)) $(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) \
 		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run) $(if $(THRESHOLD),--threshold $(THRESHOLD)) $(if $(OVERRIDE_FINAL_LOCK),--override-final-lock)
 
@@ -79,8 +79,8 @@ rescore:  ## Score saved results again with the newer pipeline checks, no model 
 post-hoc:  ## Re-score the saved outputs of a claim run with later changes, labelled post-hoc, not a claim (SYSTEM=, BASELINE=; optional ROUND=, IN_DIR=, OUT=)
 	uv run python -m adapt.eval.post_hoc --platform $(PLATFORM) --system $(SYSTEM) --baseline $(BASELINE) $(if $(ROUND),--round $(ROUND)) $(if $(IN_DIR),--in-dir $(IN_DIR)) $(if $(OUT),--out $(OUT))
 
-stage-gate:  ## Gate checks on dev and dev_real of a system, a pass or fail for each, not the claim (SYSTEM=; optional ROUND=, OUT_DIR=)
-	uv run python -m adapt.eval.stage_gate --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR))
+stage-gate:  ## Gate checks on dev and dev_real of a system, a pass or fail for each, not the claim (SYSTEM=; optional ROUND=, OUT_DIR=, MARGIN=1)
+	uv run python -m adapt.eval.stage_gate --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(MARGIN),--margin)
 
 threshold-report:  ## Coverage and critical-error curve of a system on dev and dev_real, threshold chosen on dev (SYSTEM=; optional ROUND=, SPLITS=, IN_DIR=, TUNE_ON="dev dev_real")
 	uv run python -m adapt.eval.threshold_report --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(IN_DIR),--in-dir $(IN_DIR)) $(if $(TUNE_ON),--tune-on $(TUNE_ON))

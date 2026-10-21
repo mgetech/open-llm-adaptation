@@ -6,7 +6,7 @@ import pytest
 
 from adapt.config import load_platform
 from adapt.eval.runner import results_file
-from adapt.eval.stage_gate import checks, main, report, verdict
+from adapt.eval.stage_gate import checks, load_margin, main, margin_report, report, verdict
 
 GATE = load_platform("tax-booking").config.gate
 
@@ -124,3 +124,55 @@ def test_the_command_works_with_only_dev_and_returns_zero_when_everything_passes
 def test_a_system_without_results_is_refused(tmp_path):
     with pytest.raises(SystemExit, match="no dev or dev_real results for demo"):
         main(["--system", "demo", "--round", "3", "--out-dir", str(tmp_path)])
+
+
+MARGIN = {
+    "dev": {"critical_error_rate_max": 0.0025},
+    "dev_real": {"automation_rate_min": 0.7, "accuracy_on_automated_min": 0.97},
+}
+
+
+def test_the_committed_margin_is_the_one_fixed_before_the_runs():
+    assert load_margin() == {
+        "dev": {"critical_error_rate_max": 0.0025},
+        "dev_real": {"automation_rate_min": 0.70, "accuracy_on_automated_min": 0.97},
+    }
+
+
+def test_a_configuration_that_meets_every_margin_number_meets_the_margin():
+    results = {
+        "dev": split(critical_error_rate=0.0),
+        "dev_real": split(automation_rate=0.72, accuracy_on_automated=0.975),
+    }
+    text, met = margin_report(MARGIN, results)
+    assert met and text.endswith("margin: MET")
+    assert "dev critical-error rate <= 0.0025: 0.0000 pass" in text
+
+
+def test_one_number_short_of_the_margin_means_it_is_not_met_even_if_the_gate_passes():
+    results = {
+        "dev": split(critical_error_rate=0.004),
+        "dev_real": split(automation_rate=0.72, accuracy_on_automated=0.975),
+    }
+    assert report(GATE, results, "demo")[1]  # the gate checks all pass
+    text, met = margin_report(MARGIN, results)
+    assert not met and "dev critical-error rate <= 0.0025: 0.0040 FAIL" in text
+    assert text.endswith("margin: NOT MET")
+
+
+def test_a_margin_number_is_met_exactly_at_its_limit_and_a_missing_split_is_not_met():
+    at_limit = {
+        "dev": split(critical_error_rate=0.0025),
+        "dev_real": split(automation_rate=0.7, accuracy_on_automated=0.97),
+    }
+    assert margin_report(MARGIN, at_limit)[1]
+    assert not margin_report(MARGIN, {"dev": split(critical_error_rate=0.0)})[1]
+
+
+def test_the_command_checks_the_margin_and_returns_one_when_it_is_not_met(tmp_path, capsys):
+    write(tmp_path, "demo", "dev", split(critical_error_rate=0.004))
+    write(tmp_path, "demo", "dev_real", split(automation_rate=0.72, accuracy_on_automated=0.975))
+    arguments = ["--system", "demo", "--round", "3", "--out-dir", str(tmp_path)]
+    assert main(arguments) == 0
+    assert main([*arguments, "--margin"]) == 1
+    assert "margin: NOT MET" in capsys.readouterr().out

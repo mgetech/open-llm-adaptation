@@ -1,0 +1,9 @@
+# The margin a configuration has to meet on dev and dev_real before it is chosen for the final
+# claim. It is stricter than the gate and was fixed before the runs it is read on. The threshold
+# is chosen on dev and dev_real together, so these numbers guide the choice and are not a test.
+# Every other check of the stage report (`make stage-gate`) must pass on both splits as well.
+dev:
+  critical_error_rate_max: 0.0025
+dev_real:
+  automation_rate_min: 0.70
+  accuracy_on_automated_min: 0.97
