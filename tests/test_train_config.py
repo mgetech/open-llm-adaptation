@@ -28,7 +28,7 @@ def test_the_optimiser_settings(config):
     assert optimiser.learning_rate == 2e-4
     assert optimiser.lr_scheduler == "cosine"
     assert optimiser.warmup_ratio == 0.03
-    assert optimiser.epochs == 2
+    assert optimiser.epochs == 1
     assert optimiser.optim == "paged_adamw_8bit"
     assert optimiser.batch_size * optimiser.gradient_accumulation_steps == 16
     assert (optimiser.batch_size, optimiser.gradient_accumulation_steps) == (4, 4)
@@ -36,8 +36,31 @@ def test_the_optimiser_settings(config):
 
 
 def test_the_length_limit_and_the_checkpoint_interval(config):
-    assert config.data.max_length == 1024
-    assert config.checkpoint.save_steps == 100
+    assert config.data.max_length == 1280
+    assert config.checkpoint.save_steps == 75
+
+
+def test_a_full_run_leaves_the_checkpoints_that_are_scored_afterwards(config):
+    steps = config.optimiser.epochs * 6000 // 16
+    assert steps == 375
+    saved = range(config.checkpoint.save_steps, steps + 1, config.checkpoint.save_steps)
+    assert list(saved) == [75, 150, 225, 300, 375]
+    assert config.selection.steps == [150, 225, 300, 375]
+    assert set(config.selection.steps) <= set(saved)
+
+
+def test_there_is_no_loss_based_early_stopping(config):
+    assert not hasattr(config, "early_stopping")
+    assert not hasattr(config.checkpoint, "keep")  # every checkpoint is kept
+
+
+def test_a_step_without_a_checkpoint_cannot_be_selected(tmp_path):
+    data = yaml.safe_load(TRAIN_FILE.read_text(encoding="utf-8"))
+    data["selection"]["steps"] = [150, 200]
+    path = tmp_path / "train.yaml"
+    path.write_text(yaml.safe_dump(data), encoding="utf-8")
+    with pytest.raises(ValidationError, match="no checkpoint is saved at step 200"):
+        load_train_config(path)
 
 
 def test_a_smoke_run_is_two_steps(config):

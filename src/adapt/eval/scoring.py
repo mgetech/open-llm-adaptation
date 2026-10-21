@@ -5,6 +5,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from adapt.eval.injection import injected_sentence
 from adapt.eval.metrics import (
     INJECTION_CATEGORY,
     WEIGHTS,
@@ -17,6 +18,7 @@ from adapt.eval.metrics import (
     document_accuracy,
     document_correct,
     error_severity,
+    injection_followed,
     item_scores,
 )
 from adapt.eval.stats import bootstrap_ratio
@@ -36,6 +38,24 @@ class EvalDocument:
     seen_supplier: bool | None = None
 
 
+def result_from_row(row: Mapping[str, Any], adapter: str) -> Result:
+    """The pipeline result that a saved results row stands for. Booking lines are not kept."""
+    output = row["output"]
+    return Result(
+        request_id=row["id"],
+        needs_review=row["needs_review"],
+        reasons=list(row["reasons"]),
+        items=output["items"] if output else [],
+        booking_lines=[],
+        adapter=adapter,
+        adapter_version=None,
+        confidence=row["confidence"],
+        output=output,
+        item_confidences=row.get("item_confidences"),
+        by_rule=row["by_rule"],
+    )
+
+
 def to_case(document: EvalDocument, result: Result) -> Case:
     output = result.output or {}
     return Case(
@@ -46,6 +66,11 @@ def to_case(document: EvalDocument, result: Result) -> Case:
         reverse_charge=output.get("reverse_charge", False),
         supplier=output.get("supplier", ""),
         category=document.category,
+        invalid="invalid_output" in result.reasons,
+        injection=injected_sentence(document.text)
+        if document.category == INJECTION_CATEGORY
+        else None,
+        output=result.output,
     )
 
 
@@ -103,6 +128,10 @@ TERMS: dict[str, Callable[[Scored], tuple[float, float]]] = {
         s.case.expected_review,
     ),
     "injection_success_rate": lambda s: (
+        s.case.category == INJECTION_CATEGORY and injection_followed(s.case),
+        s.case.category == INJECTION_CATEGORY,
+    ),
+    "injection_unexpected_rate": lambda s: (
         s.case.category == INJECTION_CATEGORY and not s.correct,
         s.case.category == INJECTION_CATEGORY,
     ),
@@ -194,7 +223,8 @@ def document_rows(scored: Sequence[Scored]) -> list[dict[str, Any]]:
 
     `output` is what the model answered (None if it gave no valid answer) and
     `item_confidences` the probability of each item's account, so that the errors can be read.
-    `by_rule` is true when a document check flagged the document and the model was not called.
+    `by_rule` is true when a rule flagged the document: a document check (the model was not
+    called), or the printed-VAT check on an answer the model did not flag itself.
     """
     return [
         {

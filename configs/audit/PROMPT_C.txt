@@ -1,0 +1,18 @@
+You are going to rewrite generated invoices, receipts and credit notes in a more natural way, for a data project. This is job C of three. All documents are invented. Do not ask me anything, do not stop to report, and do not stop until you are done. Use "python3" instead of "python" if "python" does not work. Do not open the folders A_write or B_label.
+
+1. Read C_rewrite/RULES.md completely. It is long and exact.
+2. Go into the folder:  cd C_rewrite
+3. Repeat this loop until the program prints DONE:
+   a. Run:  python ../tools/rewrite_check.py next
+      It writes work/current.jsonl (up to 40 documents) and tells you the file in out/ to write.
+   b. Rewrite every document in work/current.jsonl yourself, as RULES.md says, and write one JSON line for each document to that file in out/.
+   c. Go back to step a. The program checks your last answer and hands out the next documents. Rejected documents come back with the reasons; fix them the same way.
+
+Important:
+- You write every text yourself. Never write a program, a template, a loop or a text replacement that makes the texts. Programs are only for running the check.
+- Do not skip documents and do not shorten the work. Keep the texts different from each other. About every 10 batches, read RULES.md again (also the part "Common mistakes") and make sure your last answers do not repeat the same headings, openings or closing lines.
+- Your progress is saved in the C_rewrite folder. If your session ends or your memory of this conversation is cut, nothing is lost: read RULES.md again and run the same command to go on.
+- If a document is rejected three times, the program gives it up. That is fine.
+
+When the program prints DONE, go back to the main folder and run:  python finish.py
+It checks the three jobs (A, B and C) and makes results.zip. If it reports a problem in job A or B, tell me which one; do not fix those yourself. When it says the file is ready, tell me.

@@ -8,6 +8,7 @@ from adapt.eval.gate import (
     Check,
     check_gate,
     format_table,
+    injection_report,
     main,
     report_only,
     rule_report,
@@ -53,6 +54,7 @@ def rows(count, *, wrong=0, critical=0, reviewed=0, prefix="d"):
 
 
 def split_results(documents, **values):
+    values.setdefault("injection_unexpected_rate", values.get("injection_success_rate"))
     metrics = {name: {"value": value} for name, value in values.items()}
     performance = {
         "documents_per_second": 12.0,
@@ -370,6 +372,23 @@ def test_the_rule_report_separates_rule_flags_from_model_flags():
     assert shown["review recall on edge, with / without the rules"] == "0.750 / 0.250"
 
 
+def test_the_rule_report_names_heavy_noise_and_vat_mismatch_when_they_occur():
+    results = {
+        "gold": {"documents": rule_rows((False, True, True, ["vat_mismatch"]))},
+        "edge": {
+            "documents": rule_rows(
+                (True, True, True, ["heavy_noise"]),
+                (True, True, True, ["heavy_noise", "no_total"]),
+                (True, False, False, []),
+            )
+        },
+    }
+    shown = dict(rule_report(results))
+    assert shown["documents flagged by a pipeline rule"] == (
+        "3 of 4 (75.0%), 0 of them for foreign currency, 2 for heavy noise, 1 for a VAT mismatch"
+    )
+
+
 def test_results_from_before_the_rule_report_say_that_it_is_not_recorded():
     old = {
         "edge": {
@@ -398,7 +417,7 @@ def results_dir(tmp_path_factory):
         write_results(evaluate(settings), results_file(out, "tax-booking", system, split))
 
     with FakeServer() as server:
-        for split in GATE_SPLITS:
+        for split in (*GATE_SPLITS, "gold_v2"):
             run(server, "good", split)
         run(server, "weak", "test_ood", wrong_account_with_low_confidence())
         run(server, "weak", "gold", wrong_account_with_low_confidence())
@@ -450,3 +469,105 @@ def test_a_system_with_no_results_fails_with_a_message_per_check(results_dir, ca
 def test_the_system_name_is_required():
     with pytest.raises(SystemExit):
         main([])
+
+
+def with_gold_v2(gold_values, gold_v2_values):
+    """Passing results where gold and gold_v2 have their own numbers."""
+    results = passing()
+    results["gold"] = split_results(rows(20, prefix="g", **gold_values), **GOLD_NUMBERS)
+    results["gold_v2"] = split_results(rows(20, prefix="v", **gold_v2_values), **GOLD_NUMBERS)
+    return results
+
+
+GOLD_NUMBERS = dict(automation_rate=0.7, injection_success_rate=None, canary_leak_rate=0.0)
+
+
+def test_the_gate_reads_gold_v2_in_place_of_gold_when_asked():
+    results = with_gold_v2({"wrong": 20}, {})
+    baseline = better_than_baseline(results)
+    assert "accuracy on automated documents" in failures(check_gate(GATE, results, baseline))
+    checks = check_gate(GATE, results, baseline, gold="gold_v2")
+    assert failures(checks) == []
+    assert check(checks, "automation rate").source == "gold_v2"
+    assert check(checks, "accuracy on automated documents").source == "gold_v2 + test_ood"
+
+
+def test_gold_and_gold_v2_are_never_pooled():
+    results = with_gold_v2({"wrong": 20}, {})
+    checks = check_gate(GATE, results, gold="gold_v2")
+    assert check(checks, "accuracy on automated documents").value == 1.0
+    checks = check_gate(GATE, results, gold="gold")
+    assert check(checks, "accuracy on automated documents").value == 0.5
+
+
+def test_without_the_gold_v2_results_the_gate_says_what_is_missing():
+    checks = check_gate(GATE, passing(), gold="gold_v2")
+    assert check(checks, "automation rate").source == "not run: gold_v2"
+    assert "automation rate" in failures(checks)
+
+
+def test_the_default_gold_set_is_gold():
+    results = with_gold_v2({}, {"wrong": 20})
+    assert failures(check_gate(GATE, results, better_than_baseline(results))) == []
+
+
+def test_the_gate_with_gold_v2_runs_from_real_results_files(results_dir, capsys):
+    code = main(
+        [
+            "--system",
+            "good",
+            "--baseline",
+            "weak",
+            "--gold",
+            "gold_v2",
+            "--out-dir",
+            str(results_dir),
+        ]
+    )
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "gate for good against weak, with gold_v2 as the gold set" in out
+    assert "gold_v2 + test_ood" in out
+    assert "gate: PASS (10 of 10 checks)" in out
+
+
+def test_the_gold_set_must_be_gold_or_gold_v2():
+    with pytest.raises(SystemExit):
+        main(["--system", "good", "--gold", "dev_real"])
+
+
+def test_the_rule_report_names_the_private_mix_and_the_reverse_charge_cue():
+    results = {
+        "gold": {
+            "documents": rule_rows(
+                (True, True, True, ["mixed_private"]),
+                (True, True, True, ["reverse_charge_cue"]),
+                (False, False, False, []),
+            )
+        }
+    }
+    shown = dict(rule_report(results))
+    assert shown["documents flagged by a pipeline rule"] == (
+        "2 of 3 (66.7%), 0 of them for foreign currency, "
+        "1 for private and business items together, 1 for a reverse-charge cue"
+    )
+
+
+def test_results_with_the_old_injection_figure_are_not_read_as_the_new_one():
+    results = passing()
+    del results["edge"]["metrics"]["injection_unexpected_rate"]
+    injection = check(check_gate(GATE, results), "prompt-injection success")
+    assert injection.value is None and not injection.passed
+    assert "old definition in edge, run make rescore" in injection.detail
+    assert injection_report(results) == [
+        ("injection documents not handled as expected", "not recorded in these results")
+    ]
+
+
+def test_the_old_injection_figure_is_shown_next_to_the_gate_figure_and_is_not_judged():
+    results = passing()
+    results["test_ood"]["metrics"]["injection_unexpected_rate"]["value"] = 0.25
+    assert check(check_gate(GATE, results), "prompt-injection success").passed
+    assert injection_report(results) == [
+        ("injection documents not handled as expected, worst split", "0.250")
+    ]

@@ -16,18 +16,23 @@ optimiser:
   learning_rate: 0.0002
   lr_scheduler: cosine
   warmup_ratio: 0.03
-  epochs: 2
+  epochs: 1  # round 3 has 6000 training documents, the same passes as 2 epochs of 3000
   optim: paged_adamw_8bit
   batch_size: 4
   gradient_accumulation_steps: 4
   gradient_checkpointing: true
 
 data:
-  max_length: 1024  # tokens of prompt and answer together. A longer example stops the run.
+  max_length: 1280  # tokens of prompt and answer together. A longer example stops the run.
 
 checkpoint:
-  save_steps: 100
-  keep: 2
+  save_steps: 75  # a checkpoint every 75 steps, and none is deleted: 375 steps leave five
+
+# The run trains every step. Afterwards `make select` scores these checkpoints on the dev_real
+# documents with the whole pipeline and keeps the one with the lowest critical error rate. The
+# documents are never trained on.
+selection:
+  steps: [150, 225, 300, 375]
 
 logging_steps: 10
 

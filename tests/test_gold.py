@@ -1,11 +1,10 @@
 import copy
 import json
-from typing import get_args
 
 import pytest
 from jsonschema import Draft202012Validator
 
-from adapt.config import Layout, load_platform
+from adapt.config import load_platform
 from adapt.data.gold import check_record, gold_path, main, validate_gold
 from adapt.data.split import build_splits
 from adapt.schema import build_output_schema
@@ -149,6 +148,17 @@ def problems_after(examples, validator, platform, change, index=0):
     return check_record(record, validator, platform)
 
 
+# The hand-written documents cover the six layouts that existed when they were written.
+GOLD_LAYOUTS = {
+    "table_invoice",
+    "till_receipt",
+    "letter_invoice",
+    "credit_note",
+    "eu_invoice",
+    "short_receipt",
+}
+
+
 def committed_gold():
     lines = gold_path("tax-booking").read_text(encoding="utf-8").splitlines()
     return [json.loads(line) for line in lines]
@@ -162,7 +172,7 @@ def test_the_committed_gold_file_has_a_usable_size_and_range_of_cases():
     records = committed_gold()
     targets = [r["target"] for r in records]
     assert 60 <= len(records) <= 100
-    assert {r["layout"] for r in records} == set(get_args(Layout))
+    assert {r["layout"] for r in records} == GOLD_LAYOUTS
     assert {t["document_type"] for t in targets} == {"invoice", "receipt", "credit_note"}
     assert any(t["needs_review"] for t in targets)
     assert any(t["reverse_charge"] for t in targets)

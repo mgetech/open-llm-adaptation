@@ -1,33 +1,40 @@
 {
   "platform": "tax-booking",
-  "seed": 1,
-  "generator": 2,
+  "seed": 2,
+  "generator": 3,
   "splits": {
     "train": {
-      "file": "tax-booking/round2/train.jsonl",
-      "count": 3000,
-      "sha256": "fec651d4ced13b28607d9df2f1a8b5d5965bc1d38bb29cd53da4a381c33794ae"
+      "file": "tax-booking/round3/train.jsonl",
+      "count": 6000,
+      "sha256": "c602eb8764752d378150f7945feb9b17bcbba6b0f399a93ee7d0ec726fd1d457"
     },
     "dev": {
-      "file": "tax-booking/round2/dev.jsonl",
+      "file": "tax-booking/round3/dev.jsonl",
       "count": 300,
-      "sha256": "18d91cff0d9e214881369dfa3ed866bcac5635884109ee5f3734c18d5d6011a8"
+      "sha256": "10d4cb059366f4abd7208b89e721cfd2e988c3559f2f336b1bb8a432ff814c9d"
     },
     "test_iid": {
-      "file": "tax-booking/round2/test_iid.jsonl",
+      "file": "tax-booking/round3/test_iid.jsonl",
       "count": 500,
-      "sha256": "dbc21e101c2bba0dc9d0c1b1bc9ea54ab9d7b52ec666fad89a78ab668787f1ed"
+      "sha256": "1a1c240d785d1a876ba3160276613776a9fa2ac4eb5924da99082e26cf03c7ee"
     },
     "test_ood": {
-      "file": "tax-booking/round2/test_ood.jsonl",
+      "file": "tax-booking/round3/test_ood.jsonl",
       "count": 300,
-      "sha256": "42d0cf61def3184a2a46823db51392be86b7866b7de20168c5a4a6c0d09b1ecc"
+      "sha256": "3efa974832dfc8819cea35b537a84eef1b134b00331f25135657b21538b4192a"
     },
     "edge": {
-      "file": "tax-booking/round2/edge.jsonl",
+      "file": "tax-booking/round3/edge.jsonl",
       "count": 150,
-      "sha256": "04b93686f92a3945f904fec9078176b2414a9296236561840265965e7c8e8fe7"
+      "sha256": "ecd7bfa410686b13e4893b2f678ccf4b3b2747b6a588f2d41fbf8626a238e84e"
     }
+  },
+  "rewrite": {
+    "rewriter": "external model",
+    "documents": 3480,
+    "tasks": 3790,
+    "tasks_sha256": "b5a9c9f0d012813f2a82ce72bfb317d94a6219366dfb9dcedc36ba168ac55181",
+    "accepted_sha256": "11ef0ee621520ac4ffa2479bde3ee1e0b608518f2735a87fde0de27201e9871c"
   },
   "rounds": [
     {
@@ -59,6 +66,39 @@
           "file": "tax-booking/round1/edge.jsonl",
           "count": 150,
           "sha256": "5dd80105c3b819f24577419b634f9a5b20d6a804a6d504453080e6d5a03a77ca"
+        }
+      }
+    },
+    {
+      "round": 2,
+      "seed": 1,
+      "generator": 2,
+      "note": "",
+      "splits": {
+        "train": {
+          "file": "tax-booking/round2/train.jsonl",
+          "count": 3000,
+          "sha256": "fec651d4ced13b28607d9df2f1a8b5d5965bc1d38bb29cd53da4a381c33794ae"
+        },
+        "dev": {
+          "file": "tax-booking/round2/dev.jsonl",
+          "count": 300,
+          "sha256": "18d91cff0d9e214881369dfa3ed866bcac5635884109ee5f3734c18d5d6011a8"
+        },
+        "test_iid": {
+          "file": "tax-booking/round2/test_iid.jsonl",
+          "count": 500,
+          "sha256": "dbc21e101c2bba0dc9d0c1b1bc9ea54ab9d7b52ec666fad89a78ab668787f1ed"
+        },
+        "test_ood": {
+          "file": "tax-booking/round2/test_ood.jsonl",
+          "count": 300,
+          "sha256": "42d0cf61def3184a2a46823db51392be86b7866b7de20168c5a4a6c0d09b1ecc"
+        },
+        "edge": {
+          "file": "tax-booking/round2/edge.jsonl",
+          "count": 150,
+          "sha256": "04b93686f92a3945f904fec9078176b2414a9296236561840265965e7c8e8fe7"
         }
       }
     }

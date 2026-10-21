@@ -51,6 +51,12 @@ def eval_dir(data_round: int | None = None, data_dir: Path = DATA_DIR) -> Path:
     return Path("results") / f"round{resolve_round(data_round, data_dir)}" / "eval"
 
 
+def rescored_dir(data_round: int | None = None, data_dir: Path = DATA_DIR) -> Path:
+    """Where the results of a round are kept after they were scored again with newer pipeline
+    checks: `results/round<N>/rescored`. The files in `eval` stay as they were run."""
+    return Path("results") / f"round{resolve_round(data_round, data_dir)}" / "rescored"
+
+
 def runs_dir(data_round: int | None = None, data_dir: Path = DATA_DIR) -> Path:
     """Where the run manifests of a round are: `results/round<N>/runs`."""
     return Path("results") / f"round{resolve_round(data_round, data_dir)}" / "runs"

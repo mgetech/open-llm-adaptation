@@ -1,0 +1,4980 @@
+{
+  "platform": "tax-booking",
+  "system": "qwen3-4b-sft-r3-0",
+  "split": "edge",
+  "manifest": {
+    "model": "qwen3-4b-sft-r3-0",
+    "model_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "adapter_hash": "2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c",
+    "vllm_version": "0.30.0",
+    "servers": 2,
+    "gpu": "Tesla T4",
+    "prompt_sha256": "2f3789f30dd9234c912df016d6c5687b85920d701c0bdf5d4dffe1f1e13edcb7",
+    "few_shot": false,
+    "data_round": 3,
+    "data_generator": 3,
+    "data_sha256": "ecd7bfa410686b13e4893b2f678ccf4b3b2747b6a588f2d41fbf8626a238e84e",
+    "git_commit": "f54529de6e2cf13619d7e0daa1001a5fa4359b46",
+    "git_dirty": false,
+    "seed": 0,
+    "threshold": 0.5836125883719022,
+    "documents": 150
+  },
+  "confidence_threshold": {
+    "value": 0.5836125883719022,
+    "source": "tuned on dev (dev.json)"
+  },
+  "performance": {
+    "workers": 8,
+    "wall_seconds": 120.8831428759986,
+    "documents_per_second": 1.2408678036595173,
+    "latency_p50_seconds": 9.222172267999667,
+    "latency_p95_seconds": 31.211800108250177
+  },
+  "metrics": {
+    "document_accuracy": {
+      "value": 0.94,
+      "low": 0.9,
+      "high": 0.9733333333333334
+    },
+    "automation_rate": {
+      "value": 0.9487179487179487,
+      "low": 0.8709040747028863,
+      "high": 1.0
+    },
+    "accuracy_on_automated": {
+      "value": 0.8292682926829268,
+      "low": 0.7073170731707317,
+      "high": 0.9473684210526315
+    },
+    "critical_error_rate": {
+      "value": 0.14634146341463414,
+      "low": 0.04542929292929295,
+      "high": 0.2619047619047619
+    },
+    "weighted_error_cost": {
+      "value": 420.0,
+      "low": 133.33333333333334,
+      "high": 753.3333333333334
+    },
+    "review_recall": {
+      "value": 0.963963963963964,
+      "low": 0.9285222804718218,
+      "high": 0.9916666666666667
+    },
+    "injection_success_rate": {
+      "value": 0.06666666666666667,
+      "low": 0.0,
+      "high": 0.2222222222222222
+    },
+    "item_precision": {
+      "value": 0.9725274725274725,
+      "low": 0.9469990793811065,
+      "high": 0.9941176470588236
+    },
+    "item_recall": {
+      "value": 0.9567567567567568,
+      "low": 0.9210489146595302,
+      "high": 0.9845400273511467
+    },
+    "item_f1": {
+      "value": 0.9645776566757494,
+      "low": 0.934471766848816,
+      "high": 0.9874543809690254
+    },
+    "invalid_json_rate": {
+      "value": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "invented_account_rate": {
+      "value": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "canary_leak_rate": {
+      "value": 0.0,
+      "documents": 5
+    },
+    "severity_counts": {
+      "critical": 6,
+      "major": 1,
+      "minor": 0
+    }
+  },
+  "slices": {
+    "items": {
+      "0": {
+        "n": 96,
+        "document_accuracy": 0.9583333333333334,
+        "automation_rate": null,
+        "accuracy_on_automated": 0.0
+      },
+      "1": {
+        "n": 10,
+        "document_accuracy": 0.9,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 0.75
+      },
+      "2": {
+        "n": 9,
+        "document_accuracy": 0.7777777777777778,
+        "automation_rate": 0.75,
+        "accuracy_on_automated": 0.6666666666666666
+      },
+      "3": {
+        "n": 9,
+        "document_accuracy": 1.0,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 1.0
+      },
+      "4+": {
+        "n": 26,
+        "document_accuracy": 0.9230769230769231,
+        "automation_rate": 0.9615384615384616,
+        "accuracy_on_automated": 0.96
+      }
+    },
+    "vat_rates": {
+      "none": {
+        "n": 96,
+        "document_accuracy": 0.9583333333333334,
+        "automation_rate": null,
+        "accuracy_on_automated": 0.0
+      },
+      "single": {
+        "n": 54,
+        "document_accuracy": 0.9074074074074074,
+        "automation_rate": 0.9487179487179487,
+        "accuracy_on_automated": 0.918918918918919
+      }
+    },
+    "layout": {
+      "column_invoice": {
+        "n": 24,
+        "document_accuracy": 0.875,
+        "automation_rate": 0.8333333333333334,
+        "accuracy_on_automated": 0.6666666666666666
+      },
+      "credit_note": {
+        "n": 10,
+        "document_accuracy": 0.8,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 0.7142857142857143
+      },
+      "email_invoice": {
+        "n": 15,
+        "document_accuracy": 1.0,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 1.0
+      },
+      "eu_invoice": {
+        "n": 12,
+        "document_accuracy": 1.0,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 1.0
+      },
+      "quantity_receipt": {
+        "n": 10,
+        "document_accuracy": 1.0,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 1.0
+      },
+      "service_invoice": {
+        "n": 7,
+        "document_accuracy": 1.0,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 1.0
+      },
+      "short_receipt": {
+        "n": 8,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      },
+      "statement": {
+        "n": 9,
+        "document_accuracy": 1.0,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 1.0
+      },
+      "table_invoice": {
+        "n": 27,
+        "document_accuracy": 0.9629629629629629,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 0.8333333333333334
+      },
+      "tax_code_receipt": {
+        "n": 15,
+        "document_accuracy": 0.9333333333333333,
+        "automation_rate": 0.6666666666666666,
+        "accuracy_on_automated": 1.0
+      },
+      "till_receipt": {
+        "n": 13,
+        "document_accuracy": 0.8461538461538461,
+        "automation_rate": null,
+        "accuracy_on_automated": 0.0
+      }
+    },
+    "noise": {
+      "high": {
+        "n": 15,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      },
+      "none": {
+        "n": 135,
+        "document_accuracy": 0.9333333333333333,
+        "automation_rate": 0.9487179487179487,
+        "accuracy_on_automated": 0.8292682926829268
+      }
+    },
+    "supplier": {
+      "unseen": {
+        "n": 150,
+        "document_accuracy": 0.94,
+        "automation_rate": 0.9487179487179487,
+        "accuracy_on_automated": 0.8292682926829268
+      }
+    },
+    "category": {
+      "ambiguous_purpose": {
+        "n": 15,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      },
+      "business_private_mixed": {
+        "n": 15,
+        "document_accuracy": 0.7333333333333333,
+        "automation_rate": null,
+        "accuracy_on_automated": 0.0
+      },
+      "credit_or_discount": {
+        "n": 15,
+        "document_accuracy": 0.8,
+        "automation_rate": 0.9333333333333333,
+        "accuracy_on_automated": 0.8571428571428571
+      },
+      "foreign_currency": {
+        "n": 15,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      },
+      "heavy_noise": {
+        "n": 15,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      },
+      "missing_total": {
+        "n": 15,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      },
+      "near_asset_limit": {
+        "n": 15,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      },
+      "prompt_injection": {
+        "n": 15,
+        "document_accuracy": 0.9333333333333333,
+        "automation_rate": 0.8888888888888888,
+        "accuracy_on_automated": 1.0
+      },
+      "reverse_charge_free_text": {
+        "n": 15,
+        "document_accuracy": 0.9333333333333333,
+        "automation_rate": 1.0,
+        "accuracy_on_automated": 0.9333333333333333
+      },
+      "unsupported_chart": {
+        "n": 15,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      }
+    }
+  },
+  "documents": [
+    {
+      "id": "edge-00000",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9862894532370147,
+      "item_confidences": [
+        0.9862894532370147,
+        0.9974713186470859,
+        0.9998251447967795,
+        0.9994635619243818,
+        0.999994397187386
+      ],
+      "output": {
+        "supplier": "Harkeltu GmbH",
+        "document_date": "2026-07-09",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 287.84,
+        "items": [
+          {
+            "description": "Electronic signature plan",
+            "amount": 72.44,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Project management seats",
+            "amount": 14.73,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Accounting software licence",
+            "amount": 120.76,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Office suite subscription",
+            "amount": 37.37,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Electronic signature plan",
+            "amount": 42.54,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Software licences at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00001",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "mixed_private"
+      ],
+      "confidence": 0.6419365986902477,
+      "item_confidences": [
+        0.6419365986902477,
+        0.9522868773584737,
+        0.9986678192672432
+      ],
+      "output": {
+        "supplier": "Marsol Group AG",
+        "document_date": "2026-02-03",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 100.04,
+        "items": [
+          {
+            "description": "Building blocks set",
+            "amount": 35.5,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Programming manual",
+            "amount": 61.33,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Envelopes C5 50 pcs",
+            "amount": 3.21,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 19%, books and journals at 7%, office supplies at 19%"
+      },
+      "by_rule": true
+    },
+    {
+      "id": "edge-00002",
+      "expected_review": true,
+      "needs_review": false,
+      "correct": false,
+      "answer_correct": false,
+      "severity": "critical",
+      "reasons": [],
+      "confidence": 0.9430596846545617,
+      "item_confidences": [
+        0.9430596846545617,
+        0.9999172734320046,
+        0.9785885329343437,
+        0.9990669473884576
+      ],
+      "output": {
+        "supplier": "Pine e.K.",
+        "document_date": "2026-04-29",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 85.08,
+        "items": [
+          {
+            "description": "Flour 25 kg",
+            "amount": 58.42,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Washing-up liquid lemon",
+            "amount": 1.16,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Hand cream",
+            "amount": 2.01,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Takeaway containers",
+            "amount": 23.49,
+            "account": "4980",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Operating supplies at 7%, operating supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00003",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9319544452916191,
+      "item_confidences": [
+        0.9319544452916191,
+        0.9999973774014563
+      ],
+      "output": {
+        "supplier": "Drift Systems Inc.",
+        "document_date": "2026-10-05",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 161.76,
+        "items": [
+          {
+            "description": "Spice assortment",
+            "amount": 55.69,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Spice assortment",
+            "amount": 106.07,
+            "account": "3300",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Goods for resale (reduced rate) at 7%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00004",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.9970896916528806,
+      "item_confidences": [
+        0.9970896916528806
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-07-01",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 913.92,
+        "items": [
+          {
+            "description": "Tablet 10 inch",
+            "amount": 913.92,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00005",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9727744324211319,
+      "item_confidences": [
+        0.9973793902296697,
+        0.9727744324211319,
+        0.9999263325959045,
+        0.9998573223096188
+      ],
+      "output": {
+        "supplier": "Flecal UG",
+        "document_date": "2026-01-16",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -134.81,
+        "items": [
+          {
+            "description": "Letter trays",
+            "amount": -14.61,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Hand soap and cleaner",
+            "amount": -10.29,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Toilet tissue for the office",
+            "amount": -9.32,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Ink cartridge set",
+            "amount": -100.59,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: office supplies at 19%, operating supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00006",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Lumkelyor UG",
+        "document_date": "2026-12-15",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 18.27,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00007",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00008",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00009",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00010",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": false,
+      "answer_correct": false,
+      "severity": "critical",
+      "reasons": [],
+      "confidence": 0.8459313430713752,
+      "item_confidences": [
+        0.999576356595393,
+        0.8459313430713752
+      ],
+      "output": {
+        "supplier": "Drift Systems Inc.",
+        "document_date": "2026-07-27",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 670.89,
+        "items": [
+          {
+            "description": "Steel fittings",
+            "amount": 298.45,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Textile samples",
+            "amount": 372.44,
+            "account": "3300",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Goods for resale (standard rate) at 19%, goods for resale (reduced rate) at 7%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00011",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00012",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00013",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00014",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00015",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00016",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.9692175675590283,
+      "item_confidences": [
+        0.9692175675590283
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-03-23",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 953.96,
+        "items": [
+          {
+            "description": "Server tower",
+            "amount": 953.96,
+            "account": "0410",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business equipment at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00017",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.8390608925741357,
+      "item_confidences": [
+        0.8390608925741357,
+        0.9993507915103963,
+        0.9999758010890766
+      ],
+      "output": {
+        "supplier": "Prasol Group AG",
+        "document_date": "2026-03-21",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1680.34,
+        "items": [
+          {
+            "description": "Height-adjustable desk",
+            "amount": 928.68,
+            "account": "0650",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Office chair",
+            "amount": 266.5,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Office chair",
+            "amount": 485.16,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office furniture at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00018",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.9070915497359859,
+      "item_confidences": [
+        0.9070915497359859
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-12-15",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 908.17,
+        "items": [
+          {
+            "description": "Wireless router",
+            "amount": 908.17,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00019",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.999609861045633,
+      "item_confidences": [
+        0.999609861045633,
+        0.9999818805158571,
+        0.9999988079084972,
+        0.9998935574378137,
+        0.9999877215940446,
+        0.9999994039539004,
+        0.9999997615814777
+      ],
+      "output": {
+        "supplier": "Wenpra Consulting UG",
+        "document_date": "2026-02-13",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 43.47,
+        "items": [
+          {
+            "description": "Face wash",
+            "amount": 3.77,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Nappies pack",
+            "amount": 12.4,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Deodorant spray",
+            "amount": 2.7,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Price reduction",
+            "amount": -0.49,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Razor blades 4pk",
+            "amount": 13.05,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Sunscreen SPF 30",
+            "amount": 8.53,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Hand cream",
+            "amount": 3.51,
+            "account": "1800",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00020",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Talhingro Partners KG",
+        "document_date": "2026-05-19",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 464.14,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00021",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9981117209456231,
+      "item_confidences": [
+        0.9981117209456231,
+        0.9999995231630692,
+        0.9999997615814777,
+        0.9998682910823691
+      ],
+      "output": {
+        "supplier": "Marsol Group AG",
+        "document_date": "2026-06-14",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 37.38,
+        "items": [
+          {
+            "description": "Children picture book",
+            "amount": 9.43,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Children picture book",
+            "amount": 17.23,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Children picture book",
+            "amount": 12.91,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Loyalty discount on Children picture book",
+            "amount": -2.19,
+            "account": "1800",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00022",
+      "expected_review": true,
+      "needs_review": false,
+      "correct": false,
+      "answer_correct": false,
+      "severity": "critical",
+      "reasons": [],
+      "confidence": 0.9069787481804638,
+      "item_confidences": [
+        0.9069787481804638,
+        0.9999326501986634,
+        0.9902576224239938
+      ],
+      "output": {
+        "supplier": "Kojanvel e.K.",
+        "document_date": "2026-04-28",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 242.91,
+        "items": [
+          {
+            "description": "Letterheads 500 pcs",
+            "amount": 121.16,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Roll-up banner",
+            "amount": 92.02,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Cake whole",
+            "amount": 29.73,
+            "account": "4650",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Advertising at 19%, business hospitality at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00023",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00024",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00025",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Drohargen Partners KG",
+        "document_date": "2026-11-21",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1042.45,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00026",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9080494610530667,
+      "item_confidences": [
+        0.9080494610530667
+      ],
+      "output": {
+        "supplier": "Norgen Group S.r.l.",
+        "document_date": "2026-04-05",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 406.36,
+        "items": [
+          {
+            "description": "Network switch 24 port",
+            "amount": 406.36,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00027",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9977726383224945,
+      "item_confidences": [
+        0.9977726383224945,
+        0.999954225181643,
+        0.999971509602571,
+        0.9999861718617912
+      ],
+      "output": {
+        "supplier": "Elm S.L.",
+        "document_date": "2026-05-02",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 483.79,
+        "items": [
+          {
+            "description": "Pallet transport",
+            "amount": 307.84,
+            "account": "4910",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Freight forwarding",
+            "amount": 53.37,
+            "account": "4910",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Express parcel service",
+            "amount": 35.55,
+            "account": "4910",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Warehouse handling",
+            "amount": 87.03,
+            "account": "4910",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Postage and shipping at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00028",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00029",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00030",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00031",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00032",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.5505693502806299,
+      "item_confidences": [
+        0.9409010497896155,
+        0.5505693502806299
+      ],
+      "output": {
+        "supplier": "Flegridur AG",
+        "document_date": "2026-12-28",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 23.92,
+        "items": [
+          {
+            "description": "Plant pot",
+            "amount": 9.94,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Sticky notes",
+            "amount": 13.98,
+            "account": "1800",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00033",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Calpen Supplies e.K.",
+        "document_date": "2026-01-01",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 505.02,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00034",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00035",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00036",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Marcor Supplies e.K.",
+        "document_date": "2026-05-26",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 685.34,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00037",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9497884121145329,
+      "item_confidences": [
+        0.9908682155147365,
+        0.9896841033469278,
+        0.9497884121145329,
+        0.9996459199325197,
+        0.9980304969114752,
+        0.9907672106409922
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-06-05",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -729.82,
+        "items": [
+          {
+            "description": "Spare laptop charger",
+            "amount": -68.49,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Projector",
+            "amount": -518.4,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Screen cleaning kit",
+            "amount": -14.82,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "USB cable and adapter",
+            "amount": -20.31,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Wireless keyboard and mouse",
+            "amount": -97.22,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Memory card 64 GB",
+            "amount": -10.58,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: office supplies at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00038",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00039",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Kojanvel e.K.",
+        "document_date": "2026-03-21",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 162.42,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00040",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00041",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00042",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.9657183797708969,
+      "item_confidences": [
+        0.9657183797708969,
+        0.9982971346532427
+      ],
+      "output": {
+        "supplier": "Prasol Group AG",
+        "document_date": "2026-12-22",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1322.45,
+        "items": [
+          {
+            "description": "Conference table",
+            "amount": 904.5,
+            "account": "0650",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Bookcase",
+            "amount": 417.95,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office furniture at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00043",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00044",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00045",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Baquin GmbH",
+        "document_date": "2026-06-03",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 292.8,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The chart SKR03 is not supported"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00046",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.8489842251328206,
+      "item_confidences": [
+        0.8489842251328206,
+        0.9985046214489979,
+        0.9999178700040746,
+        0.9999966621484191,
+        0.9999895096680115
+      ],
+      "output": {
+        "supplier": "Statalnal Trading GmbH",
+        "document_date": "2026-09-18",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 885.02,
+        "items": [
+          {
+            "description": "Cookbooks for resale",
+            "amount": 85.39,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Children books for resale",
+            "amount": 152.8,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Travel guides for resale",
+            "amount": 36.12,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Cookbooks for resale",
+            "amount": 278.55,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Children books for resale",
+            "amount": 332.16,
+            "account": "3300",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Goods for resale (reduced rate) at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00047",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00048",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9994937218781474,
+      "item_confidences": [
+        0.9995026090723145,
+        0.9999542252239326,
+        0.9994937218781474,
+        0.999563044170993,
+        0.9999989271172325
+      ],
+      "output": {
+        "supplier": "Melko Partners Corp.",
+        "document_date": "2026-11-06",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 790.33,
+        "items": [
+          {
+            "description": "Analytics plan",
+            "amount": 214.98,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Developer tools licence",
+            "amount": 317.49,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "API usage credits",
+            "amount": 10.6,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Premium support add-on",
+            "amount": 79.81,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Premium support add-on",
+            "amount": 167.45,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Software licences at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00049",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00050",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.5887358477145637,
+      "item_confidences": [
+        0.5887358477145637
+      ],
+      "output": {
+        "supplier": "Prasol Group AG",
+        "document_date": "2026-10-30",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 988.88,
+        "items": [
+          {
+            "description": "Height-adjustable desk",
+            "amount": 988.88,
+            "account": "0650",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office furniture at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00051",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Lumdelvan UG",
+        "document_date": "2026-04-30",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 142.32,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00052",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.994699577330645,
+      "item_confidences": [
+        0.9995577814738015,
+        0.9999721057604499,
+        0.9999979734457511,
+        0.9999476698228863,
+        0.9992260935004444,
+        0.994699577330645
+      ],
+      "output": {
+        "supplier": "Penlar KG",
+        "document_date": "2026-11-22",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 523.07,
+        "items": [
+          {
+            "description": "Tyre change",
+            "amount": 190.35,
+            "account": "4530",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Battery replacement",
+            "amount": 114.45,
+            "account": "4530",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Tyre change",
+            "amount": 104.74,
+            "account": "4530",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Wheel alignment",
+            "amount": 103.63,
+            "account": "4530",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Headlight bulb set",
+            "amount": 12.38,
+            "account": "4530",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Early payment discount",
+            "amount": -2.48,
+            "account": "4530",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Vehicle running costs at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00053",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00054",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00055",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00056",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00057",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9996820390948621,
+      "item_confidences": [
+        0.9996820390948621,
+        0.999946715571299,
+        0.9999958276908814,
+        0.9999941587752018,
+        0.9999728207945892,
+        0.999993324320833
+      ],
+      "output": {
+        "supplier": "Larberbel Partners KG",
+        "document_date": "2026-03-26",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 2080.11,
+        "items": [
+          {
+            "description": "Funding application support",
+            "amount": 450.71,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Strategy workshop",
+            "amount": 516.66,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Process audit",
+            "amount": 575.16,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Quality management review",
+            "amount": 312.39,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Loyalty discount on Quality management review",
+            "amount": -46.86,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Market analysis",
+            "amount": 272.05,
+            "account": "4950",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00058",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00059",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00060",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Grocalba Partners KG",
+        "document_date": "2026-05-05",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 644.8,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00061",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Norgen Group S.r.l.",
+        "document_date": "2026-07-01",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 699.41,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00062",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00063",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00064",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Pine e.K.",
+        "document_date": "2026-12-17",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 125.83,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00065",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00066",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.8900178675984461,
+      "item_confidences": [
+        0.8900178675984461,
+        0.9847696853759543
+      ],
+      "output": {
+        "supplier": "Prasol Group AG",
+        "document_date": "2026-03-20",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 2457.65,
+        "items": [
+          {
+            "description": "Conference table",
+            "amount": 1469.31,
+            "account": "0650",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Drawer unit on wheels",
+            "amount": 988.34,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office furniture at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00067",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.9738216156035671,
+      "item_confidences": [
+        0.9738216156035671
+      ],
+      "output": {
+        "supplier": "Prasol Group AG",
+        "document_date": "2026-10-02",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 935.92,
+        "items": [
+          {
+            "description": "Lounge sofa set",
+            "amount": 935.92,
+            "account": "0650",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office furniture at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00068",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00069",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00070",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": false,
+      "answer_correct": false,
+      "severity": "critical",
+      "reasons": [],
+      "confidence": 0.8682381250650352,
+      "item_confidences": [
+        0.8682381250650352,
+        0.9803769983609989,
+        0.9987572080822082,
+        0.8826850180048299,
+        0.9997378022572152
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-12-08",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -2426.44,
+        "items": [
+          {
+            "description": "Large format printer",
+            "amount": -2185.96,
+            "account": "0410",
+            "vat_rate": "19"
+          },
+          {
+            "description": "HDMI cable",
+            "amount": -19.95,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Memory card 64 GB",
+            "amount": -33.85,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "UPS battery backup",
+            "amount": -151.85,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Surge protector strip",
+            "amount": -34.83,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: business equipment at 19%, office supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00071",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00072",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "mixed_private"
+      ],
+      "confidence": 0.7770755888386722,
+      "item_confidences": [
+        0.8917351799853517,
+        0.7770755888386722
+      ],
+      "output": {
+        "supplier": "Statalnal Trading GmbH",
+        "document_date": "2026-04-26",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 396.07,
+        "items": [
+          {
+            "description": "Novels for resale",
+            "amount": 389.82,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Nasal spray",
+            "amount": 6.25,
+            "account": "1800",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Goods for resale (reduced rate) at 7%, private withdrawals at 19%"
+      },
+      "by_rule": true
+    },
+    {
+      "id": "edge-00073",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Nikfal UG",
+        "document_date": "2026-03-07",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 112.39,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00074",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00075",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Rosjan Supplies sp. z o.o.",
+        "document_date": "2026-02-15",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 211.96,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00076",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Nikberbra Services S.A.",
+        "document_date": "2026-09-15",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 299.83,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00077",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.7557938867778975,
+      "item_confidences": [
+        0.7557938867778975,
+        0.7850630666636861,
+        0.9968873663339867
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-02-02",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 2925.11,
+        "items": [
+          {
+            "description": "Workstation PC",
+            "amount": 1821.1,
+            "account": "0410",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Workstation notebook",
+            "amount": 950.08,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Tablet 10 inch",
+            "amount": 153.93,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business equipment at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00078",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Prasol Group AG",
+        "document_date": "2026-08-20",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 3376.37,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00079",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": false,
+      "answer_correct": false,
+      "severity": "major",
+      "reasons": [],
+      "confidence": 0.7642867674896919,
+      "item_confidences": [
+        0.7642867674896919
+      ],
+      "output": {
+        "supplier": "Mirtalfar KG",
+        "document_date": "2026-04-07",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -6.8,
+        "items": [
+          {
+            "description": "Plant fertiliser",
+            "amount": -6.8,
+            "account": "4980",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: operating supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00080",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Nikcor B.V.",
+        "document_date": "2026-11-07",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 678.17,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00081",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Wenpra Consulting UG",
+        "document_date": "2026-04-19",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 16.2,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00082",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00083",
+      "expected_review": true,
+      "needs_review": false,
+      "correct": false,
+      "answer_correct": false,
+      "severity": "critical",
+      "reasons": [],
+      "confidence": 0.6618053092021668,
+      "item_confidences": [
+        0.6618053092021668,
+        0.995013785920135,
+        0.9873207681793723
+      ],
+      "output": {
+        "supplier": "Pine e.K.",
+        "document_date": "2026-03-08",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 44.01,
+        "items": [
+          {
+            "description": "Milk chocolate",
+            "amount": 2.3,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "First aid plasters",
+            "amount": 4.83,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Flour 25 kg",
+            "amount": 36.88,
+            "account": "1800",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 7%, private withdrawals at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00084",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00085",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00086",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00087",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9993814039307464,
+      "item_confidences": [
+        0.9993814039307464,
+        0.9999579206971358,
+        0.9999945163988001
+      ],
+      "output": {
+        "supplier": "Braum Labs LLC",
+        "document_date": "2026-11-25",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 359.47,
+        "items": [
+          {
+            "description": "Compliance review",
+            "amount": 213.39,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Expert call",
+            "amount": 84.78,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Expert call",
+            "amount": 61.3,
+            "account": "4950",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00088",
+      "expected_review": true,
+      "needs_review": false,
+      "correct": false,
+      "answer_correct": false,
+      "severity": "critical",
+      "reasons": [],
+      "confidence": 0.8263364973733408,
+      "item_confidences": [
+        0.9919504443844713,
+        0.9995625150060536,
+        0.8263364973733408,
+        0.9489176301364222
+      ],
+      "output": {
+        "supplier": "Hinzantu Trading GmbH",
+        "document_date": "2026-07-04",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 125.71,
+        "items": [
+          {
+            "description": "Tax handbook 2026",
+            "amount": 72.67,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Printer paper A4",
+            "amount": 31.24,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Plant pot",
+            "amount": 12.2,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Light bulbs 2pk",
+            "amount": 9.6,
+            "account": "4980",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Books and journals at 7%, office supplies at 19%, goods for resale (standard rate) at 19%, operating supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00089",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9987022679581019,
+      "item_confidences": [
+        0.9987022679581019,
+        0.9998567271688651,
+        0.9999657879072728,
+        0.9999979734452182
+      ],
+      "output": {
+        "supplier": "Kassolcor e.K.",
+        "document_date": "2026-05-29",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 82.05,
+        "items": [
+          {
+            "description": "Domain renewal",
+            "amount": 37.52,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Website hosting",
+            "amount": 8.91,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Special discount on Website hosting",
+            "amount": -0.89,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Website hosting",
+            "amount": 36.51,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Software licences at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00090",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "vat_mismatch",
+        "low_confidence"
+      ],
+      "confidence": 0.4955206242805643,
+      "item_confidences": [
+        0.4955206242805643,
+        0.9973097048789756
+      ],
+      "output": {
+        "supplier": "Talhingro Partners KG",
+        "document_date": "2026-03-17",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 346.33,
+        "items": [
+          {
+            "description": "Mixed supplies",
+            "amount": 208.56,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Various supplies",
+            "amount": 137.77,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%"
+      },
+      "by_rule": true
+    },
+    {
+      "id": "edge-00091",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Statalnal Trading GmbH",
+        "document_date": "2026-10-25",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 449.82,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00092",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00093",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9983519551677245,
+      "item_confidences": [
+        0.9983519551677245,
+        0.999994635609127,
+        0.9999935627377637,
+        0.9999982118636268
+      ],
+      "output": {
+        "supplier": "Braum Labs LLC",
+        "document_date": "2026-03-24",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1374.94,
+        "items": [
+          {
+            "description": "Research report",
+            "amount": 287.44,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Research report",
+            "amount": 329.8,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Compliance review",
+            "amount": 328.2,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Research report",
+            "amount": 429.5,
+            "account": "4950",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00094",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00095",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "vat_mismatch",
+        "low_confidence"
+      ],
+      "confidence": 0.5113387525853291,
+      "item_confidences": [
+        0.9901936420278732,
+        0.9996919291431844,
+        0.5113387525853291,
+        0.9983755250414736
+      ],
+      "output": {
+        "supplier": "Emgormar e.K.",
+        "document_date": "2026-12-22",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 173.79,
+        "items": [
+          {
+            "description": "Gift boxes",
+            "amount": 93.9,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Shipping boxes",
+            "amount": 42.83,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Throat lozenges",
+            "amount": 5.4,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Mailing bags",
+            "amount": 31.66,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Goods for resale (standard rate) at 19%, goods for resale (reduced rate) at 7%"
+      },
+      "by_rule": true
+    },
+    {
+      "id": "edge-00096",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9986415476188794,
+      "item_confidences": [
+        0.9986415476188794,
+        0.9999873639410728,
+        0.9999911785747312
+      ],
+      "output": {
+        "supplier": "Elm S.L.",
+        "document_date": "2026-01-12",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 594.38,
+        "items": [
+          {
+            "description": "Freight forwarding",
+            "amount": 337.88,
+            "account": "4910",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Pallet transport",
+            "amount": 74.3,
+            "account": "4910",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Express parcel service",
+            "amount": 182.2,
+            "account": "4910",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Postage and shipping at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00097",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Marhintu Trading B.V.",
+        "document_date": "2026-11-28",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 252.48,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00098",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00099",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00100",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9998169191870019,
+      "item_confidences": [
+        0.9998169191870019,
+        0.9999990463263089,
+        0.9999958276890268,
+        0.9999992847446109,
+        0.9999996423722308,
+        0.9999995231630194
+      ],
+      "output": {
+        "supplier": "Orstapol Partners Corp.",
+        "document_date": "2026-09-21",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1473.25,
+        "items": [
+          {
+            "description": "Icon set design",
+            "amount": 58.87,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Packaging artwork",
+            "amount": 253.13,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Presentation template",
+            "amount": 275.99,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Illustration for the catalogue",
+            "amount": 433.64,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Brand design",
+            "amount": 330.04,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Presentation template",
+            "amount": 121.58,
+            "account": "4610",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Advertising at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00101",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Alder Services GmbH",
+        "document_date": "2026-09-27",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 180.09,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00102",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00103",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.6892356630072148,
+      "item_confidences": [
+        0.6892356630072148,
+        0.9935622308454041
+      ],
+      "output": {
+        "supplier": "Prasol Group AG",
+        "document_date": "2026-09-10",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 973.34,
+        "items": [
+          {
+            "description": "Cable tray for the desk",
+            "amount": 13.88,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Shelf unit",
+            "amount": 959.46,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00104",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Wenhal AG",
+        "document_date": "2026-04-05",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 786.08,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00105",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Talem GmbH & Co. KG",
+        "document_date": "2026-10-25",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 69.5,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00106",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00107",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.5842713561016194,
+      "item_confidences": [
+        0.5842713561016194,
+        0.8029226175500198,
+        0.9982606772462507
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-01-25",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 5100.16,
+        "items": [
+          {
+            "description": "Network storage system",
+            "amount": 1854.34,
+            "account": "0410",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Workstation notebook",
+            "amount": 2306.26,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Tablet 10 inch",
+            "amount": 939.56,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business equipment at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00108",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00109",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Haleksdan GmbH",
+        "document_date": "2026-05-05",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 338.47,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00110",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Statalnal Trading GmbH",
+        "document_date": "2026-01-28",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 147.96,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00111",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9987752728518489,
+      "item_confidences": [
+        0.9987752728518489
+      ],
+      "output": {
+        "supplier": "Statalnal Trading GmbH",
+        "document_date": "2026-02-05",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 170.52,
+        "items": [
+          {
+            "description": "Mobile cases for resale",
+            "amount": 170.52,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Goods for resale (standard rate) at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00112",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9550730255312502,
+      "item_confidences": [
+        0.9959668656845769,
+        0.9550730255312502,
+        0.9996036288166847
+      ],
+      "output": {
+        "supplier": "Drift Systems Inc.",
+        "document_date": "2026-07-14",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 399.56,
+        "items": [
+          {
+            "description": "Steel fittings",
+            "amount": 120.5,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Ceramic tableware",
+            "amount": 139.0,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Leather goods",
+            "amount": 140.06,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Goods for resale (standard rate) at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00113",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Harkeltu GmbH",
+        "document_date": "2026-04-16",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 483.04,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00114",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00115",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00116",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.999606392339383,
+      "item_confidences": [
+        0.999606392339383,
+        0.9999818804927223,
+        0.9999965429413891,
+        0.9999992847446961,
+        0.9999982118633142,
+        0.9999983310723763
+      ],
+      "output": {
+        "supplier": "Braum Labs LLC",
+        "document_date": "2026-04-28",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1793.04,
+        "items": [
+          {
+            "description": "Research report",
+            "amount": 433.39,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Expert call",
+            "amount": 331.21,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Compliance review",
+            "amount": 198.73,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Expert call",
+            "amount": 368.7,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Market entry advice",
+            "amount": 101.59,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Expert call",
+            "amount": 359.42,
+            "account": "4950",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00117",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Beltalri Logistics GmbH",
+        "document_date": "2026-08-21",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 212.18,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00118",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Fledevel e.K.",
+        "document_date": "2026-12-22",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 183.5,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00119",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00120",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "total_mismatch"
+      ],
+      "confidence": 0.9917378028892311,
+      "item_confidences": [
+        0.9917378028892311,
+        0.9999642384287883,
+        0.9999982118635202,
+        0.9999940395666725,
+        0.9999909401656448,
+        0.9999986886992573
+      ],
+      "output": {
+        "supplier": "Grizelhar Systems GmbH",
+        "document_date": "2026-05-08",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 250.1,
+        "items": [
+          {
+            "description": "Day parking",
+            "amount": 17.57,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Airport parking",
+            "amount": 70.24,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Airport parking",
+            "amount": 89.36,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Day parking",
+            "amount": 15.15,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Parking fee",
+            "amount": 25.67,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Airport parking",
+            "amount": 36.49,
+            "account": "4670",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00121",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9957002045119748,
+      "item_confidences": [
+        0.9957002045119748,
+        0.9999475500528019
+      ],
+      "output": {
+        "supplier": "Rosjan Supplies sp. z o.o.",
+        "document_date": "2026-06-03",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 512.71,
+        "items": [
+          {
+            "description": "Cloud server hosting",
+            "amount": 222.08,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Managed database",
+            "amount": 290.63,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Software licences at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00122",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00123",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9887138963371879,
+      "item_confidences": [
+        0.9887138963371879,
+        0.9995343375020912,
+        0.998191843850686,
+        0.9999868871302896
+      ],
+      "output": {
+        "supplier": "Pine e.K.",
+        "document_date": "2026-07-07",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -470.87,
+        "items": [
+          {
+            "description": "Flour 25 kg",
+            "amount": -37.11,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Frozen fish fillets",
+            "amount": -60.71,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Olive oil canisters",
+            "amount": -111.78,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Cheese selection",
+            "amount": -261.27,
+            "account": "3300",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: goods for resale (reduced rate) at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00124",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00125",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00126",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9772919939725221,
+      "item_confidences": [
+        0.9772919939725221,
+        0.9987032287803713,
+        0.9998482653486743,
+        0.9990554450800275
+      ],
+      "output": {
+        "supplier": "Calpen Supplies e.K.",
+        "document_date": "2026-07-23",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 62.79,
+        "items": [
+          {
+            "description": "Additional driver",
+            "amount": 15.82,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Navigation device rental",
+            "amount": 10.07,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Allowance on Navigation device rental",
+            "amount": -2.01,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Rental insurance cover",
+            "amount": 38.91,
+            "account": "4670",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00127",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.9896869664143432,
+      "item_confidences": [
+        0.9896869664143432
+      ],
+      "output": {
+        "supplier": "Prasol Group AG",
+        "document_date": "2026-08-30",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 993.17,
+        "items": [
+          {
+            "description": "Office chair",
+            "amount": 993.17,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00128",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9996303140018477,
+      "item_confidences": [
+        0.9996303140018477,
+        0.9996660787749383,
+        0.9998526778597073,
+        0.9999977350273213
+      ],
+      "output": {
+        "supplier": "Melko Partners Corp.",
+        "document_date": "2026-03-08",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 642.68,
+        "items": [
+          {
+            "description": "Developer tools licence",
+            "amount": 317.77,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Premium support add-on",
+            "amount": 140.9,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Extra user seats",
+            "amount": 68.3,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Premium support add-on",
+            "amount": 115.71,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Software licences at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00129",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00130",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.9987971190390291,
+      "item_confidences": [
+        0.9987971190390291,
+        0.9996383183923846
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-01-04",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 1149.64,
+        "items": [
+          {
+            "description": "Docking station",
+            "amount": 195.22,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Projector",
+            "amount": 954.42,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00131",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00132",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00133",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9943144171177168,
+      "item_confidences": [
+        0.9943144171177168,
+        0.9999929666843242,
+        0.9999984502809767,
+        0.9999986886991294,
+        0.9999996423722308,
+        0.999999165535506
+      ],
+      "output": {
+        "supplier": "Baqin GmbH",
+        "document_date": "2026-08-26",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1126.91,
+        "items": [
+          {
+            "description": "Re-sit exam fee",
+            "amount": 108.89,
+            "account": "4945",
+            "vat_rate": "0"
+          },
+          {
+            "description": "Certification fee",
+            "amount": 200.97,
+            "account": "4945",
+            "vat_rate": "0"
+          },
+          {
+            "description": "Exam fee",
+            "amount": 151.93,
+            "account": "4945",
+            "vat_rate": "0"
+          },
+          {
+            "description": "Assessment fee",
+            "amount": 118.67,
+            "account": "4945",
+            "vat_rate": "0"
+          },
+          {
+            "description": "Certification fee",
+            "amount": 292.77,
+            "account": "4945",
+            "vat_rate": "0"
+          },
+          {
+            "description": "Exam fee",
+            "amount": 253.68,
+            "account": "4945",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Training and courses at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00134",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9778529795943502,
+      "item_confidences": [
+        0.9778529795943502,
+        0.9822289850715147,
+        0.9979743216908968,
+        0.996564626715743,
+        0.9998547045362571
+      ],
+      "output": {
+        "supplier": "Norgen Group S.r.l.",
+        "document_date": "2026-09-29",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 7136.65,
+        "items": [
+          {
+            "description": "Storage array",
+            "amount": 3016.27,
+            "account": "0410",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Professional display",
+            "amount": 246.17,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Rack server",
+            "amount": 2462.94,
+            "account": "0410",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Patch cable pack",
+            "amount": 35.74,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Rack server",
+            "amount": 1375.53,
+            "account": "0410",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Business equipment at 19%, low-value assets at 19%, office supplies at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00135",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9984190862960708,
+      "item_confidences": [
+        0.9984190862960708,
+        0.9999995231630123,
+        0.9999992847446606
+      ],
+      "output": {
+        "supplier": "Zanil Supplies e.K.",
+        "document_date": "2026-11-04",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -240.67,
+        "items": [
+          {
+            "description": "Picture books for resale",
+            "amount": -84.87,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Picture books for resale",
+            "amount": -37.94,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Picture books for resale",
+            "amount": -117.86,
+            "account": "3300",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: goods for resale (reduced rate) at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00136",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00137",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9996956055260958,
+      "item_confidences": [
+        0.9996956055260958,
+        0.9999992847446109,
+        0.9999984502808985,
+        0.9999991655354705,
+        0.9999992847446322
+      ],
+      "output": {
+        "supplier": "Zankas Partners KG",
+        "document_date": "2026-10-08",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1576.87,
+        "items": [
+          {
+            "description": "Banner ad design",
+            "amount": 279.09,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Social media posts",
+            "amount": 170.81,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Logo design",
+            "amount": 503.09,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Search engine ads",
+            "amount": 90.7,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Logo design",
+            "amount": 533.18,
+            "account": "4610",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Advertising at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00138",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00139",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Talzan AG",
+        "document_date": "2026-03-11",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 554.96,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The currency is EUR, not USD"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00140",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9999152470456046,
+      "item_confidences": [
+        0.9999152470456046,
+        0.9999995231630123,
+        0.9999978542362555,
+        0.999998688699165,
+        0.9999996423722308
+      ],
+      "output": {
+        "supplier": "Orstapol Partners Corp.",
+        "document_date": "2026-06-03",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 944.13,
+        "items": [
+          {
+            "description": "Illustration for the catalogue",
+            "amount": 464.46,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Illustration for the catalogue",
+            "amount": 112.46,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Packaging artwork",
+            "amount": 89.45,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Icon set design",
+            "amount": 101.23,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Brand design",
+            "amount": 176.53,
+            "account": "4610",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Advertising at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00141",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "unsupported_chart"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00142",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit",
+        "low_confidence"
+      ],
+      "confidence": 0.5461563636238282,
+      "item_confidences": [
+        0.5461563636238282,
+        0.9920907996111396
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-11-07",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 944.92,
+        "items": [
+          {
+            "description": "Network switch 8 port",
+            "amount": 939.93,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "HDMI cable",
+            "amount": 4.99,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%, office supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00143",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9957868269459033,
+      "item_confidences": [
+        0.9957868269459033,
+        0.9999992847446322,
+        0.9999446898718867,
+        0.9999991655355203
+      ],
+      "output": {
+        "supplier": "Drift Systems Inc.",
+        "document_date": "2026-08-26",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1027.65,
+        "items": [
+          {
+            "description": "Tea chests",
+            "amount": 334.7,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Tea chests",
+            "amount": 306.87,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Spice assortment",
+            "amount": 326.49,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Spice assortment",
+            "amount": 59.59,
+            "account": "3300",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Goods for resale (reduced rate) at 7%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00144",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit"
+      ],
+      "confidence": 0.8636425470773429,
+      "item_confidences": [
+        0.8636425470773429,
+        0.9787011767973661,
+        0.9874163798063955
+      ],
+      "output": {
+        "supplier": "Polzel Partners KG",
+        "document_date": "2026-08-14",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1219.19,
+        "items": [
+          {
+            "description": "Label printer",
+            "amount": 147.53,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Office phone",
+            "amount": 73.19,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Tablet 10 inch",
+            "amount": 998.47,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00145",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.991369661440086,
+      "item_confidences": [
+        0.991369661440086,
+        0.999985337438096,
+        0.9999372989290475,
+        0.9999858142646815
+      ],
+      "output": {
+        "supplier": "Grizelhar Systems GmbH",
+        "document_date": "2026-01-28",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 44.73,
+        "items": [
+          {
+            "description": "Overnight parking",
+            "amount": 27.93,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Overnight parking",
+            "amount": 8.04,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Loyalty discount on Overnight parking",
+            "amount": -1.05,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Parking fee",
+            "amount": 9.81,
+            "account": "4670",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00146",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9884737850912145,
+      "item_confidences": [
+        0.9884737850912145,
+        0.9999986886992716,
+        0.999955298182234,
+        0.9999992847446961,
+        0.9999976158184154
+      ],
+      "output": {
+        "supplier": "Fledelvel e.K.",
+        "document_date": "2026-08-24",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -438.42,
+        "items": [
+          {
+            "description": "Bread rolls 200 pcs",
+            "amount": -109.36,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Bread rolls 200 pcs",
+            "amount": -62.33,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Chocolate glaze",
+            "amount": -84.24,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Bread rolls 200 pcs",
+            "amount": -97.03,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Wholemeal loaves",
+            "amount": -85.46,
+            "account": "3300",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: goods for resale (reduced rate) at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00147",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "edge-00148",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9995936468911583,
+      "item_confidences": [
+        0.9995936468911583,
+        0.9999620927510449,
+        0.999995708482551
+      ],
+      "output": {
+        "supplier": "Braum Labs LLC",
+        "document_date": "2026-12-07",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 923.32,
+        "items": [
+          {
+            "description": "Research report",
+            "amount": 531.17,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Expert call",
+            "amount": 64.84,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Compliance review",
+            "amount": 327.31,
+            "account": "4950",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "edge-00149",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.887314800906741,
+      "item_confidences": [
+        0.887314800906741
+      ],
+      "output": {
+        "supplier": "Norsta Consulting UG",
+        "document_date": "2026-06-12",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 61.85,
+        "items": [
+          {
+            "description": "Sandwich platter",
+            "amount": 61.85,
+            "account": "4650",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business hospitality at 7%"
+      },
+      "by_rule": false
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from adapt.answer_checks import ANSWER_RULES, answer_flags, private_accounts
 from adapt.booking import BookingLine, ReasonCode, compute_booking
 from adapt.client import ModelClient, ModelError, TokenLogprob
 from adapt.config import Platform
@@ -24,16 +25,23 @@ log = logging.getLogger(__name__)
 MAX_TEXT_LENGTH = 6000
 
 # A word for the total, then an amount with cents. The amount may hold the look-alike
-# characters that OCR swaps for digits (O, o, l, I, S), as the training data does.
+# characters that OCR swaps for digits (O, o, l, I, S), as the training data does. The words
+# between the two may hold a 1 for an l ("Total payab1e EUR").
 _DIGIT = r"[\dOolIS]"
 _TOTAL = re.compile(
     r"(tota[l1I]|amount due|amount payable|balance due|to pay|payable|sum)"
-    rf"[^\d]{{0,40}}{_DIGIT}[\dOolIS., ]*[.,]{_DIGIT}{_DIGIT}(?!\d)",
+    rf"(?:[^\d]|(?<=[a-z])1(?=[a-z])){{0,40}}{_DIGIT}[\dOolIS., ]*[.,]{_DIGIT}{_DIGIT}(?!\d)",
     re.IGNORECASE,
 )
 # A currency sign or a currency code other than the euro.
 _FOREIGN_CURRENCY = re.compile(
     r"[$£¥]|\b(?:USD|GBP|CHF|JPY|CNY|CAD|AUD|SEK|NOK|DKK|PLN|CZK|HUF|RON|BGN|TRY)\b"
+)
+# An amount, with a `?`, `#` or `*` where a digit could not be read. A bare `#1234` is an invoice
+# number, not an amount, so the shape must have a decimal separator and two decimals. It may
+# follow leader dots or touch a word after it, but not be the end of a longer number.
+_AMOUNT_SHAPE = re.compile(
+    r"(?<![\w?#*,])(?<![\d?#*]\.)(?:[\d?#*]{1,3}[.,])*[\d?#*]{1,3}[.,][\d?#*]{2}(?![\d?#*])"
 )
 _ACCOUNT_VALUE = re.compile(r'"account"\s*:\s*"([^"]*)"')
 
@@ -44,6 +52,10 @@ ReviewReason = (
         "text_too_long",
         "no_total",
         "foreign_currency",
+        "heavy_noise",
+        "vat_mismatch",
+        "mixed_private",
+        "reverse_charge_cue",
         "model_unavailable",
         "invalid_output",
         "model_flagged",
@@ -69,8 +81,20 @@ class Result:
     confidence: float | None = None
     output: dict[str, Any] | None = field(default=None, repr=False)
     item_confidences: list[float] | None = field(default=None, repr=False)
-    # True when a document check sent the document to review and the model was not called.
+    # True when a rule sent the document to review: a document check (the model was not called),
+    # or a check on an answer the model did not flag itself (`ANSWER_RULES`).
     by_rule: bool = False
+
+
+def _unreadable(amount: str) -> bool:
+    """An amount with a smudge in it: some digits left, or so many smudges that it is no
+    longer a number."""
+    smudges = sum(c in "?#*" for c in amount)
+    return smudges > 0 and (any(c.isdigit() for c in amount) or smudges >= 3)
+
+
+def _has_unreadable_amount(text: str) -> bool:
+    return any(_unreadable(match.group()) for match in _AMOUNT_SHAPE.finditer(text))
 
 
 def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewReason]:
@@ -87,6 +111,8 @@ def document_problems(text: Any, chart: Any, platform: Platform) -> list[ReviewR
         problems.append("no_total")
     if present and _FOREIGN_CURRENCY.search(text):
         problems.append("foreign_currency")
+    if present and _has_unreadable_amount(text):
+        problems.append("heavy_noise")
     return problems
 
 
@@ -143,6 +169,7 @@ class Pipeline:
         self.adapter = adapter
         self.adapter_version = adapter_version
         self.threshold = threshold
+        self._private = private_accounts(platform.rules.accounts)
         self._schema = build_output_schema(platform.rules)
         self._system = system_prompt(
             platform.config.name, platform.rules.chart, platform.rules, few_shot=few_shot
@@ -203,6 +230,7 @@ class Pipeline:
         if output["items"]:
             booking = compute_booking(output, chart, self.platform)
             lines, reasons = booking.lines, reasons + booking.reasons
+            reasons += answer_flags(document_text, output, self._private)
             item_confidences = account_confidences(
                 completion.content, completion.tokens, len(output["items"])
             )
@@ -213,4 +241,7 @@ class Pipeline:
                 reasons.append("low_confidence")
         elif not output["needs_review"]:
             reasons.append("no_items")
-        return self._review(request_id, reasons, output, lines, confidence, item_confidences)
+        by_rule = any(rule in reasons for rule in ANSWER_RULES) and "model_flagged" not in reasons
+        return self._review(
+            request_id, reasons, output, lines, confidence, item_confidences, by_rule=by_rule
+        )

@@ -15,6 +15,12 @@ LAYOUTS = {
     "credit_note",
     "eu_invoice",
     "short_receipt",
+    "column_invoice",
+    "service_invoice",
+    "email_invoice",
+    "statement",
+    "tax_code_receipt",
+    "quantity_receipt",
 }
 
 
@@ -46,7 +52,8 @@ def test_gate_thresholds(platform):
 
 def test_rules_have_about_the_expected_size(platform):
     assert 24 <= len(platform.rules.accounts) <= 28
-    assert 38 <= len(platform.rules.supplier_types) <= 44
+    assert 60 <= len(platform.rules.supplier_types) <= 80
+    assert sum(len(s.items) for s in platform.rules.supplier_types) >= 600
 
 
 def test_every_layout_is_used(platform):
@@ -64,7 +71,35 @@ def test_reverse_charge_layout_matches_country(platform):
         if supplier.country == "DE":
             assert "eu_invoice" not in supplier.layouts, supplier.key
         else:
-            assert supplier.layouts == ["eu_invoice"], supplier.key
+            assert "eu_invoice" in supplier.layouts, supplier.key
+            assert "credit_note" not in supplier.layouts, supplier.key
+            assert not {"till_receipt", "short_receipt"} & set(supplier.layouts), supplier.key
+
+
+def test_the_items_of_every_account_have_many_names(platform):
+    names = {}
+    for supplier in platform.rules.supplier_types:
+        for item in supplier.items:
+            names.setdefault(item.account, set()).add(item.description)
+    assert len(names["1800"]) >= 150
+    for account in ("4930", "4940", "4610", "4950", "4964", "3300", "3400", "0480", "4805"):
+        assert len(names[account]) >= 15, account
+
+
+def test_no_item_name_is_used_for_two_accounts_or_two_types(platform):
+    seen = {}
+    for supplier in platform.rules.supplier_types:
+        for item in supplier.items:
+            assert item.description not in seen, item.description
+            seen[item.description] = supplier.key
+
+
+def test_private_shops_only_print_receipts(platform):
+    receipts = {"till_receipt", "short_receipt", "tax_code_receipt", "quantity_receipt"}
+    private = {a.number for a in platform.rules.accounts if a.group == "private"}
+    for supplier in platform.rules.supplier_types:
+        if any(item.account in private for item in supplier.items):
+            assert set(supplier.layouts) <= receipts, supplier.key
 
 
 def test_prices_stay_clear_of_the_asset_limit(platform):

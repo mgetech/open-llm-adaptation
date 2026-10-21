@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data keep-round validate-gold models-check baseline train eval-sft eval gate lint format test requirements
+.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate gate declare-claim lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -16,13 +16,25 @@ setup:  ## Create the virtual environment and install dependencies
 install-vllm:  ## Install the vLLM version pinned in configs/models.yaml (Linux GPU machines)
 	uv pip install --python .venv/bin/python "vllm==$$(uv run python -m adapt.models --vllm-version)"
 
-data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=)
-	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED)
+data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=, optional TRAIN_SIZE=, REWRITES=folder)
+	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED) $(if $(TRAIN_SIZE),--train-size $(TRAIN_SIZE)) $(if $(REWRITES),--rewrites $(REWRITES))
+
+rewrite-export:  ## Make the tasks and the folder (and zip) for the rewriter (SEED=, optional SHARE=0.5, TRAIN_SIZE=, OUT=)
+	uv run python -m adapt.data.rewrite_export --platform $(PLATFORM) --seed $(SEED) $(if $(SHARE),--share $(SHARE)) $(if $(TRAIN_SIZE),--train-size $(TRAIN_SIZE)) $(if $(OUT),--out $(OUT))
+
+audit-export:  ## Make the folder (and zip) with the three jobs for a second author (GUIDE=file, optional OUT=, TRAIN_SIZE=, DATA_SEED=)
+	uv run python -m adapt.data.audit export --platform $(PLATFORM) --guide $(GUIDE) $(if $(OUT),--out $(OUT)) $(if $(TRAIN_SIZE),--train-size $(TRAIN_SIZE)) $(if $(DATA_SEED),--data-seed $(DATA_SEED))
+
+audit-compare:  ## Compare the labeller's answers with our labels (ANSWERS=file, optional REPORT=)
+	uv run python -m adapt.data.audit compare --platform $(PLATFORM) --answers $(ANSWERS) $(if $(REPORT),--report $(REPORT))
+
+rewrite-check:  ## Check the replies of the rewriter and write accepted.jsonl (optional DIR=data/rewrite/round3)
+	uv run python -m adapt.data.rewrite_check check --dir $(if $(DIR),$(DIR),data/rewrite/round3)
 
 keep-round:  ## Copy the current data to round<N>/ and record it in the manifest (ROUND=, optional NOTE=)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --keep-round $(ROUND) $(if $(NOTE),--note "$(NOTE)")
 
-validate-gold:  ## Check the gold files: schema, amounts and accounts (PLATFORM=)
+validate-gold:  ## Check the gold and dev_real files: schema, amounts, accounts (PLATFORM=)
 	uv run python -m adapt.data.gold --platform $(PLATFORM)
 
 models-check:  ## Check the model gates and compare the pinned revisions with the Hub (OFFLINE=1, PIN=1)
@@ -35,24 +47,46 @@ train:  ## QLoRA fine-tuning of one model (MODEL=, SEED=; optional ROUND=, NUM_G
 		$(if $(MAX_STEPS),--max-steps $(MAX_STEPS)) $(if $(ROUND),--round $(ROUND)) \
 		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR))
 
-eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional ROUND=, SMOKE=1, MAX_STEPS=, NUM_GPUS=, SERVERS=2, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1)
+select:  ## Score the checkpoints of a run on dev_real and keep the best as its adapter (MODEL=, SEED=; optional ROUND=, STEPS="150 225", SERVERS=2, SMOKE=1, ADAPTERS_DIR=, RUNS_DIR=, OUT_DIR=, DRY_RUN=1)
+	uv run python -m adapt.train.selection --platform $(PLATFORM) --seed $(SEED) \
+		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(STEPS),--steps $(STEPS)) \
+		$(if $(SERVERS),--servers $(SERVERS)) $(if $(ROUND),--round $(ROUND)) \
+		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR)) \
+		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
+
+eval-sft:  ## Evaluate a trained adapter on all splits, with its own server (MODEL=, SEED=; optional ROUND=, SMOKE=1, MAX_STEPS=, NUM_GPUS=, SERVERS=2, SPLITS=, ADAPTERS_DIR=, OUT_DIR=, DRY_RUN=1, OVERRIDE_FINAL_LOCK=1)
 	uv run python -m adapt.train.evaluate --platform $(PLATFORM) --seed $(SEED) \
 		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(MAX_STEPS),--max-steps $(MAX_STEPS) --num-gpus $(NUM_GPUS)) \
 		$(if $(SERVERS),--servers $(SERVERS)) $(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) \
-		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
+		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run) $(if $(OVERRIDE_FINAL_LOCK),--override-final-lock)
 
-eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINTS=; optional ROUND=, MODEL=, THRESHOLD=, FEW_SHOT=1, OUT_DIR=)
+eval:  ## Evaluate a system on a split (SYSTEM=, SPLIT=, ENDPOINTS=; optional ROUND=, MODEL=, THRESHOLD=, FEW_SHOT=1, OUT_DIR=, OVERRIDE_FINAL_LOCK=1)
 	uv run python -m adapt.eval.runner --platform $(PLATFORM) --split $(SPLIT) --endpoints $(ENDPOINTS) \
 		$(if $(SYSTEM),--system $(SYSTEM)) $(if $(MODEL),--model $(MODEL)) \
 		$(if $(THRESHOLD),--threshold $(THRESHOLD)) $(if $(WORKERS),--workers $(WORKERS)) \
 		$(if $(MODEL_REVISION),--model-revision $(MODEL_REVISION)) \
-		$(if $(ADAPTER_PATH),--adapter-path $(ADAPTER_PATH)) $(if $(ROUND),--round $(ROUND)) $(if $(FEW_SHOT),--few-shot) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
+		$(if $(ADAPTER_PATH),--adapter-path $(ADAPTER_PATH)) $(if $(ROUND),--round $(ROUND)) $(if $(FEW_SHOT),--few-shot) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(OVERRIDE_FINAL_LOCK),--override-final-lock)
 
 baseline:  ## Few-shot baseline of one model, with its own server (MODEL=; optional ROUND=, SPLITS=, OUT_DIR=, DRY_RUN=1)
 	uv run python -m adapt.baseline --platform $(PLATFORM) --model $(MODEL) 		$(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(DRY_RUN),--dry-run)
 
-gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=, ROUND=, OUT_DIR=)
-	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE)) $(if $(ROUND),--round $(ROUND)) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
+pair:  ## Combine the saved results of two systems into one pair configuration (FIRST=, SECOND=, NAME=; optional CONFIDENCE=each|ignore, SPLITS=, ROUND=, OUT_DIR=)
+	uv run python -m adapt.eval.configuration --platform $(PLATFORM) --first $(FIRST) --second $(SECOND) --name $(NAME) 		$(if $(CONFIDENCE),--confidence $(CONFIDENCE)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR))
+
+rescore:  ## Score saved results again with the newer pipeline checks, no model run (SYSTEMS="a b"; optional SPLITS=, ROUND=, RETUNE=1)
+	uv run python -m adapt.eval.rescore --platform $(PLATFORM) --systems $(SYSTEMS) $(if $(SPLITS),--splits $(SPLITS)) $(if $(ROUND),--round $(ROUND)) $(if $(RETUNE),--retune)
+
+stage-gate:  ## Gate checks on dev and dev_real of a system, a pass or fail for each, not the claim (SYSTEM=; optional ROUND=, OUT_DIR=)
+	uv run python -m adapt.eval.stage_gate --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR))
+
+threshold-report:  ## Coverage and critical-error curve of a system on dev and dev_real, threshold chosen on dev (SYSTEM=; optional ROUND=, SPLITS=, IN_DIR=)
+	uv run python -m adapt.eval.threshold_report --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(SPLITS),--splits $(SPLITS)) $(if $(IN_DIR),--in-dir $(IN_DIR))
+
+gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=, GOLD=gold_v2, ROUND=, OUT_DIR=)
+	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE)) $(if $(GOLD),--gold $(GOLD)) $(if $(ROUND),--round $(ROUND)) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
+
+declare-claim:  ## Declare the configurations of the final claim before the final run (CONFIGS="name=system:folder ...", SHIPPED=; optional ROUND=; STATUS=1 shows it)
+	uv run python -m adapt.eval.declare_claim --platform $(PLATFORM) $(if $(ROUND),--round $(ROUND)) 		$(if $(STATUS),--status,--config $(CONFIGS) --shipped $(SHIPPED))
 
 lint:  ## Check style and formatting
 	uv run ruff check .

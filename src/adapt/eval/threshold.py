@@ -3,7 +3,9 @@
 A document is automated at threshold `t` when nothing else sent it to review and its
 confidence is at least `t`. The rows of a run hold what is needed to try any `t` without
 running the model again. The threshold chosen is the lowest one, so the most documents are
-automated, at which the accuracy on automated documents reaches the target.
+automated, at which the accuracy on automated documents reaches its target and the share of
+automated documents with a critical error is within its limit. If no threshold meets both, the
+one that meets the accuracy target alone is used, and the record says so.
 """
 
 import json
@@ -23,15 +25,21 @@ class CurvePoint:
     automated: int
     automation_rate: float | None
     accuracy_on_automated: float | None
+    critical_errors: int = 0
+    critical_error_rate: float | None = None
 
 
 @dataclass(frozen=True)
 class Tuned:
-    """The curve and the point chosen from it. `chosen` is None if no point reaches the target."""
+    """The curve and the point chosen from it. `chosen` is None if no point reaches the accuracy
+    target. `critical_reached` is False when the point chosen meets the accuracy target but not
+    the limit on critical errors."""
 
     target_accuracy: float
     curve: list[CurvePoint]
     chosen: CurvePoint | None
+    max_critical_error_rate: float | None = None
+    critical_reached: bool = True
 
     @property
     def threshold(self) -> float | None:
@@ -53,17 +61,20 @@ def _automated(row: Mapping[str, Any], threshold: float) -> bool:
     return confidence is None or confidence >= threshold
 
 
-def _point(rows: Sequence[Mapping[str, Any]], threshold: float) -> CurvePoint:
+def point_at(rows: Sequence[Mapping[str, Any]], threshold: float) -> CurvePoint:
     automated = [row for row in rows if _automated(row, threshold)]
     automatable = [row for row in rows if not row["expected_review"]]
     # An automated document is only right if it should not have been reviewed.
     right = sum(row["answer_correct"] and not row["expected_review"] for row in automated)
     done = sum(not row["expected_review"] for row in automated)
+    critical = sum(row.get("severity") == "critical" for row in automated)
     return CurvePoint(
         threshold,
         len(automated),
         done / len(automatable) if automatable else None,
         right / len(automated) if automated else None,
+        critical,
+        critical / len(automated) if automated else None,
     )
 
 
@@ -76,17 +87,35 @@ def coverage_curve(rows: Sequence[Mapping[str, Any]]) -> list[CurvePoint]:
     for row in rows:
         if row["confidence"] is not None and _automated(row, 0.0):
             candidates.add(row["confidence"])
-    return [_point(rows, threshold) for threshold in sorted(candidates)]
+    return [point_at(rows, threshold) for threshold in sorted(candidates)]
 
 
-def tune_threshold(rows: Sequence[Mapping[str, Any]], target_accuracy: float) -> Tuned:
-    """The lowest threshold whose accuracy on automated documents is at least the target."""
+def _meets(point: CurvePoint, target_accuracy: float, max_critical: float | None) -> bool:
+    accuracy = point.accuracy_on_automated
+    if accuracy is None or accuracy < target_accuracy:
+        return False
+    if max_critical is None:
+        return True
+    return point.critical_error_rate is not None and point.critical_error_rate <= max_critical
+
+
+def tune_threshold(
+    rows: Sequence[Mapping[str, Any]],
+    target_accuracy: float,
+    max_critical_error_rate: float | None = None,
+) -> Tuned:
+    """The lowest threshold whose accuracy on automated documents is at least the target and
+    whose critical-error rate is at most the limit (when one is given). Without a threshold that
+    meets both, the lowest one that meets the accuracy target alone."""
     curve = coverage_curve(rows)
     for point in curve:
-        accuracy = point.accuracy_on_automated
-        if accuracy is not None and accuracy >= target_accuracy:
-            return Tuned(target_accuracy, curve, point)
-    return Tuned(target_accuracy, curve, None)
+        if _meets(point, target_accuracy, max_critical_error_rate):
+            return Tuned(target_accuracy, curve, point, max_critical_error_rate)
+    if max_critical_error_rate is not None:
+        for point in curve:
+            if _meets(point, target_accuracy, None):
+                return Tuned(target_accuracy, curve, point, max_critical_error_rate, False)
+    return Tuned(target_accuracy, curve, None, max_critical_error_rate, False)
 
 
 def tuning_record(tuned: Tuned) -> dict[str, Any]:
@@ -95,9 +124,12 @@ def tuning_record(tuned: Tuned) -> dict[str, Any]:
     return {
         "value": tuned.threshold,
         "target_accuracy": tuned.target_accuracy,
+        "target_critical_error_rate": tuned.max_critical_error_rate,
         "target_reached": chosen is not None,
+        "critical_target_reached": chosen is not None and tuned.critical_reached,
         "automation_rate": chosen.automation_rate if chosen else None,
         "accuracy_on_automated": chosen.accuracy_on_automated if chosen else None,
+        "critical_error_rate": chosen.critical_error_rate if chosen else None,
         "curve": [asdict(point) for point in tuned.curve],
     }
 

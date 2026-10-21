@@ -1,9 +1,12 @@
-"""Check the gold evaluation files.
+"""Check the hand-written evaluation files.
 
-Run with `make validate-gold`. Gold labels are not computed by code, so these
-checks are the only guard on them. There are two files: `gold.jsonl`, and `gold_v2.jsonl` with
-the documents written before any round-2 result existed. The second one is checked when it is
-there.
+Run with `make validate-gold`. These labels are not computed by code, so these checks are the
+only guard on them. There are three files: `gold.jsonl`, `gold_v2.jsonl` with the documents
+written before any round-2 result existed, and `dev_real.jsonl`, the realistic documents used
+to choose between configurations. The last two are checked when they are there. A dev_real
+document must also not appear in any training file. gold_v2 needs at least 40 records: the ids
+`gold2-001` and up are the ones written before round 2, the ids `gold2b-001` and up are the added
+ones.
 
 Each line of `platforms/<platform>/evals/<name>.jsonl` is one JSON object with:
 - `id`: a unique string;
@@ -15,6 +18,7 @@ Each line of `platforms/<platform>/evals/<name>.jsonl` is one JSON object with:
 
 import argparse
 import json
+import re
 import sys
 from collections.abc import Sequence
 from decimal import Decimal
@@ -24,11 +28,16 @@ from typing import Any, get_args
 from jsonschema import Draft202012Validator
 
 from adapt.config import PLATFORMS_DIR, Layout, Platform, load_platform
+from adapt.data.rounds import DATA_DIR
 from adapt.schema import build_output_schema
 
 REQUIRED_FIELDS = ("id", "platform", "chart", "document_text", "target")
 OPTIONAL_FIELDS = ("layout",)
 GOLD_NAMES = ("gold", "gold_v2")
+DEV_REAL = "dev_real"
+GOLD_V2_MIN = 40
+ORIGINAL_ID = re.compile(r"^gold2-\d{3}$")
+ADDED_ID = re.compile(r"^gold2b-\d{3}$")
 
 
 def gold_path(platform: str, root: Path = PLATFORMS_DIR, name: str = "gold") -> Path:
@@ -96,6 +105,57 @@ def check_record(record: Any, validator: Draft202012Validator, platform: Platfor
     return problems + _amount_problems(record["target"])
 
 
+def _text_key(text: str) -> str:
+    return " ".join(text.split()).lower()
+
+
+def train_overlap(path: Path, platform: str, data_dir: Path = DATA_DIR) -> list[str]:
+    """Name the documents of `path` that are also in a training file of any round.
+
+    Spacing and case are ignored, so a copy with other line breaks is found too."""
+    texts = {
+        _text_key(json.loads(line)["document_text"]): json.loads(line)["id"]
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    }
+    problems = []
+    for train in sorted((data_dir / platform).glob("round*/train.jsonl")):
+        for line in train.read_text(encoding="utf-8").splitlines():
+            record = json.loads(line)
+            for text in (
+                record["document_text"],
+                (record["canary"] or {}).get("text_without_name"),
+            ):
+                if text and _text_key(text) in texts:
+                    name = texts[_text_key(text)]
+                    problems.append(f"{name}: the document is also in {train.parent.name}/train")
+    return problems
+
+
+def gold_v2_problems(path: Path) -> list[str]:
+    """Check the size of gold_v2 and that every id says whether the record is original or added."""
+    ids = [
+        json.loads(line)["id"]
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    problems = [
+        f"{name}: the id must be gold2-NNN (original) or gold2b-NNN (added)"
+        for name in ids
+        if not (ORIGINAL_ID.match(name) or ADDED_ID.match(name))
+    ]
+    if len(ids) < GOLD_V2_MIN:
+        problems.append(f"{path.name} has {len(ids)} records, at least {GOLD_V2_MIN} are needed")
+    return problems
+
+
+def gold_v2_counts(path: Path) -> tuple[int, int]:
+    """The number of original and of added records in gold_v2."""
+    ids = [json.loads(line)["id"] for line in path.read_text(encoding="utf-8").splitlines()]
+    original = sum(bool(ORIGINAL_ID.match(name)) for name in ids)
+    return original, len(ids) - original
+
+
 def validate_gold(path: Path, platform: Platform) -> list[str]:
     """Check every line of a gold file. Each problem names the line and the record id."""
     if not path.is_file():
@@ -127,12 +187,13 @@ def validate_gold(path: Path, platform: Platform) -> list[str]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Check the gold evaluation files.")
+    parser = argparse.ArgumentParser(description="Check the hand-written evaluation files.")
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument(
         "--path",
         type=Path,
-        help="check this file only (default: gold.jsonl, and gold_v2.jsonl if it exists)",
+        help="check this file only (default: gold.jsonl, and gold_v2.jsonl and dev_real.jsonl "
+        "if they exist)",
     )
     args = parser.parse_args(argv)
 
@@ -140,12 +201,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         paths = [args.path]
     else:
         paths = [gold_path(args.platform)]
-        if gold_path(args.platform, name="gold_v2").exists():
-            paths.append(gold_path(args.platform, name="gold_v2"))
+        for name in ("gold_v2", DEV_REAL):
+            if gold_path(args.platform, name=name).exists():
+                paths.append(gold_path(args.platform, name=name))
     platform = load_platform(args.platform)
     failed = False
     for path in paths:
         problems = validate_gold(path, platform)
+        if path.stem == DEV_REAL and not problems:
+            problems = train_overlap(path, args.platform)
+        if path.stem == "gold_v2" and not problems:
+            problems = gold_v2_problems(path)
         for problem in problems:
             print(problem, file=sys.stderr)
         if problems:
@@ -153,7 +219,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             failed = True
         else:
             count = len(path.read_text(encoding="utf-8").splitlines())
-            print(f"{path}: {count} records, all valid")
+            split = ""
+            if path.stem == "gold_v2":
+                original, added = gold_v2_counts(path)
+                split = f" ({original} original, {added} added)"
+            print(f"{path}: {count} records{split}, all valid")
     return 1 if failed else 0
 
 

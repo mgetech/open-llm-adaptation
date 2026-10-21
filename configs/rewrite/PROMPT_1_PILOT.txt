@@ -1,0 +1,12 @@
+You are going to rewrite generated invoices, receipts and credit notes for a data project. Everything you need is in the folder you are working in. All documents are invented, there is no real data in them.
+
+First read README.txt and RULES.md completely. Then do the pilot, a first test of 40 documents:
+
+1. Run:  python rewrite.py next --pilot
+   (If "python" does not work, use "python3".)
+   It writes work/current.jsonl and tells you which file in out/ to write.
+2. Rewrite every document in work/current.jsonl yourself, as RULES.md says. Write your answers, one JSON line for each document, to the file in out/ that the program named.
+3. Run  python rewrite.py next --pilot  again. It checks your answers and shows what it rejected. Rewrite the rejected documents the same way (they come back in the next work/current.jsonl with the reasons). Repeat until the program prints PILOT DONE.
+4. Then STOP. Do not start the full run. Run  python rewrite.py pack  and tell me that the pilot is done and that results.zip is ready.
+
+Do not ask me questions during the pilot. If something in the rules is unclear, choose the safer reading and go on.

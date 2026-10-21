@@ -269,6 +269,27 @@ def test_the_same_seed_gives_the_same_training(smoke, tmp_path):
     assert second["adapter_sha256"] == first["adapter_sha256"]
 
 
+def test_a_smoke_run_keeps_every_checkpoint_and_leaves_the_choice_to_the_selection(smoke):
+    adapters, manifest = smoke
+    folder = adapters / "tax-booking" / "smoke-0-checkpoints"
+    assert sorted(path.name for path in folder.glob("checkpoint-*")) == [
+        "checkpoint-1",
+        "checkpoint-2",
+    ]
+    for checkpoint in folder.glob("checkpoint-*"):
+        assert (checkpoint / "adapter_config.json").is_file()
+        assert (checkpoint / "adapter_model.safetensors").is_file()
+    assert manifest["selection"] is None
+
+
+def test_a_run_trains_every_step_whatever_the_loss_on_dev_real_does(tmp_path):
+    settings = TrainSettings("tax-booking", 0, smoke=True, max_steps=4, adapters_dir=tmp_path)
+    manifest = run(settings)
+    assert manifest["steps"] == 4
+    folder = tmp_path / "tax-booking" / "smoke-0-checkpoints"
+    assert len(list(folder.glob("checkpoint-*"))) == 4
+
+
 def test_a_run_continues_from_its_last_checkpoint(tmp_path):
     first = run(TrainSettings("tax-booking", 0, smoke=True, max_steps=1, adapters_dir=tmp_path))
     assert first["steps"] == 1

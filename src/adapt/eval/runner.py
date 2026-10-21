@@ -34,6 +34,7 @@ from adapt.client import ModelClient, ssl_context
 from adapt.config import PLATFORMS_DIR, Platform, load_platform
 from adapt.data.gold import gold_path
 from adapt.data.rounds import eval_dir, generator_version, resolve_round, round_folder
+from adapt.eval.final_lock import CLAIM_SPLITS, lock_file, start_run
 from adapt.eval.metrics import account_groups
 from adapt.eval.scoring import (
     EvalDocument,
@@ -55,11 +56,13 @@ from adapt.prompting import system_prompt
 ROOT = PLATFORMS_DIR.parent
 DATA_DIR = ROOT / "data"
 RESULTS_DIR = eval_dir()  # the results of the current round
+RESULTS_ROOT = ROOT / "results"
 SPLITS = ("dev", "test_iid", "test_ood", "edge", "gold")
 # gold_v2 is written by hand after the first round. It is reported next to gold, and the gate
-# does not read it.
-GOLD_SPLITS = ("gold", "gold_v2")
-ALL_SPLITS = (*SPLITS, "gold_v2")
+# does not read it. dev_real is written by hand too. It is used to choose a configuration and
+# is never part of the gate or of a report.
+HAND_WRITTEN_SPLITS = ("gold", "gold_v2", "dev_real")
+ALL_SPLITS = (*SPLITS, "gold_v2", "dev_real")
 SYSTEM_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # A request waits for its turn on a busy server. The 30 seconds of the gateway are too short
 # for 8 requests in flight on a T4, and a timeout would count as an error of the model.
@@ -78,16 +81,20 @@ def _read_lines(path: Path) -> list[dict[str, Any]]:
 
 
 def default_splits(platform: str, root: Path = PLATFORMS_DIR) -> tuple[str, ...]:
-    """The splits to evaluate when none are named: all of them, and gold_v2 once its file exists."""
-    return (*SPLITS, "gold_v2") if gold_path(platform, root, "gold_v2").exists() else SPLITS
+    """The splits to evaluate when none are named: all of them, and gold_v2 and dev_real once
+    their files exist."""
+    extra = tuple(
+        name for name in ("gold_v2", "dev_real") if gold_path(platform, root, name).exists()
+    )
+    return (*SPLITS, *extra)
 
 
 def split_path(
     platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
 ) -> Path:
-    """The file of a split. The gold set does not depend on the round. `data_round` None is the
-    current round."""
-    if split in GOLD_SPLITS:
+    """The file of a split. The hand-written sets do not depend on the round. `data_round` None
+    is the current round."""
+    if split in HAND_WRITTEN_SPLITS:
         return gold_path(platform, data_dir.parent / "platforms", split)
     return round_folder(platform, data_round, data_dir) / f"{split}.jsonl"
 
@@ -95,13 +102,12 @@ def split_path(
 def load_documents(
     platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
 ) -> list[EvalDocument]:
-    """The documents of one split. Gold documents (gold and gold_v2) have no category, noise
-    level or flag for a seen supplier, except that the supplier is compared with the training
-    names."""
+    """The documents of one split. Hand-written documents (gold, gold_v2 and dev_real) have no
+    category or noise level, except that the supplier is compared with the training names."""
     if split not in ALL_SPLITS:
         raise ValueError(f"unknown split {split!r}, expected one of {', '.join(ALL_SPLITS)}")
     records = _read_lines(split_path(platform, split, data_dir, data_round))
-    if split not in GOLD_SPLITS:
+    if split not in HAND_WRITTEN_SPLITS:
         return [
             EvalDocument(
                 r["id"],
@@ -353,11 +359,17 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
 
     confidence_threshold: dict[str, Any] = {"value": threshold, "source": source}
     if threshold is None:
-        target = platform.config.gate.accuracy_automated_min
-        tuned = tune_threshold(document_rows(score(documents, results, groups)), target)
+        gate = platform.config.gate
+        tuned = tune_threshold(
+            document_rows(score(documents, results, groups)),
+            gate.accuracy_automated_min,
+            gate.critical_error_rate_max,
+        )
         threshold = tuned.threshold if tuned.threshold is not None else 0.0
         if tuned.threshold is None:
             confidence_threshold["source"] = "dev target not reached, no confidence limit"
+        elif not tuned.critical_reached:
+            confidence_threshold["source"] = "tuned on dev, critical-error limit not reached"
         confidence_threshold |= tuning_record(tuned)
         results = [apply_threshold(result, threshold) for result in results]
 
@@ -402,6 +414,45 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
         "slices": compute_slices(scored),
         "documents": document_rows(scored),
     }
+
+
+def final_files(
+    platform: str, data_dir: Path = DATA_DIR, data_round: int | None = None
+) -> dict[str, Any]:
+    """The files a final claim stands on: test_ood of the round and the gold sets, by hash."""
+    data_round = resolve_round(data_round, data_dir)
+    platforms = data_dir.parent / "platforms"
+    return {
+        "test_ood_sha256": hash_file(split_path(platform, "test_ood", data_dir, data_round)),
+        "gold_sha256": {
+            name: hash_file(gold_path(platform, platforms, name))
+            for name in ("gold", "gold_v2")
+            if gold_path(platform, platforms, name).exists()
+        },
+    }
+
+
+def claim_final_split(
+    platform: str,
+    system: str,
+    split: str,
+    out_dir: Path,
+    *,
+    adapter_path: Path | None = None,
+    data_dir: Path = DATA_DIR,
+    data_round: int | None = None,
+    few_shot: bool = False,
+    override: bool = False,
+    results_root: Path = RESULTS_ROOT,
+) -> None:
+    """Allow a run on test_ood or a gold set, or refuse it (see final_lock). Other splits, the
+    few-shot baseline and runs that write outside the results folder are not part of a claim."""
+    path = lock_file(out_dir, results_root)
+    if split not in CLAIM_SPLITS or few_shot or path is None:
+        return
+    adapter_hash = hash_directory(adapter_path) if adapter_path else None
+    files = final_files(platform, data_dir, data_round)
+    start_run(path, files, system, adapter_hash, override)
 
 
 def results_file(out_dir: Path, platform: str, system: str, split: str) -> Path:
@@ -456,6 +507,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--few-shot", action="store_true", help="add the examples to the prompt")
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
+    parser.add_argument(
+        "--override-final-lock",
+        action="store_true",
+        help="run on test_ood or gold files that already back a final claim (written to the lock)",
+    )
     args = parser.parse_args(argv)
     try:
         out_dir = args.out_dir or eval_dir(args.round)
@@ -477,6 +533,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         data_round=args.round,
     )
     try:
+        claim_final_split(
+            args.platform,
+            args.system,
+            args.split,
+            out_dir,
+            adapter_path=args.adapter_path,
+            data_round=args.round,
+            few_shot=args.few_shot,
+            override=args.override_final_lock,
+        )
         results = evaluate(settings)
     except ValueError as error:
         sys.exit(f"error: {error}")

@@ -1,11 +1,15 @@
 """Fine-tune one model with QLoRA and write its adapter and a run manifest.
 
     adapters/<platform>/<model>-<seed>/            the adapter (not committed)
-    adapters/<platform>/<model>-<seed>-checkpoints/  checkpoints, for `--resume`
+    adapters/<platform>/<model>-<seed>-checkpoints/  every checkpoint
     results/round<N>/runs/<platform>-<model>-<seed>.json    the run manifest
 
 `--round N` trains on the data of round N (default: the current round). A run on a later round
 than the first has `-r<N>` after the model, as in `qwen3-4b-r2-0`.
+
+The run trains every step and keeps every checkpoint (`checkpoint.save_steps`). The adapter it
+writes is the last one. `make select` then scores some checkpoints on the dev_real documents, which
+are never trained on, and records the choice in the manifest.
 
 `--smoke` trains a tiny random model with a tiny tokenizer on the CPU for two steps. It checks the
 code path. It writes under `smoke-<seed>` and its manifest goes next to the adapter, not into
@@ -272,6 +276,7 @@ def run(
         else accumulation_steps(optimiser.gradient_accumulation_steps, settings.num_gpus)
     )
     effective_batch = per_device_batch * accumulation * settings.num_gpus
+    save_steps = smoke.save_steps if settings.smoke else config.checkpoint.save_steps
     arguments = SFTConfig(
         output_dir=str(checkpoint_dir),
         seed=settings.seed,
@@ -290,8 +295,8 @@ def run(
         gradient_checkpointing_kwargs={"use_reentrant": False},
         ddp_find_unused_parameters=False,
         save_strategy="steps",
-        save_steps=smoke.save_steps if settings.smoke else config.checkpoint.save_steps,
-        save_total_limit=config.checkpoint.keep,
+        save_steps=save_steps,
+        save_total_limit=None,
         logging_steps=config.logging_steps,
         report_to="none",
         max_length=max_length,
@@ -343,6 +348,7 @@ def run(
             "longest_example_tokens": max(len(e["input_ids"]) for e in examples),
             "max_length": max_length,
         },
+        "selection": None,  # `make select` fills it in
         "git_commit": commit,
         "git_dirty": dirty,
         "gpu": gpu_name(),

@@ -35,6 +35,8 @@ OUTPUT = {
     "needs_review": False,
     "reason": "Office supplies at 19%, book at 7%",
 }
+# A document that prints no VAT, for answers that are not about TEXT.
+PLAIN = "Nordpaper GmbH\nItem 100.00\nTotal EUR 100.00"
 FLAGGED = {
     **OUTPUT,
     "items": [],
@@ -120,7 +122,7 @@ def test_a_request_id_is_kept_or_made_up(pipe, server):
         (TEXT, None, ["unsupported_chart"]),
         ("Nordpaper GmbH\nPaper 23.80", "SKR03", ["no_total"]),
         ("Nordpaper GmbH\nTotal EUR 4", "SKR03", ["no_total"]),
-        ("Nordpaper GmbH\nTotal EUR 2?4.0?", "SKR03", ["no_total"]),
+        ("Nordpaper GmbH\nTotal EUR 2?4.0?", "SKR03", ["no_total", "heavy_noise"]),
         ("Nordpaper GmbH\nPaper 23.80", "SKR04", ["unsupported_chart", "no_total"]),
     ],
 )
@@ -163,6 +165,14 @@ def test_a_currency_code_inside_a_word_is_not_a_currency(platform):
     assert document_problems(text, "SKR03", platform) == []
 
 
+@pytest.mark.parametrize(
+    "line",
+    ["Total payab1e EUR 297.49", "Totalpayab1e EUR 311,21", "Tota1 sa1e EUR 53,4S"],
+)
+def test_a_one_for_an_l_in_the_words_before_the_total_is_still_a_total(platform, line):
+    assert document_problems(f"Nordpaper GmbH\n{line}", "SKR03", platform) == []
+
+
 def test_the_rule_flags_exactly_the_documents_labelled_with_another_currency(platform):
     train = [
         (record["id"], record["document_text"], record["chart"], record["target"])
@@ -183,6 +193,72 @@ def test_the_rule_flags_exactly_the_documents_labelled_with_another_currency(pla
     }
     expected = {id_ for id_, _, _, target in documents if target["currency"] != "EUR"}
     assert expected and flagged == expected
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Printer paper A4 ... 2?.80",
+        "Printer paper A4 ... #3.80",
+        "Printer paper A4 ... 2*,80",
+        "Printer paper A4 ... 1.2?4,00",
+        "Printer paper A4 ...12,*8PRINTER PAPER",
+        "Printer paper A4 ... ??,?#",
+        "Printer paper A4 ... *,#*",
+    ],
+)
+def test_an_amount_that_cannot_be_read_needs_review_without_the_model(pipe, server, line):
+    result = pipe.process(TEXT.replace("2x Printer paper A4 ... 23.80", line), "SKR03")
+    assert result.needs_review and result.reasons == ["heavy_noise"]
+    assert result.by_rule
+    assert server.requests == []
+
+
+@pytest.mark.parametrize("line", ["Invoice #1234", "Wait... 5? ok", "Ref #12  Tel. 030 23125"])
+def test_marks_that_are_not_inside_an_amount_are_not_heavy_noise(platform, line):
+    assert document_problems(f"{TEXT}\n{line}", "SKR03", platform) == []
+
+
+def test_an_item_booked_at_another_rate_than_the_printed_vat_needs_review(pipe, server):
+    wrong = [{**OUTPUT["items"][0], "vat_rate": "7"}, OUTPUT["items"][1]]
+    result = run(pipe, server, output=output_with(items=wrong))
+    assert result.needs_review and result.reasons == ["vat_mismatch"]
+    assert result.by_rule
+    assert len(result.booking_lines) == 2
+
+
+def test_the_vat_check_is_not_a_rule_flag_when_the_model_flagged_the_document(pipe, server):
+    wrong = [{**OUTPUT["items"][0], "vat_rate": "7"}, OUTPUT["items"][1]]
+    result = run(pipe, server, output=output_with(items=wrong, needs_review=True, reason="unsure"))
+    assert result.reasons == ["model_flagged", "vat_mismatch"]
+    assert not result.by_rule
+
+
+def test_a_reverse_charge_answer_is_not_compared_with_printed_vat(pipe, server):
+    wrong = [{**OUTPUT["items"][0], "vat_rate": "7"}, OUTPUT["items"][1]]
+    result = run(pipe, server, output=output_with(items=wrong, reverse_charge=True))
+    assert "vat_mismatch" not in result.reasons
+
+
+def test_the_heavy_noise_check_flags_exactly_the_heavy_noise_documents(platform):
+    """Over train, dev, test_iid, test_ood and edge: no other document is flagged, and every
+    document made with illegible amounts is. The gold sets are not read."""
+    records = [
+        json.loads(line)
+        for line in split_path("tax-booking", "train").read_text("utf-8").splitlines()
+    ]
+    for split in ("dev", "test_iid", "test_ood", "edge"):
+        records += [
+            json.loads(line)
+            for line in split_path("tax-booking", split).read_text("utf-8").splitlines()
+        ]
+    flagged = {
+        r["id"]
+        for r in records
+        if "heavy_noise" in document_problems(r["document_text"], r["chart"], platform)
+    }
+    made = {r["id"] for r in records if r["category"] == "heavy_noise"}
+    assert made and flagged == made
 
 
 def test_only_the_document_checks_set_by_rule(pipe, server):
@@ -278,20 +354,20 @@ def test_a_total_that_does_not_match_needs_review(pipe, server):
 
 def test_a_net_amount_near_the_asset_limit_needs_review(pipe, server):
     item = {"description": "Laptop", "amount": 975.8, "account": "0410", "vat_rate": "19"}
-    result = run(pipe, server, output=output_with(items=[item], total=975.8))
+    result = run(pipe, server, output=output_with(items=[item], total=975.8), text=PLAIN)
     assert result.needs_review and result.reasons == ["near_asset_limit"]
 
 
 def test_an_asset_booked_as_expense_needs_review(pipe, server):
     item = {"description": "Desk", "amount": 1785.0, "account": "4930", "vat_rate": "19"}
-    result = run(pipe, server, output=output_with(items=[item], total=1785.0))
+    result = run(pipe, server, output=output_with(items=[item], total=1785.0), text=PLAIN)
     assert result.needs_review and result.reasons == ["asset_as_expense"]
 
 
 def test_a_credit_note_comes_out_automated(pipe, server):
     item = {"description": "Toner, returned", "amount": -59.5, "account": "4930", "vat_rate": "19"}
     output = output_with(items=[item], total=-59.5, document_type="credit_note")
-    result = run(pipe, server, output=output)
+    result = run(pipe, server, output=output, text=PLAIN)
     assert not result.needs_review
     assert result.booking_lines[0].net == Decimal("-50.00")
 
@@ -457,3 +533,38 @@ def test_documents_from_the_dev_split_end_as_the_data_says(pipe, server, platfor
         if result.needs_review:
             assert result.reasons, r["id"]
     assert len(records) > 250
+
+
+MIXED_ITEMS = [
+    {"description": "Printer paper A4", "amount": 23.8, "account": "4930", "vat_rate": "19"},
+    {"description": "Tax handbook 2026", "amount": 21.4, "account": "1800", "vat_rate": "7"},
+]
+CUE_TEXT = PLAIN + "\nReverse charge: tax liability of the recipient"
+ONE_ITEM = [{"description": "Item", "amount": 100.0, "account": "4930", "vat_rate": "19"}]
+
+
+def test_an_answer_that_mixes_private_and_business_accounts_goes_to_review_by_rule(pipe, server):
+    result = run(pipe, server, output=output_with(items=MIXED_ITEMS))
+    assert result.needs_review and result.reasons == ["mixed_private"]
+    assert result.by_rule
+    assert len(result.booking_lines) == 2
+
+
+def test_a_text_that_names_the_reverse_charge_needs_review_when_the_answer_has_none(pipe, server):
+    answer = output_with(items=ONE_ITEM, total=100.0)
+    result = run(pipe, server, output=answer, text=CUE_TEXT)
+    assert result.needs_review and result.reasons == ["reverse_charge_cue"]
+    assert result.by_rule
+
+
+def test_an_answer_with_the_reverse_charge_is_not_flagged_for_the_cue(pipe, server):
+    answer = output_with(items=ONE_ITEM, total=100.0, reverse_charge=True)
+    result = run(pipe, server, output=answer, text=CUE_TEXT)
+    assert "reverse_charge_cue" not in result.reasons
+
+
+def test_the_new_rules_are_not_rule_flags_when_the_model_flagged_the_document(pipe, server):
+    answer = output_with(items=MIXED_ITEMS, needs_review=True, reason="unsure")
+    result = run(pipe, server, output=answer)
+    assert result.reasons == ["model_flagged", "mixed_private"]
+    assert not result.by_rule

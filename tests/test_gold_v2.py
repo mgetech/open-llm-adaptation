@@ -7,7 +7,7 @@ import pytest
 
 from adapt.config import PLATFORMS_DIR
 from adapt.data import gold as gold_module
-from adapt.data.gold import GOLD_NAMES, gold_path, main
+from adapt.data.gold import GOLD_NAMES, gold_path, gold_v2_counts, gold_v2_problems, main
 from adapt.eval.gate import GATE_SPLITS, gold_v2_report, load_results
 from adapt.eval.runner import (
     ALL_SPLITS,
@@ -101,6 +101,7 @@ def test_the_validator_checks_gold_v2_when_it_exists(tmp_path, monkeypatch, caps
 
     shutil.copy(gold_path("tax-booking"), tmp_path / "gold.jsonl")
     monkeypatch.setattr(gold_module, "gold_path", path_of)
+    monkeypatch.setattr(gold_module, "GOLD_V2_MIN", 1)
 
     assert main([]) == 0
     assert "gold_v2" not in capsys.readouterr().out
@@ -108,7 +109,9 @@ def test_the_validator_checks_gold_v2_when_it_exists(tmp_path, monkeypatch, caps
     write_v2([RECORD])
     assert main([]) == 0
     out = capsys.readouterr().out
-    assert "gold.jsonl: " in out and "gold_v2.jsonl: 1 records, all valid" in out
+    assert (
+        "gold.jsonl: " in out and "gold_v2.jsonl: 1 records (1 original, 0 added), all valid" in out
+    )
 
     broken = json.loads(json.dumps(RECORD))
     broken["target"]["items"][0]["account"] = "9999"
@@ -123,13 +126,14 @@ def results_of(accuracy, critical, automation, documents=20):
         "critical_error_rate": {"value": critical},
         "automation_rate": {"value": automation},
     }
-    return {"metrics": metrics, "documents": [{}] * documents}
+    rows = [{"id": f"gold2-{number:03d}"} for number in range(documents)]
+    return {"metrics": metrics, "documents": rows}
 
 
 def test_the_report_shows_gold_v2_next_to_gold():
     results = {"gold": results_of(0.8, 0.1, 0.9, 80), "gold_v2": results_of(0.95, 0.0, 1.0)}
     shown = dict(gold_v2_report(results))
-    assert shown["gold_v2 documents"] == "20"
+    assert shown["gold_v2 documents"] == "20 (20 original, 0 added)"
     assert shown["accuracy on automated documents, gold / gold_v2"] == "0.800 / 0.950"
     assert shown["critical-error rate, gold / gold_v2"] == "0.100 / 0.000"
     assert shown["automation rate, gold / gold_v2"] == "0.900 / 1.000"
@@ -144,3 +148,55 @@ def test_the_gate_loads_gold_v2_results_when_the_file_exists(tmp_path):
     folder.mkdir(parents=True)
     (folder / "gold_v2.json").write_text(json.dumps(results_of(1, 0, 1)), encoding="utf-8")
     assert list(load_results(tmp_path, "tax-booking", "system")) == ["gold_v2"]
+
+
+def test_the_report_counts_original_and_added_documents():
+    new = results_of(1, 0, 1, 2)
+    new["documents"] += [{"id": "gold2b-001"}, {"id": "gold2b-002"}, {"id": "gold2b-003"}]
+    shown = dict(gold_v2_report({"gold": results_of(0.8, 0.1, 0.9, 80), "gold_v2": new}))
+    assert shown["gold_v2 documents"] == "5 (2 original, 3 added)"
+
+
+def numbered(prefix, count):
+    return [{**RECORD, "id": f"{prefix}-{number:03d}"} for number in range(1, count + 1)]
+
+
+def test_gold_v2_needs_at_least_40_records_with_ids_that_say_original_or_added(tmp_path):
+    path = write_gold(tmp_path, "gold_v2", numbered("gold2", 20) + numbered("gold2b", 19))
+    assert gold_v2_problems(path) == ["gold_v2.jsonl has 39 records, at least 40 are needed"]
+    assert gold_v2_counts(path) == (20, 19)
+
+    path = write_gold(tmp_path, "gold_v2", numbered("gold2", 20) + numbered("gold2b", 20))
+    assert gold_v2_problems(path) == []
+    assert gold_v2_counts(path) == (20, 20)
+
+
+def test_a_gold_v2_id_must_be_original_or_added(tmp_path):
+    path = write_gold(
+        tmp_path, "gold_v2", numbered("gold2", 20) + numbered("gold2b", 19) + numbered("gold3", 1)
+    )
+    assert gold_v2_problems(path) == [
+        "gold3-001: the id must be gold2-NNN (original) or gold2b-NNN (added)"
+    ]
+
+
+def test_the_validator_shows_how_many_records_are_original_and_added(tmp_path, monkeypatch, capsys):
+    def path_of(platform, root=PLATFORMS_DIR, name="gold"):
+        return tmp_path / f"{name}.jsonl"
+
+    shutil.copy(gold_path("tax-booking"), tmp_path / "gold.jsonl")
+    monkeypatch.setattr(gold_module, "gold_path", path_of)
+    write_gold(tmp_path, "gold_v2", numbered("gold2", 20) + numbered("gold2b", 19))
+    (tmp_path / "gold_v2.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in numbered("gold2", 20) + numbered("gold2b", 19)),
+        encoding="utf-8",
+    )
+    assert main([]) == 1
+    assert "gold_v2.jsonl has 39 records, at least 40 are needed" in capsys.readouterr().err
+
+    (tmp_path / "gold_v2.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in numbered("gold2", 20) + numbered("gold2b", 20)),
+        encoding="utf-8",
+    )
+    assert main([]) == 0
+    assert "40 records (20 original, 20 added), all valid" in capsys.readouterr().out

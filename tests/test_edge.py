@@ -8,16 +8,20 @@ from adapt.config import load_platform
 from adapt.data.edge import (
     AMBIGUOUS_ITEMS,
     CATEGORIES,
+    EDGE_WEIGHTS,
     FOREIGN_CURRENCIES,
     FREE_TEXT_NOTES,
     INJECTIONS,
+    MIXED_LAYOUTS,
     MONEY,
+    NUMBERED_AMBIGUOUS,
     SMUDGE_CHARS,
     UNSUPPORTED_CHART,
+    edge_counts,
     generate_edge_documents,
 )
 from adapt.data.generate import make_suppliers
-from adapt.data.layouts import REVERSE_CHARGE_NOTE
+from adapt.data.layouts import REVERSE_CHARGE_NOTES
 from adapt.schema import build_output_schema
 
 SEED = 21
@@ -115,9 +119,16 @@ def test_only_the_unsupported_chart_category_changes_the_chart(platform, documen
             assert document.chart == platform.rules.chart
 
 
+NUMBERED = re.compile(
+    "|".join(re.escape(pattern).replace(r"\{n\}", r"\d+") for pattern in NUMBERED_AMBIGUOUS),
+    re.IGNORECASE,
+)
+
+
 def test_ambiguous_documents_show_an_ambiguous_item(documents):
     for document in in_category(documents, "ambiguous_purpose"):
-        assert any(item in document.text for item in AMBIGUOUS_ITEMS)
+        text = document.text.lower()
+        assert any(item.lower() in text for item in AMBIGUOUS_ITEMS) or NUMBERED.search(text)
 
 
 def test_mixed_documents_show_private_and_business_items(platform, documents):
@@ -126,8 +137,9 @@ def test_mixed_documents_show_private_and_business_items(platform, documents):
     private = {i.description for i in items if i.account in private_accounts}
     business = {i.description for i in items if i.account not in private_accounts}
     for document in in_category(documents, "business_private_mixed"):
-        assert any(description in document.text for description in private)
-        assert any(description in document.text for description in business)
+        text = document.text.lower()
+        assert any(description.lower() in text for description in private)
+        assert any(description.lower() in text for description in business)
 
 
 def test_missing_total_documents_have_no_complete_total(documents):
@@ -170,7 +182,7 @@ def test_near_limit_documents_have_an_item_close_to_the_limit(platform, document
 def test_reverse_charge_note_appears_only_in_free_text(documents):
     for document in in_category(documents, "reverse_charge_free_text"):
         assert document.target["reverse_charge"] is True
-        assert REVERSE_CHARGE_NOTE not in document.text
+        assert not any(note in document.text for note in REVERSE_CHARGE_NOTES)
         assert any(note in document.text for note in FREE_TEXT_NOTES)
 
 
@@ -233,40 +245,99 @@ def test_money_pattern_matches_both_styles():
 
 def test_mixed_documents_appear_on_receipts_and_invoices(many):
     layouts = {d.layout for d in in_category(many, "business_private_mixed")}
-    assert {"till_receipt", "table_invoice"} <= layouts
-    assert layouts <= {"till_receipt", "short_receipt", "table_invoice"}
+    assert {"till_receipt", "table_invoice", "tax_code_receipt", "quantity_receipt"} <= layouts
+    assert layouts <= set(MIXED_LAYOUTS)
 
 
 def test_mixed_documents_name_their_private_items(platform, many):
     private_accounts = {a.number for a in platform.rules.accounts if a.group == "private"}
     private = {
-        i.description
+        i.description.lower()
         for t in platform.rules.supplier_types
         for i in t.items
         if i.account in private_accounts
     }
     for document in in_category(many, "business_private_mixed"):
-        assert any(description in document.text for description in private)
+        text = document.text.lower()
+        assert any(description in text for description in private)
+
+
+def test_mixed_documents_come_from_business_shops_and_from_private_shops(platform, suppliers, many):
+    private_accounts = {a.number for a in platform.rules.accounts if a.group == "private"}
+    type_of = {s.name: s.type_key for s in suppliers}
+    types = {t.key: t for t in platform.rules.supplier_types}
+    kinds = set()
+    for document in in_category(many, "business_private_mixed"):
+        shop = types[type_of[document.supplier]]
+        kinds.add(all(i.account in private_accounts for i in shop.items))
+        assert shop.country == "DE"
+    assert kinds == {True, False}
+
+
+def test_a_private_shop_receipt_with_a_business_item_names_paper_or_a_book(
+    platform, suppliers, many
+):
+    private_accounts = {a.number for a in platform.rules.accounts if a.group == "private"}
+    type_of = {s.name: s.type_key for s in suppliers}
+    types = {t.key: t for t in platform.rules.supplier_types}
+    business = {
+        i.description.lower()
+        for t in platform.rules.supplier_types
+        for i in t.items
+        if i.account in ("4930", "4940")
+    }
+    found = 0
+    for document in in_category(many, "business_private_mixed"):
+        shop = types[type_of[document.supplier]]
+        if all(i.account in private_accounts for i in shop.items):
+            found += 1
+            assert any(name in document.text.lower() for name in business)
+    assert found > 5
 
 
 def test_free_text_reverse_charge_notes_use_many_phrasings(many):
     found = in_category(many, "reverse_charge_free_text")
     used = {note for document in found for note in FREE_TEXT_NOTES if note in document.text}
-    assert len(FREE_TEXT_NOTES) >= 10
-    assert len(used) >= 8
+    assert len(FREE_TEXT_NOTES) >= 40
+    assert len(used) >= 20
+
+
+def test_free_text_reverse_charge_documents_use_several_layouts(many):
+    layouts = {d.layout for d in in_category(many, "reverse_charge_free_text")}
+    assert "eu_invoice" in layouts
+    assert len(layouts) >= 4
 
 
 def test_injection_documents_use_many_phrasings(many):
     found = in_category(many, "prompt_injection")
     used = {phrase for document in found for phrase in INJECTIONS if phrase in document.text}
-    assert len(used) >= 8
+    assert len(INJECTIONS) >= 40
+    assert len(used) >= 20
 
 
 def test_ambiguous_documents_use_many_phrasings(many):
     found = in_category(many, "ambiguous_purpose")
-    used = {item for document in found for item in AMBIGUOUS_ITEMS if item in document.text}
-    assert len(AMBIGUOUS_ITEMS) >= 15
-    assert len(used) >= 10
+    used = {
+        item
+        for document in found
+        for item in AMBIGUOUS_ITEMS
+        if item.lower() in document.text.lower()
+    }
+    assert len(AMBIGUOUS_ITEMS) >= 80
+    assert len(used) >= 30
+    assert any(NUMBERED.search(document.text) for document in found)
+
+
+def test_the_hard_categories_get_more_documents(platform, suppliers):
+    counts = edge_counts(3, EDGE_WEIGHTS)
+    assert counts["business_private_mixed"] == 9 and counts["ambiguous_purpose"] == 6
+    assert counts["missing_total"] == 3
+    assert set(EDGE_WEIGHTS) <= set(CATEGORIES)
+    documents = generate_edge_documents(platform, suppliers, SEED, 2, weights=EDGE_WEIGHTS)
+    assert len(documents) == sum(edge_counts(2, EDGE_WEIGHTS).values())
+    assert len(in_category(documents, "business_private_mixed")) == 6
+    plain = generate_edge_documents(platform, suppliers, SEED, 2)
+    assert in_category(documents, "missing_total") == in_category(plain, "missing_total")
 
 
 def test_a_discount_sits_below_the_item_it_reduces_and_shares_its_account(many):
@@ -283,3 +354,14 @@ def test_a_discount_sits_below_the_item_it_reduces_and_shares_its_account(many):
         if items[position]["description"].endswith(f" on {above['description']}"):
             named += 1
     assert named > 0
+
+
+def test_an_ambiguous_name_is_never_the_name_of_a_real_item(platform):
+    real = {
+        item.description.lower().rstrip("s")
+        for supplier_type in platform.rules.supplier_types
+        for item in supplier_type.items
+    }
+    for name in AMBIGUOUS_ITEMS:
+        assert name.lower().rstrip("s") not in real, name
+    assert len(set(AMBIGUOUS_ITEMS)) == len(AMBIGUOUS_ITEMS)

@@ -1,0 +1,15 @@
+The pilot is approved. Now rewrite all the remaining documents, without stopping and without asking me anything. Read RULES.md again first.
+
+Repeat this loop until the program prints DONE:
+
+1. Run:  python rewrite.py next      (use "python3" if "python" does not work)
+2. Rewrite every document in work/current.jsonl yourself, as RULES.md says, and write one JSON line for each document to the file in out/ that the program named.
+3. Go back to step 1. The program checks your last answer, then hands out the next documents. Rejected documents come back with the reasons, so fix them the same way.
+
+Important:
+- You write every text yourself. Never write a program, a template, a loop or a text replacement that makes the texts. Programs are only for running rewrite.py.
+- Do not skip documents and do not shorten the work. Keep the texts different from each other, as RULES.md says. About every 10 batches, read RULES.md again (also the part "Common mistakes") and check that your last answers do not repeat the same headings, openings or closing lines.
+- Your progress is saved in the out/ folder. If your session ends or your memory of this conversation is cut, nothing is lost: read RULES.md again and run  python rewrite.py next  to go on.
+- Do not stop to report. Do not ask for a decision. If a document is rejected three times, the program gives it up. That is fine.
+
+When the program prints DONE, run  python rewrite.py pack  and tell me that results.zip is ready.

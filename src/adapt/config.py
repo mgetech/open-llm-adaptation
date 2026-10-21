@@ -15,6 +15,12 @@ Layout = Literal[
     "credit_note",
     "eu_invoice",
     "short_receipt",
+    "column_invoice",
+    "service_invoice",
+    "email_invoice",
+    "statement",
+    "tax_code_receipt",
+    "quantity_receipt",
 ]
 VatRate = Literal["19", "7", "0"]
 Country = Literal["DE", "EU", "non-EU"]
@@ -90,12 +96,16 @@ class SupplierType(_Model):
 
 class SupplierNames(_Model):
     syllables: list[str] = Field(min_length=20)
+    # Plain words that can stand in for a made-up name.
+    words: list[str] = []
     suffixes: dict[Country, list[str]]
 
     @model_validator(mode="after")
     def check_parts(self) -> Self:
         if len(set(self.syllables)) != len(self.syllables):
             raise ValueError("duplicate syllable")
+        if len({word.lower() for word in self.words}) != len(self.words):
+            raise ValueError("duplicate word")
         for country in get_args(Country):
             if not self.suffixes.get(country):
                 raise ValueError(f"no name suffix for country {country}")
