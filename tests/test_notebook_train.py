@@ -295,3 +295,11 @@ def test_the_run_calls_pass_the_epochs_but_the_short_check_does_not(code):
     for command in ('"select"', '"eval-sft"'):
         calls = [s for s in code if command in s and "MAX_STEPS" not in s]
         assert len(calls) == 1 and "*EPOCH_ARGS" in calls[0], command
+
+
+def test_the_short_check_can_be_skipped_with_one_setting(code):
+    assert settings_of(code[0])["SHORT_CHECK"] is True
+    checks = [s for s in code if "{CHECK_MODEL}" in s]
+    assert len(checks) == 2 and all(s.startswith("if SHORT_CHECK:") for s in checks)
+    for source in checks:
+        compile(source, "<cell>", "exec")
