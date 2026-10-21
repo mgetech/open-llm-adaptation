@@ -1,17 +1,21 @@
 """The lock on the final claim.
 
-The test_ood and gold files can only back one claim. The first run of a system on them for
-a final result writes a claim to `results/final.lock.json`: the hashes of the test_ood file and
-of the gold files, and the system and its adapter. Another system on the same files is
-refused, because a second look at the same test documents is not a clean claim. The same
-system and adapter may go on, for example after a crash in the middle of the run.
+The test_ood and gold files can back one claim. Before the final run, the claim is declared in
+`results/final.lock.json`: the hashes of the test_ood file and of the gold files, the
+configurations that will be evaluated, and the one that is shipped. Both are chosen on dev and
+dev_real. A configuration is one adapter, or two adapters that must agree, each given with its
+system name and the hash of its folder.
 
-New test_ood or gold files have other hashes, so they open a new claim. `override` runs anyway,
-and the claim is written with `"override": true`.
+A run on those files is allowed only for an adapter of a declared configuration. Any other
+system or adapter is refused, and so is a run when nothing was declared. The first run marks
+the claim as started, and from then on the list and the shipped choice cannot change. New
+test_ood or gold files have other hashes, so they need their own declaration. `override` runs
+an adapter that is not in the list and writes it to the claim with `"override": true`; it never
+changes the shipped choice.
 """
 
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -19,10 +23,11 @@ LOCK_NAME = "final.lock.json"
 # The splits that make a final claim. The few-shot baseline does not: it is the system the
 # claim is compared with, and nothing is chosen with it.
 CLAIM_SPLITS = ("test_ood", "gold", "gold_v2")
+MAX_ADAPTERS = 2  # a configuration is one adapter, or two that must agree
 
 
 class FinalLockError(ValueError):
-    """A second final claim on files that already back one."""
+    """A run or a declaration that the lock does not allow."""
 
 
 def lock_file(out_dir: Path, results_root: Path) -> Path | None:
@@ -45,38 +50,96 @@ def _write(path: Path, claims: list[dict[str, Any]]) -> None:
         file.write(json.dumps({"claims": claims}, indent=2, ensure_ascii=False) + "\n")
 
 
-def claim(
+def _find(claims: Sequence[dict[str, Any]], files: Mapping[str, Any]) -> dict[str, Any] | None:
+    for item in claims:
+        if {key: item.get(key) for key in files} == dict(files):
+            return item
+    return None
+
+
+def _check_configurations(
+    configurations: Mapping[str, Sequence[Mapping[str, str]]], shipped: str
+) -> None:
+    if not configurations:
+        raise FinalLockError("a claim needs at least one configuration")
+    for name, adapters in configurations.items():
+        if not 1 <= len(adapters) <= MAX_ADAPTERS:
+            raise FinalLockError(f"configuration {name} must have one or two adapters")
+        if len({a["system"] for a in adapters}) != len(adapters):
+            raise FinalLockError(f"configuration {name} names the same system twice")
+        if any(not a["adapter_hash"] for a in adapters):
+            raise FinalLockError(f"configuration {name} has an adapter without a hash")
+    if shipped not in configurations:
+        raise FinalLockError(f"the shipped configuration {shipped} is not in the list")
+
+
+def declare(
+    path: Path,
+    files: Mapping[str, Any],
+    data_round: int,
+    configurations: Mapping[str, Sequence[Mapping[str, str]]],
+    shipped: str,
+) -> None:
+    """Declare the claim on `files`: the configurations to evaluate and the shipped one.
+
+    A claim that was declared but not started can be declared again. One that has started cannot
+    be changed."""
+    _check_configurations(configurations, shipped)
+    claims = read_claims(path)
+    existing = _find(claims, files)
+    if existing and existing["started"]:
+        raise FinalLockError(
+            f"the claim on these test_ood and gold files has started (shipped: "
+            f"{existing['shipped']}). The list and the shipped choice cannot change. "
+            "Use new test_ood and gold files for another claim."
+        )
+    declared = {
+        **files,
+        "round": data_round,
+        "configurations": [
+            {"name": name, "adapters": [dict(a) for a in adapters]}
+            for name, adapters in configurations.items()
+        ],
+        "shipped": shipped,
+        "started": False,
+        "runs": [],
+    }
+    _write(path, [c for c in claims if c is not existing] + [declared])
+
+
+def start_run(
     path: Path,
     files: Mapping[str, Any],
     system: str,
     adapter_hash: str | None,
-    data_round: int,
     override: bool = False,
 ) -> None:
-    """Record a final claim on `files` (`test_ood_sha256` and `gold_sha256`), or refuse it.
-
-    Raises FinalLockError when another system already holds a claim on the same files and
-    `override` is not set."""
+    """Allow a run of `system` on the claimed splits, or refuse it. The first allowed run marks
+    the claim as started."""
     claims = read_claims(path)
-    same = [c for c in claims if {k: c.get(k) for k in files} == dict(files)]
-    mine = any(c["system"] == system and c["adapter_hash"] == adapter_hash for c in same)
-    if same and not mine and not override:
-        first = same[0]
+    found = _find(claims, files)
+    if found is None:
         raise FinalLockError(
-            f"{first['system']} already made the final claim on these test_ood and gold files "
-            f"(round {first['round']}, see {path.name}). Another run on them is a second look. "
-            "Use new test_ood and gold files, or give the override if you accept that the "
-            "result is not a clean claim."
+            "no claim is declared for these test_ood and gold files. Declare the "
+            "configurations and the shipped one first (make declare-claim)."
         )
-    if mine:
+    declared = {
+        (a["system"], a["adapter_hash"])
+        for config in found["configurations"]
+        for a in config["adapters"]
+    }
+    allowed = (system, adapter_hash) in declared
+    if not allowed and not override:
+        names = ", ".join(a for a, _ in sorted(declared))
+        raise FinalLockError(
+            f"{system} is not in the claim declared for these test_ood and gold files "
+            f"(declared: {names}; shipped: {found['shipped']}). Give the override to run it "
+            "anyway; the result is then not a clean claim."
+        )
+    run = {"system": system, "adapter_hash": adapter_hash, "override": not allowed}
+    if found["started"] and run in found["runs"]:
         return
-    claims.append(
-        {
-            **files,
-            "system": system,
-            "adapter_hash": adapter_hash,
-            "round": data_round,
-            "override": bool(same) and override,
-        }
-    )
+    found["started"] = True
+    if run not in found["runs"]:
+        found["runs"].append(run)
     _write(path, claims)

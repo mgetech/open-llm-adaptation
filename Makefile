@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore gate lint format test requirements
+.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore gate declare-claim lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -78,6 +78,9 @@ rescore:  ## Score saved results again with the newer pipeline checks, no model 
 
 gate:  ## Check the results of a system against the gate (SYSTEM=, optional BASELINE=, GOLD=gold_v2, ROUND=, OUT_DIR=)
 	uv run python -m adapt.eval.gate --platform $(PLATFORM) $(if $(SYSTEM),--system $(SYSTEM)) $(if $(BASELINE),--baseline $(BASELINE)) $(if $(GOLD),--gold $(GOLD)) $(if $(ROUND),--round $(ROUND)) 		$(if $(OUT_DIR),--out-dir $(OUT_DIR))
+
+declare-claim:  ## Declare the configurations of the final claim before the final run (CONFIGS="name=system:folder ...", SHIPPED=; optional ROUND=; STATUS=1 shows it)
+	uv run python -m adapt.eval.declare_claim --platform $(PLATFORM) $(if $(ROUND),--round $(ROUND)) 		$(if $(STATUS),--status,--config $(CONFIGS) --shipped $(SHIPPED))
 
 lint:  ## Check style and formatting
 	uv run ruff check .

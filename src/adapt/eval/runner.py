@@ -34,7 +34,7 @@ from adapt.client import ModelClient, ssl_context
 from adapt.config import PLATFORMS_DIR, Platform, load_platform
 from adapt.data.gold import gold_path
 from adapt.data.rounds import eval_dir, generator_version, resolve_round, round_folder
-from adapt.eval.final_lock import CLAIM_SPLITS, claim, lock_file
+from adapt.eval.final_lock import CLAIM_SPLITS, lock_file, start_run
 from adapt.eval.metrics import account_groups
 from adapt.eval.scoring import (
     EvalDocument,
@@ -410,6 +410,22 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
     }
 
 
+def final_files(
+    platform: str, data_dir: Path = DATA_DIR, data_round: int | None = None
+) -> dict[str, Any]:
+    """The files a final claim stands on: test_ood of the round and the gold sets, by hash."""
+    data_round = resolve_round(data_round, data_dir)
+    platforms = data_dir.parent / "platforms"
+    return {
+        "test_ood_sha256": hash_file(split_path(platform, "test_ood", data_dir, data_round)),
+        "gold_sha256": {
+            name: hash_file(gold_path(platform, platforms, name))
+            for name in ("gold", "gold_v2")
+            if gold_path(platform, platforms, name).exists()
+        },
+    }
+
+
 def claim_final_split(
     platform: str,
     system: str,
@@ -423,24 +439,14 @@ def claim_final_split(
     override: bool = False,
     results_root: Path = RESULTS_ROOT,
 ) -> None:
-    """Make the final claim for a run on test_ood or a gold set, or refuse it (see final_lock).
-    Other splits, the few-shot baseline and runs that write outside the results folder make no
-    claim."""
+    """Allow a run on test_ood or a gold set, or refuse it (see final_lock). Other splits, the
+    few-shot baseline and runs that write outside the results folder are not part of a claim."""
     path = lock_file(out_dir, results_root)
     if split not in CLAIM_SPLITS or few_shot or path is None:
         return
-    data_round = resolve_round(data_round, data_dir)
-    gold = {
-        name: hash_file(gold_path(platform, data_dir.parent / "platforms", name))
-        for name in ("gold", "gold_v2")
-        if gold_path(platform, data_dir.parent / "platforms", name).exists()
-    }
-    files = {
-        "test_ood_sha256": hash_file(split_path(platform, "test_ood", data_dir, data_round)),
-        "gold_sha256": gold,
-    }
     adapter_hash = hash_directory(adapter_path) if adapter_path else None
-    claim(path, files, system, adapter_hash, data_round, override)
+    files = final_files(platform, data_dir, data_round)
+    start_run(path, files, system, adapter_hash, override)
 
 
 def results_file(out_dir: Path, platform: str, system: str, split: str) -> Path:
