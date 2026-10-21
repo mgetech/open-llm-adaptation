@@ -71,6 +71,24 @@ def test_the_supplier_is_found_whatever_its_case():
     assert has_reason(reasons(GOOD.replace("FENWICK TRADING GMBH", "FENWICK LTD")), "supplier")
 
 
+def test_an_item_name_must_stay_as_given_but_its_case_and_line_breaks_may_change():
+    assert reasons(GOOD.replace("NOTEBOOK A5   3.20", "Notebook\nA5   3.20")) == []
+    shortened = reasons(GOOD.replace("PENCIL SET", "PENCILS"))
+    assert has_reason(shortened, "item name 'pencil set'")
+    assert has_reason(reasons(GOOD.replace("NOTEBOOK A5", "NOTEBOOK A 5")), "item name")
+    assert has_reason(reasons(GOOD.replace("NOTEBOOK A5", "NOTEBK A5")), "item name")
+
+
+def test_a_name_that_several_items_share_must_appear_as_often():
+    items = [
+        {"description": "Pencil set", "amount": 6.5},
+        {"description": "Pencil set", "amount": 3.2},
+    ]
+    text = GOOD.replace("NOTEBOOK A5", "PENCIL SET")
+    assert reasons(text, items=items) == []
+    assert has_reason(reasons(GOOD, items=items), "item name 'pencil set'")
+
+
 def test_every_item_amount_and_the_total_must_be_there():
     assert has_reason(reasons(GOOD.replace("6.50", "6.40")), "item amount 6.50")
     assert has_reason(reasons(GOOD.replace("Total EUR 9.70", "Total EUR 9.00")), "total 9.70")

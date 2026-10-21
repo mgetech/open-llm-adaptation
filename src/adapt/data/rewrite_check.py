@@ -296,6 +296,7 @@ def check_rewrite(task: dict, text: object) -> list[str]:
     for needed in task.get("keep_verbatim") or []:
         if needed not in text:
             reasons.append(f"missing text that must stay: {needed[:60]!r}")
+    reasons += item_name_problems(task, text)
     reasons += rate_problems(task, rest)
     reasons += currency_problems(task, rest)
 
@@ -318,6 +319,19 @@ def check_rewrite(task: dict, text: object) -> list[str]:
         elif difflib.SequenceMatcher(None, draft, text, autojunk=False).ratio() > CLOSE_TO_DRAFT:
             reasons.append("the text is too close to the draft, write it in your own words")
     return reasons
+
+
+def item_name_problems(task: dict, text: str) -> list[str]:
+    """Item names that are not in the text as given. The label of a document is the account of
+    each item, so an item that is renamed can no longer be told from the generated name. Capitals
+    and line breaks may change. A name that several items share must appear as often."""
+    flat = " ".join(text.lower().split())
+    wanted = Counter(" ".join(item["description"].lower().split()) for item in task["items"])
+    return [
+        f"item name {name!r} is not in the text as given"
+        for name, count in wanted.items()
+        if flat.count(name) < count
+    ]
 
 
 def hint_problems(task: dict, rest: str) -> list[str]:
