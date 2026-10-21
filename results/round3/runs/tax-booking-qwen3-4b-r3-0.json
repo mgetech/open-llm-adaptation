@@ -1,0 +1,143 @@
+{
+  "run_id": "tax-booking-qwen3-4b-r3-0",
+  "platform": "tax-booking",
+  "model": "qwen3-4b",
+  "model_hf_id": "Qwen/Qwen3-4B",
+  "model_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+  "seed": 0,
+  "smoke": false,
+  "max_steps": null,
+  "config": {
+    "quantisation": {
+      "quant_type": "nf4",
+      "double_quant": true,
+      "compute_dtype": "float16"
+    },
+    "lora": {
+      "r": 16,
+      "alpha": 32,
+      "dropout": 0.05,
+      "target_modules": "all-linear"
+    },
+    "optimiser": {
+      "learning_rate": 0.0002,
+      "lr_scheduler": "cosine",
+      "warmup_ratio": 0.03,
+      "epochs": 1,
+      "optim": "paged_adamw_8bit",
+      "batch_size": 4,
+      "gradient_accumulation_steps": 4,
+      "gradient_checkpointing": true
+    },
+    "data": {
+      "max_length": 1280
+    },
+    "checkpoint": {
+      "save_steps": 75
+    },
+    "selection": {
+      "steps": [
+        150,
+        225,
+        300,
+        375
+      ]
+    },
+    "logging_steps": 10,
+    "smoke": {
+      "steps": 2,
+      "examples": 16,
+      "tokenizer_examples": 200,
+      "batch_size": 2,
+      "max_length": 4096,
+      "save_steps": 1,
+      "vocab_size": 1000,
+      "hidden_size": 64,
+      "intermediate_size": 128,
+      "layers": 2,
+      "heads": 4,
+      "kv_heads": 2,
+      "head_dim": 16
+    }
+  },
+  "prompt_sha256": "2f3789f30dd9234c912df016d6c5687b85920d701c0bdf5d4dffe1f1e13edcb7",
+  "data": {
+    "round": 3,
+    "generator": 3,
+    "train_file": "train.jsonl",
+    "train_sha256": "c602eb8764752d378150f7945feb9b17bcbba6b0f399a93ee7d0ec726fd1d457",
+    "examples": 6000,
+    "longest_example_tokens": 1067,
+    "max_length": 1280
+  },
+  "selection": {
+    "split": "dev_real",
+    "file": "dev_real.jsonl",
+    "sha256": "d1996227863aeb15611d8a778c3ba53002044cd373f73fc0e0b57091267f0e11",
+    "examples": 96,
+    "method": "lowest critical error rate, then highest document accuracy, then the later step",
+    "confidence_limit": 0.0,
+    "candidates": [
+      {
+        "step": 150,
+        "system": "qwen3-4b-sft-r3-0-ckpt150",
+        "critical_error_rate": 0.12162162162162163,
+        "document_accuracy": 0.8020833333333334,
+        "automation_rate": 0.935064935064935,
+        "adapter_sha256": "3bac771085e628e4bf3d1c88bd9ea708e8f0ceb874860af1c87ffef365f8e91a"
+      },
+      {
+        "step": 225,
+        "system": "qwen3-4b-sft-r3-0-ckpt225",
+        "critical_error_rate": 0.10126582278481013,
+        "document_accuracy": 0.8125,
+        "automation_rate": 0.974025974025974,
+        "adapter_sha256": "8469131ac0efa46a6a3b83fb8d9b99e3d360af906ba220b88754a4131d3c6863"
+      },
+      {
+        "step": 300,
+        "system": "qwen3-4b-sft-r3-0-ckpt300",
+        "critical_error_rate": 0.05405405405405406,
+        "document_accuracy": 0.84375,
+        "automation_rate": 0.948051948051948,
+        "adapter_sha256": "246cba930e50ce34ff3d1bb0a8b8b565e27abad13e0ad42a6c81019d72dbe656"
+      },
+      {
+        "step": 375,
+        "system": "qwen3-4b-sft-r3-0-ckpt375",
+        "critical_error_rate": 0.05263157894736842,
+        "document_accuracy": 0.8958333333333334,
+        "automation_rate": 0.974025974025974,
+        "adapter_sha256": "2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c"
+      }
+    ],
+    "chosen_step": 375
+  },
+  "git_commit": "f54529de6e2cf13619d7e0daa1001a5fa4359b46",
+  "git_dirty": false,
+  "gpu": "Tesla T4",
+  "gpu_count": 2,
+  "num_gpus": 2,
+  "per_device_batch_size": 4,
+  "gradient_accumulation_steps": 2,
+  "effective_batch_size": 16,
+  "peak_gpu_memory_gib": 4.998046875,
+  "versions": {
+    "python": "3.12.15",
+    "torch": "2.13.0",
+    "transformers": "5.20.0",
+    "trl": "1.16.0",
+    "peft": "0.21.2",
+    "bitsandbytes": "0.50.2",
+    "datasets": "5.1.0",
+    "tokenizers": "0.23.3"
+  },
+  "steps": 375,
+  "resumed_from_step": null,
+  "train_loss": 0.021743225810428462,
+  "trainable_parameters": 33030144,
+  "wall_seconds": 6517.168251614,
+  "gpu_hours": 3.6206490286744444,
+  "adapter_dir": "/kaggle/working/open-llm-adaptation/adapters/tax-booking/qwen3-4b-r3-0",
+  "adapter_sha256": "2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c"
+}
