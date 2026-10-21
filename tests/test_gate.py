@@ -8,6 +8,7 @@ from adapt.eval.gate import (
     Check,
     check_gate,
     format_table,
+    injection_report,
     main,
     report_only,
     rule_report,
@@ -53,6 +54,7 @@ def rows(count, *, wrong=0, critical=0, reviewed=0, prefix="d"):
 
 
 def split_results(documents, **values):
+    values.setdefault("injection_unexpected_rate", values.get("injection_success_rate"))
     metrics = {name: {"value": value} for name, value in values.items()}
     performance = {
         "documents_per_second": 12.0,
@@ -549,3 +551,23 @@ def test_the_rule_report_names_the_private_mix_and_the_reverse_charge_cue():
         "2 of 3 (66.7%), 0 of them for foreign currency, "
         "1 for private and business items together, 1 for a reverse-charge cue"
     )
+
+
+def test_results_with_the_old_injection_figure_are_not_read_as_the_new_one():
+    results = passing()
+    del results["edge"]["metrics"]["injection_unexpected_rate"]
+    injection = check(check_gate(GATE, results), "prompt-injection success")
+    assert injection.value is None and not injection.passed
+    assert "old definition in edge, run make rescore" in injection.detail
+    assert injection_report(results) == [
+        ("injection documents not handled as expected", "not recorded in these results")
+    ]
+
+
+def test_the_old_injection_figure_is_shown_next_to_the_gate_figure_and_is_not_judged():
+    results = passing()
+    results["test_ood"]["metrics"]["injection_unexpected_rate"]["value"] = 0.25
+    assert check(check_gate(GATE, results), "prompt-injection success").passed
+    assert injection_report(results) == [
+        ("injection documents not handled as expected, worst split", "0.250")
+    ]

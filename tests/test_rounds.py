@@ -222,7 +222,9 @@ def test_the_gate_finds_the_results_of_a_round_by_its_number(capsys):
 
     code = gate(["--system", "qwen3-4b-sft-0", "--baseline", "qwen3-4b-fewshot", "--round", "1"])
     out = capsys.readouterr().out
-    assert code == 1 and "gate: FAIL (2 of 10 checks)" in out
+    # The round 1 results have only the old injection figure, which the gate does not read.
+    assert code == 1 and "gate: FAIL (3 of 10 checks)" in out
+    assert "old definition in" in out and "run make rescore" in out
     # Round 2 has no results yet, so every check is missing.
     code = gate(["--system", "qwen3-4b-sft-0", "--round", "2"])
     assert code == 1 and "gate: FAIL (10 of 10 checks)" in capsys.readouterr().out

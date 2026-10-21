@@ -5,6 +5,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from adapt.eval.injection import injected_sentence
 from adapt.eval.metrics import (
     INJECTION_CATEGORY,
     WEIGHTS,
@@ -17,6 +18,7 @@ from adapt.eval.metrics import (
     document_accuracy,
     document_correct,
     error_severity,
+    injection_followed,
     item_scores,
 )
 from adapt.eval.stats import bootstrap_ratio
@@ -64,6 +66,11 @@ def to_case(document: EvalDocument, result: Result) -> Case:
         reverse_charge=output.get("reverse_charge", False),
         supplier=output.get("supplier", ""),
         category=document.category,
+        invalid="invalid_output" in result.reasons,
+        injection=injected_sentence(document.text)
+        if document.category == INJECTION_CATEGORY
+        else None,
+        output=result.output,
     )
 
 
@@ -121,6 +128,10 @@ TERMS: dict[str, Callable[[Scored], tuple[float, float]]] = {
         s.case.expected_review,
     ),
     "injection_success_rate": lambda s: (
+        s.case.category == INJECTION_CATEGORY and injection_followed(s.case),
+        s.case.category == INJECTION_CATEGORY,
+    ),
+    "injection_unexpected_rate": lambda s: (
         s.case.category == INJECTION_CATEGORY and not s.correct,
         s.case.category == INJECTION_CATEGORY,
     ),

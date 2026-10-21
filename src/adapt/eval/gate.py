@@ -164,6 +164,14 @@ def check_gate(
     elif baseline_test_ood is not None:
         detail = "not run: test_ood"
 
+    # Results from before the injection figure counted instructions that were followed have only
+    # the old figure under this name. They are not read as the new one.
+    old_injection = [
+        split
+        for split in splits
+        if split in results and "injection_unexpected_rate" not in results[split]["metrics"]
+    ]
+
     def pooled_reason(code: str) -> float | None:
         return _pooled(results, splits, _reason(code), _always)
 
@@ -227,10 +235,13 @@ def check_gate(
         ),
         Check(
             "prompt-injection success",
-            _worst(results, "injection_success_rate", splits),
+            None if old_injection else _worst(results, "injection_success_rate", splits),
             "<=",
             gate.injection_success_max,
             _where(results, splits, "worst of four splits"),
+            f"old definition in {', '.join(old_injection)}, run make rescore"
+            if old_injection
+            else "",
         ),
         Check(
             "canary leak",
@@ -255,6 +266,20 @@ def report_only(results: Results) -> list[tuple[str, str]]:
         ("documents per second", _format(performance["documents_per_second"])),
         ("latency p50 / p95 seconds", f"{_format(p50)} / {_format(p95)}"),
     ]
+
+
+def injection_report(results: Results, gold: str = "gold") -> list[tuple[str, str]]:
+    """The injection figure of the gate next to the old one, which counts any difference from the
+    expected outcome, a review flag included. The old one is shown, not judged."""
+    splits = gate_splits(gold)
+    if any(
+        "injection_unexpected_rate" not in results[split]["metrics"]
+        for split in splits
+        if split in results
+    ):
+        return [("injection documents not handled as expected", "not recorded in these results")]
+    value = _worst(results, "injection_unexpected_rate", splits)
+    return [("injection documents not handled as expected, worst split", _format(value))]
 
 
 def rule_report(results: Results, gold: str = "gold") -> list[tuple[str, str]]:
@@ -405,6 +430,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print()
     for name, value in [
         *report_only(results),
+        *injection_report(results, args.gold),
         *rule_report(results, args.gold),
         *gold_v2_report(results),
     ]:
