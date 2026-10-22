@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm fetch-weights serve-local data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc post-hoc-gold gate seal declare-claim lint format test requirements
+.PHONY: help setup install-vllm fetch-weights serve-local gateway-key data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc post-hoc-gold gate seal declare-claim lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -19,8 +19,11 @@ install-vllm:  ## Install the vLLM version pinned in configs/models.yaml (Linux 
 fetch-weights:  ## Download the base model of configs/serve.yaml once, so that serving is offline
 	uv run python -m adapt.serve --fetch-weights
 
-serve-local:  ## Start vLLM with the model and adapters of configs/serve.yaml (PRINT=1 shows the command only)
-	uv run python -m adapt.serve $(if $(PRINT),--print)
+serve-local:  ## Start vLLM and the gateway from configs/serve.yaml and configs/keys.yaml (optional PRINT=1 shows the commands only, NO_GATEWAY=1 starts vLLM alone)
+	uv run python -m adapt.serve $(if $(PRINT),--print) $(if $(NO_GATEWAY),--no-gateway)
+
+gateway-key:  ## Make an API key and print the lines to add to configs/keys.yaml (ID=name; optional KEY_PLATFORMS="tax-booking")
+	uv run python -m adapt.gateway.keys --id $(ID) $(if $(KEY_PLATFORMS),--platforms $(KEY_PLATFORMS))
 
 data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=, optional TRAIN_SIZE=, REWRITES=folder)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED) $(if $(TRAIN_SIZE),--train-size $(TRAIN_SIZE)) $(if $(REWRITES),--rewrites $(REWRITES))

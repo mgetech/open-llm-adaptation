@@ -1,8 +1,10 @@
 """Serve the shipped model with vLLM from `configs/serve.yaml`.
 
 Run with `make serve-local`. It checks that every adapter has the hash in the file, then starts
-vLLM with the base model at its pinned revision and the adapters loaded as LoRA modules, offline.
-`--print` shows the command and the environment without starting anything.
+vLLM with the base model at its pinned revision and the adapters loaded as LoRA modules, offline,
+and the gateway in front of it. Kaggle has no Docker, so this is how the two run there. `--print`
+shows the commands and the environment without starting anything, and `--no-gateway` starts vLLM
+alone.
 
 `make fetch-weights` downloads the base model once, so that serving needs no network.
 """
@@ -11,13 +13,16 @@ import argparse
 import os
 import subprocess
 import sys
+import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from adapt.baseline import stop
 from adapt.eval.runner import ADAPTER_FILES, ROOT, hash_directory
+from adapt.gateway.keys import load_keys
 from adapt.models import CONFIGS_DIR, Registry, load_registry
 
 SERVE_FILE = CONFIGS_DIR / "serve.yaml"
@@ -37,6 +42,7 @@ class Adapter(_Model):
     name: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$")
     path: Path
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    threshold: float = Field(ge=0, le=1)
 
 
 class ServeConfig(_Model):
@@ -127,8 +133,40 @@ def serve_command(config: ServeConfig, registry: Registry, python: str | None = 
     return command
 
 
+def gateway_command(file: Path, port: int, python: str | None = None) -> list[str]:
+    """The gateway command. It reaches vLLM on the port of the serve file."""
+    return [
+        python or sys.executable,
+        "-m",
+        "adapt.gateway",
+        "--serve-file",
+        str(file),
+        "--port",
+        str(port),
+    ]
+
+
 def environment(config: ServeConfig, base: Mapping[str, str] | None = None) -> dict[str, str]:
     return {**(os.environ if base is None else base), **config.environment}
+
+
+def run_together(commands: Sequence[tuple[Sequence[str], Mapping[str, str]]]) -> int:
+    """Run the commands side by side until one ends or the user stops them, then stop them all."""
+    processes = []
+    try:
+        for command, env in commands:
+            processes.append(subprocess.Popen(list(command), env=dict(env)))
+        while True:
+            for process in processes:
+                code = process.poll()
+                if code is not None:
+                    return code
+            time.sleep(1.0)
+    except KeyboardInterrupt:
+        return 130
+    finally:
+        for process in processes:
+            stop(process)
 
 
 def fetch_weights(registry: Registry, key: str) -> Path:
@@ -148,7 +186,9 @@ def fetch_weights(registry: Registry, key: str) -> Path:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Serve the shipped model with vLLM.")
     parser.add_argument("--file", type=Path, default=SERVE_FILE, help="default: configs/serve.yaml")
-    parser.add_argument("--print", action="store_true", help="show the command, do not start it")
+    parser.add_argument("--print", action="store_true", help="show the commands, do not start them")
+    parser.add_argument("--no-gateway", action="store_true", help="start vLLM alone")
+    parser.add_argument("--gateway-port", type=int, default=8080)
     parser.add_argument("--fetch-weights", action="store_true", help="download the base model")
     args = parser.parse_args(argv)
     try:
@@ -157,19 +197,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.fetch_weights:
             print(f"base model {config.model}: {fetch_weights(registry, config.model)}")
             return 0
-        command = serve_command(config, registry)
+        commands = [(serve_command(config, registry), environment(config))]
+        if not args.no_gateway:
+            gateway = gateway_command(args.file, args.gateway_port)
+            commands.append((gateway, environment(config)))
         if args.print:
             for name, value in config.environment.items():
                 print(f"{name}={value}")
-            print(" ".join(command))
+            for command, _ in commands:
+                print(" ".join(command))
             return 0
         check_adapters(config)
+        if not args.no_gateway:
+            load_keys()
     except (ValueError, OSError) as error:
         sys.exit(f"error: {error}")
-    try:
-        return subprocess.run(command, env=environment(config), check=False).returncode
-    except KeyboardInterrupt:
-        return 130
+    return run_together(commands)
 
 
 if __name__ == "__main__":

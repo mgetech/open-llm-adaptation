@@ -15,12 +15,15 @@ lora:
   max_loras: 2
   max_lora_rank: 16
 
-# Adapters by the name a request uses. `sha256` is the hash over adapter_config.json and
-# adapter_model.safetensors; the launcher refuses an adapter whose files do not match it.
+# Adapters by the name a request uses; the gateway serves the platform of the same name with the
+# adapter. `sha256` is the hash over adapter_config.json and adapter_model.safetensors; the
+# launcher refuses an adapter whose files do not match it. `threshold` is the confidence limit
+# of the pipeline, chosen on dev and dev_real.
 adapters:
   - name: tax-booking
     path: adapters/tax-booking/qwen3-4b-r3-0
     sha256: 2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c
+    threshold: 0.9817172787547637
 
 # Serving is offline: `make fetch-weights` downloads the base model once.
 environment:

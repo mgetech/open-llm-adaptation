@@ -12,6 +12,7 @@ import yaml
 from adapt import serve
 from adapt.eval.final_lock import read_claims
 from adapt.eval.runner import ADAPTER_FILES, RESULTS_ROOT, ROOT, hash_directory
+from adapt.gateway.keys import load_keys
 from adapt.models import Registry, load_registry
 from adapt.serve import (
     SERVE_FILE,
@@ -34,6 +35,19 @@ def registry() -> Registry:
 @pytest.fixture
 def raw() -> dict:
     return yaml.safe_load(SERVE_FILE.read_text(encoding="utf-8"))
+
+
+KEY_FILE = (
+    """keys:
+  - id: a
+    sha256: """
+    + '"'
+    + "0" * 64
+    + '"'
+    + """
+    platforms: [tax-booking]
+"""
+)
 
 
 @pytest.fixture
@@ -129,20 +143,35 @@ def test_an_invalid_file_names_itself(tmp_path, raw):
 
 def test_an_adapter_with_the_expected_hash_passes(raw, adapter_folder):
     expected = hash_directory(adapter_folder, ADAPTER_FILES)
-    adapter = {"name": "tax-booking", "path": str(adapter_folder), "sha256": expected}
+    adapter = {
+        "name": "tax-booking",
+        "path": str(adapter_folder),
+        "sha256": expected,
+        "threshold": 0.5,
+    }
     check_adapters(config_with(raw, adapters=[adapter]))
 
 
 def test_an_adapter_with_other_weights_is_refused(raw, adapter_folder):
     expected = hash_directory(adapter_folder, ADAPTER_FILES)
-    adapter = {"name": "tax-booking", "path": str(adapter_folder), "sha256": expected}
+    adapter = {
+        "name": "tax-booking",
+        "path": str(adapter_folder),
+        "sha256": expected,
+        "threshold": 0.5,
+    }
     (adapter_folder / "adapter_model.safetensors").write_bytes(b"changed")
     with pytest.raises(ValueError, match="has hash .* the file expects"):
         check_adapters(config_with(raw, adapters=[adapter]))
 
 
 def test_a_missing_adapter_is_refused(raw, tmp_path):
-    adapter = {"name": "tax-booking", "path": str(tmp_path / "none"), "sha256": "0" * 64}
+    adapter = {
+        "name": "tax-booking",
+        "path": str(tmp_path / "none"),
+        "sha256": "0" * 64,
+        "threshold": 0.5,
+    }
     with pytest.raises(ValueError, match="no adapter tax-booking in"):
         check_adapters(config_with(raw, adapters=[adapter]))
 
@@ -185,22 +214,67 @@ def test_the_launcher_stops_before_vllm_when_the_adapter_is_missing(raw, tmp_pat
         main(["--file", str(path)])
 
 
-def test_the_launcher_runs_the_command_with_the_environment(
+def test_the_launcher_starts_vllm_and_the_gateway_with_the_environment(
     raw, adapter_folder, tmp_path, monkeypatch
 ):
     expected = hash_directory(adapter_folder, ADAPTER_FILES)
-    raw["adapters"] = [{"name": "tax-booking", "path": str(adapter_folder), "sha256": expected}]
+    raw["adapters"][0].update(path=str(adapter_folder), sha256=expected)
     path = tmp_path / "serve.yaml"
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
-    seen = {}
+    keys = tmp_path / "keys.yaml"
+    keys.write_text(KEY_FILE, encoding="utf-8")
+    monkeypatch.setattr("adapt.serve.load_keys", lambda: load_keys(keys))
+    started = []
 
-    def fake_run(command, env, check):
-        seen.update(command=command, env=env, check=check)
-        return subprocess.CompletedProcess(command, 0)
+    def fake_run_together(commands):
+        started.extend(commands)
+        return 0
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(serve, "run_together", fake_run_together)
     assert main(["--file", str(path)]) == 0
-    assert seen["command"][3] == "serve" and seen["env"]["HF_HUB_OFFLINE"] == "1"
+    (vllm, vllm_env), (gateway, gateway_env) = started
+    assert vllm[3] == "serve" and gateway[1:3] == ["-m", "adapt.gateway"]
+    assert "--serve-file" in gateway and gateway[gateway.index("--port") + 1] == "8080"
+    assert vllm_env["HF_HUB_OFFLINE"] == "1" and gateway_env["HF_HUB_OFFLINE"] == "1"
+
+
+def test_without_the_gateway_only_vllm_starts(raw, adapter_folder, tmp_path, monkeypatch):
+    expected = hash_directory(adapter_folder, ADAPTER_FILES)
+    raw["adapters"][0].update(path=str(adapter_folder), sha256=expected)
+    path = tmp_path / "serve.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    started = []
+    monkeypatch.setattr(serve, "run_together", lambda commands: started.extend(commands) or 0)
+    assert main(["--file", str(path), "--no-gateway"]) == 0
+    assert len(started) == 1 and started[0][0][3] == "serve"
+
+
+def test_the_gateway_is_not_started_without_a_key_file(raw, adapter_folder, tmp_path, monkeypatch):
+    expected = hash_directory(adapter_folder, ADAPTER_FILES)
+    raw["adapters"][0].update(path=str(adapter_folder), sha256=expected)
+    path = tmp_path / "serve.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    monkeypatch.setattr("adapt.serve.load_keys", lambda: load_keys(tmp_path / "none.yaml"))
+    monkeypatch.setattr(serve, "run_together", lambda commands: pytest.fail("must not start"))
+    with pytest.raises(SystemExit, match="no key file"):
+        main(["--file", str(path)])
+
+
+def test_the_processes_run_together_and_all_stop_when_one_ends(monkeypatch):
+    class Process:
+        def __init__(self, code):
+            self.code, self.stopped = code, False
+
+        def poll(self):
+            return self.code
+
+    made = [Process(None), Process(3)]
+    monkeypatch.setattr(subprocess, "Popen", lambda command, env: made.pop(0))
+    stopped = []
+    monkeypatch.setattr(serve, "stop", stopped.append)
+    monkeypatch.setattr(serve.time, "sleep", lambda seconds: None)
+    assert serve.run_together([(["a"], {}), (["b"], {})]) == 3
+    assert len(stopped) == 2
 
 
 needs_make = pytest.mark.skipif(shutil.which("make") is None, reason="make is not installed")
@@ -222,3 +296,5 @@ def test_the_make_targets_call_the_launcher():
     assert "-m adapt.serve" in planned("serve-local")
     assert "--print" in planned("serve-local", "PRINT=1")
     assert "--print" not in planned("serve-local")
+    assert "--no-gateway" in planned("serve-local", "NO_GATEWAY=1")
+    assert "-m adapt.gateway.keys --id demo" in planned("gateway-key", "ID=demo")
