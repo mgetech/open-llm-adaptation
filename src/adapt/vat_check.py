@@ -1,8 +1,9 @@
 """Compare the VAT printed on a document with the VAT of the booked items.
 
 Many documents print their VAT: a net amount and a VAT amount for each rate, a line "incl. VAT
-19%: 3.80", a list "VAT 19% 5.29 and 7% 1.24", or a sentence "The invoice includes VAT of 19%
-(3.80), 7% (1.40)". The amounts of
+19%: 3.80" (also "VAT 19% incl.: 3.80", "incl. 19% VAT: 3.80" and "Incl. VAT: 19% 3.80, 7% 1.40"),
+a list "VAT 19% 5.29 and 7% 1.24", or a sentence "The invoice includes VAT of 19% (3.80), 7%
+(1.40)". The amounts of
 the items are gross, so the booked net and VAT of a rate follow from the items. If the two do not
 agree, an item was booked at the wrong rate.
 
@@ -24,8 +25,15 @@ _AMOUNT = r"-?\d{1,3}(?:[.,]\d{3})*[.,]\d{2}(?![\dOolIS])|-?\d+[.,]\d{2}(?![\dOo
 # digit, but not a letter. "and" may be merged into a keyword too ("2,87 andVAT 7%").
 _NET = re.compile(rf"(?<![a-z])Net\s*(\d{{1,2}})\s*%\s*:?\s*({_AMOUNT})", re.IGNORECASE)
 _VAT = re.compile(
-    rf"(?:(?<![a-z])|(?<=and))VAT\s*(\d{{1,2}})\s*%\s*:?\s*({_AMOUNT})", re.IGNORECASE
+    rf"(?:(?<![a-z])|(?<=and))VAT\s*(\d{{1,2}})\s*%\s*(?:incl\.?)?\s*:?\s*({_AMOUNT})",
+    re.IGNORECASE,
 )
+# A receipt may print the included VAT as "incl. 19% VAT: 3.80" or as one line "Incl. VAT: 19% 3.80,
+# 7% 1.40".
+_VAT_RATE_FIRST = re.compile(
+    rf"(?<![a-z])incl\.?\s*(\d{{1,2}})\s*%\s*VAT\s*:?\s*({_AMOUNT})", re.IGNORECASE
+)
+_VAT_LIST = re.compile(r"(?<![a-z])incl\.?\s*VAT\s*:", re.IGNORECASE)
 # After a VAT line, the net of the same rate ("VAT 19% 85.84 on net 451.78") or the next rates
 # without the word VAT ("VAT 19% 5.29 and 7% 1.24", or "7% 1.24" on the next line).
 _ON_NET = re.compile(rf"\s*(?:on|of)\s+net\s*:?\s*({_AMOUNT})", re.IGNORECASE)
@@ -37,7 +45,10 @@ _VAT_OF_RATE = re.compile(rf"(?<![\dOolIS])(\d{{1,2}})\s*%\s*\(\s*({_AMOUNT})\s*
 _VAT_SENTENCE = re.compile(r"includes\s+VAT\s+of\b", re.IGNORECASE)
 # The same places with look-alike characters for the digits. They show that a line was printed
 # even when its numbers cannot be read.
-_LOOSE_LINE = re.compile(r"(?<![a-z])(?:Net|VAT)\s*[\dOolIS]{1,2}\s*%", re.IGNORECASE)
+_LOOSE_LINE = re.compile(
+    r"(?<![a-z])(?:(?:Net|VAT)\s*[\dOolIS]{1,2}\s*%|inc[l1I]\.?\s*[\dOolIS]{1,2}\s*%\s*\W{0,3}VAT)",
+    re.IGNORECASE,
+)
 _LOOSE_RATE = re.compile(r"(?<![\dOolIS])[\dOolIS]{1,2}\s*%\s*\(")
 
 
@@ -48,27 +59,40 @@ def parse_amount(text: str) -> Decimal:
     return Decimal(digits)
 
 
+def _next_rates(text: str, position: int, vats: dict[str, Decimal]) -> tuple[int, int]:
+    """Read the rates that follow without the word VAT, and return how many were there and read."""
+    expected = read = 0
+    while loose := _NEXT_RATE_LOOSE.match(text, position):
+        expected += 1
+        strict = _NEXT_RATE.match(text, position)
+        if strict:
+            vats.setdefault(strict.group(1), parse_amount(strict.group(2)))
+            read += 1
+            position = strict.end()
+        else:
+            position = loose.end()
+    return expected, read
+
+
 def _printed(text: str) -> tuple[dict[str, Decimal], dict[str, Decimal], bool]:
     """The net and the VAT printed for each rate, and whether every such line could be read."""
     net_lines, vat_lines = _NET.findall(text), _VAT.findall(text)
+    rate_first = _VAT_RATE_FIRST.findall(text)
     nets = {rate: parse_amount(amount) for rate, amount in net_lines}
-    vats = {rate: parse_amount(amount) for rate, amount in vat_lines}
-    expected, read = len(_LOOSE_LINE.findall(text)), len(net_lines) + len(vat_lines)
+    vats = {rate: parse_amount(amount) for rate, amount in vat_lines + rate_first}
+    expected = len(_LOOSE_LINE.findall(text))
+    read = len(net_lines) + len(vat_lines) + len(rate_first)
     for line in _VAT.finditer(text):
         position = line.end()
         on_net = _ON_NET.match(text, position)
         if on_net:
             nets.setdefault(line.group(1), parse_amount(on_net.group(1)))
             position = on_net.end()
-        while loose := _NEXT_RATE_LOOSE.match(text, position):
-            expected += 1
-            strict = _NEXT_RATE.match(text, position)
-            if strict:
-                vats.setdefault(strict.group(1), parse_amount(strict.group(2)))
-                read += 1
-                position = strict.end()
-            else:
-                position = loose.end()
+        more_expected, more_read = _next_rates(text, position, vats)
+        expected, read = expected + more_expected, read + more_read
+    for line in _VAT_LIST.finditer(text):
+        more_expected, more_read = _next_rates(text, line.end(), vats)
+        expected, read = expected + more_expected, read + more_read
     sentence = _VAT_SENTENCE.search(text)
     if sentence:
         rest = text[sentence.end() :]
