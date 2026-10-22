@@ -93,6 +93,8 @@ It is far behind the 4B. Without a confidence threshold, 38 of 265 automated dev
 
 `final.lock.json` records the SHA-256 of `gold_v3.jsonl` and the date I sealed it, 2026-10-22, before the decisions that followed. The first hash I recorded (`02152f1ca6396e98cd544af0d66d256a52e73eca75104fcf2b0aaf286c9c6df6`) was computed over a copy with Windows line endings, but git stores the file with Unix line endings (`.gitattributes`), so no other checkout could reproduce it. CI found this. The content is the same: with the line endings converted, the file hashes to `cf07dbdaa76632d42e607ebefa75d22b0349d0b03bf7cef07be8f314f21d371c`, which is also the hash of the file in the commit that added it, before any decision that followed. The lock now holds that hash, `make seal` and `make declare-claim STATUS=1` hash a file with Unix line endings, and a test checks that the committed file still matches.
 
+The validator for `gold_v3` (`make validate-gold`) then found one problem: the `reason` of `gold3-016` held a leftover drafting note and was over the length limit. I replaced that one string and changed nothing else in the file, and I sealed the file again. No result on `gold_v3` existed, so no decision depended on it. The hash before the correction was `cf07dbdaa76632d42e607ebefa75d22b0349d0b03bf7cef07be8f314f21d371c`; it is now `08d92575c8ad5586ed6364aaec695567dfe48d6a9a169ec91c6c94e7c42eff24`.
+
 ## Reading a round
 
 ```
