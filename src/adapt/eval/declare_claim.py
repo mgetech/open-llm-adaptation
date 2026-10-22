@@ -13,11 +13,14 @@ shipped configuration is chosen on dev and dev_real, before the final run. See
 files and which results exist for it.
 
 `make seal FILE=...` records the SHA-256 of a file and the date in the lock, so that it is provable
-that the file was fixed before the decisions that follow. The file is hashed and not read. A sealed
-file cannot be sealed again with another hash, and `--status` says whether it still matches.
+that the file was fixed before the decisions that follow. The file is hashed and not read, with
+Unix line endings, which is how git stores it (`.gitattributes`), so a Windows checkout and a Linux
+checkout give the same hash. A sealed file cannot be sealed again with another hash, and `--status`
+says whether it still matches.
 """
 
 import argparse
+import hashlib
 import sys
 from collections.abc import Sequence
 from datetime import date
@@ -38,7 +41,6 @@ from adapt.eval.runner import (
     ROOT,
     final_files,
     hash_directory,
-    hash_file,
     results_file,
 )
 
@@ -62,6 +64,11 @@ def parse_configuration(text: str) -> tuple[str, list[dict[str, str]]]:
     return name, adapters
 
 
+def sealed_hash(path: Path) -> str:
+    """The SHA-256 of a file with Unix line endings, the way git stores it."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def seal_file(path: Path, lock: Path = LOCK, today: str | None = None) -> str:
     """Seal `path` in the lock under its name without extension. Returns a line to print."""
     if not path.is_file():
@@ -72,7 +79,7 @@ def seal_file(path: Path, lock: Path = LOCK, today: str | None = None) -> str:
         if resolved.is_relative_to(ROOT.resolve())
         else path.as_posix()
     )
-    sha256 = hash_file(path)
+    sha256 = sealed_hash(path)
     day = today or date.today().isoformat()
     try:
         new = seal(lock, path.stem, shown, sha256, day)
@@ -92,7 +99,7 @@ def sealed_lines(lock: Path = LOCK) -> list[str]:
             "missing"
             if not path.is_file()
             else "matches"
-            if hash_file(path) == entry["sha256"]
+            if sealed_hash(path) == entry["sha256"]
             else "CHANGED"
         )
         lines.append(f"sealed {entry['sealed']}: {name} {entry['sha256'][:12]} ({state})")

@@ -83,6 +83,10 @@ I first scored this run before the VAT check read the "incl." lines of a receipt
 - **The confidence threshold** is chosen on the rows of dev and `dev_real` together, with the limit on critical errors first and then the accuracy target, and then used as it is. Before, it was chosen on dev, and only the accuracy target counted. With both splits in the choice, no split is left to check the threshold on; the claim run is the first check. `make rescore RETUNE=1 TUNE_ON="dev dev_real"` applies it to saved results, and `make threshold-report SYSTEM=...` prints how many documents are automated and how many of them have a critical error at each threshold, on dev and on `dev_real`.
 - **`make stage-gate SYSTEM=...`** shows the gate checks that dev and `dev_real` can show, with a pass or a fail for each. It helps to choose settings and is not the claim.
 
+### The gold_v3 seal
+
+`final.lock.json` records the SHA-256 of `gold_v3.jsonl` and the date I sealed it, 2026-10-22, before the decisions that followed. The first hash I recorded (`02152f1ca6396e98cd544af0d66d256a52e73eca75104fcf2b0aaf286c9c6df6`) was computed over a copy with Windows line endings, but git stores the file with Unix line endings (`.gitattributes`), so no other checkout could reproduce it. CI found this. The content is the same: with the line endings converted, the file hashes to `cf07dbdaa76632d42e607ebefa75d22b0349d0b03bf7cef07be8f314f21d371c`, which is also the hash of the file in the commit that added it, before any decision that followed. The lock now holds that hash, `make seal` and `make declare-claim STATUS=1` hash a file with Unix line endings, and a test checks that the committed file still matches.
+
 ## Reading a round
 
 ```

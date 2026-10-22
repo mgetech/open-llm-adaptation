@@ -8,7 +8,13 @@ import pytest
 
 from adapt.eval import final_lock
 from adapt.eval.declare_claim import main as declare_main
-from adapt.eval.declare_claim import parse_configuration, seal_file, sealed_lines, status
+from adapt.eval.declare_claim import (
+    parse_configuration,
+    seal_file,
+    sealed_hash,
+    sealed_lines,
+    status,
+)
 from adapt.eval.final_lock import (
     FinalLockError,
     declare,
@@ -366,8 +372,17 @@ def test_the_status_lists_sealed_files_and_whether_they_match(tmp_path, monkeypa
     assert sealed_lines(lock)[0].endswith("(CHANGED)")
 
 
+def test_a_file_has_the_same_sealed_hash_with_windows_or_unix_line_endings(tmp_path):
+    unix, windows = tmp_path / "unix.jsonl", tmp_path / "windows.jsonl"
+    unix.write_bytes(b"one\ntwo\n")
+    windows.write_bytes(b"one\r\ntwo\r\n")
+    assert sealed_hash(unix) == sealed_hash(windows)
+    unix.write_bytes(b"one\ntwo!\n")
+    assert sealed_hash(unix) != sealed_hash(windows)
+
+
 def test_the_committed_lock_seals_gold_v3_and_the_file_has_not_changed():
-    from adapt.eval.runner import ROOT, hash_file
+    from adapt.eval.runner import ROOT
 
     sealed = read_sealed(RESULTS_ROOT / "final.lock.json")
     assert sealed["gold_v3"]["file"] == "platforms/tax-booking/evals/gold_v3.jsonl"
@@ -375,4 +390,4 @@ def test_the_committed_lock_seals_gold_v3_and_the_file_has_not_changed():
     path = ROOT / sealed["gold_v3"]["file"]
     if not path.is_file():
         pytest.skip("gold_v3.jsonl is not in this checkout yet")
-    assert hash_file(path) == sealed["gold_v3"]["sha256"]
+    assert sealed_hash(path) == sealed["gold_v3"]["sha256"]
