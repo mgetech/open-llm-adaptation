@@ -16,6 +16,7 @@ results/
     rescored/<platform>/<system>/<split>.json the round 2 results scored again with pipeline checks added later
   round3/
     eval/, runs/                              as in round 1
+    rescored/<platform>/<system>/<split>.json dev and dev_real scored again with the later pipeline checks
 ```
 
 ## The rounds
@@ -38,6 +39,25 @@ It did not pass the gate. As run, accuracy on automated documents, the critical-
 An earlier 4B run of round 3 stopped training early on the `dev_real` loss and gave a much worse model. I dropped that rule. The results of that run are not kept here.
 
 The round 3 test splits and `gold_v2` were evaluated in that run, so they cannot back another claim. `final.lock.json` holds that claim. A run of a system on `test_ood` or on a gold file is refused unless a claim was declared before the run (`make declare-claim`) and the system is one of its configurations. The claim cannot change after the first run.
+
+### Two epochs on round 3 (a negative result)
+
+The one-epoch model was close to the limits on dev and `dev_real`, so I trained the same Qwen3-4B on the same round 3 data for two epochs (750 steps, a checkpoint every 75, seed 0, run `qwen3-4b-r3-e2-0`). I scored steps 450, 525, 600, 675 and 750 on `dev_real` with the whole pipeline and kept step 450 (critical-error rate 0.029 and document accuracy 0.854, the best of the five; the others had a critical-error rate of 0.042 to 0.055). I set the margin I wanted before the run in `configs/margin.yaml`. I did not train a second seed: a second seed is luck, not a change.
+
+It is not better than one epoch. This is the stage report with the threshold chosen on dev and `dev_real` together, 0.8333 (`make stage-gate SYSTEM=qwen3-4b-sft-r3-e2-0 ROUND=3 OUT_DIR=results/round3/rescored MARGIN=1`):
+
+| check | limit | dev | dev_real |
+|---|---|---|---|
+| automation rate | >= 0.6 | 0.881 pass | 0.844 pass |
+| accuracy on automated documents | >= 0.95 | 0.983 pass | 0.908 fail |
+| critical-error rate | <= 0.005 | 0.000 pass | 0.015 fail |
+| review-flag recall | >= 0.95 | 1.000 pass | 1.000 pass |
+
+The margin is not met: `dev_real` accuracy on automated documents is 0.908, against 0.97. The one-epoch model has 0.960 there.
+
+Training longer made the model more sure of its wrong answers. On `dev_real` four wrong account and VAT answers that no rule catches sit at a confidence of 0.9993 to 0.9998, so no threshold separates them from the right ones: raising it to 0.99 still leaves 1 critical error in 54 automated documents. The wrong answers are the same kind each time: neighbouring accounts (4805 and 4964 for a maintenance or support contract, 4945 and 4950 for consulting work) and food against non-food VAT on a receipt with no printed cue.
+
+I first scored this run before the VAT check read the "incl." lines of a receipt. A critical error on dev passed that check, and the threshold had to go to 0.9999, which left an automation rate of 0.20 on dev and 0.04 on `dev_real`. The numbers above use the check after the fix, and the one-epoch model is the same under both.
 
 ### Post-hoc re-scoring of round 3
 
