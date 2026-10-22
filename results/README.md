@@ -33,9 +33,9 @@ The gold files are the same for all rounds: `gold.jsonl` is the original set, an
 
 ### Round 3
 
-One system was trained for round 3: Qwen3-4B, seed 0. It trained for all 375 steps. I chose its checkpoint among steps 150, 225, 300 and 375 on `dev_real`, with the whole pipeline: the lowest critical-error rate, then the highest document accuracy. The scores of each checkpoint are in `qwen3-4b-sft-r3-0-ckpt<step>`, and the choice is in the run manifest.
+Qwen3-4B, seed 0, was the first system trained for round 3. It trained for all 375 steps. I chose its checkpoint among steps 150, 225, 300 and 375 on `dev_real`, with the whole pipeline: the lowest critical-error rate, then the highest document accuracy. The scores of each checkpoint are in `qwen3-4b-sft-r3-0-ckpt<step>`, and the choice is in the run manifest.
 
-It did not pass the gate. As run, accuracy on automated documents, the critical-error rate and prompt-injection success were over their limits (`make gate`, command below). I changed how prompt-injection success is counted after this result (see the changes below), so the injection figure in the round 3 files is the old one. Qwen3-1.7B and more seeds were not trained, since 4B failed.
+It did not pass the gate. As run, accuracy on automated documents, the critical-error rate and prompt-injection success were over their limits (`make gate`, command below). I changed how prompt-injection success is counted after this result (see the changes below), so the injection figure in the round 3 files is the old one. I trained Qwen3-1.7B on the same data afterwards (see below), and more seeds were not trained.
 
 An earlier 4B run of round 3 stopped training early on the `dev_real` loss and gave a much worse model. I dropped that rule. The results of that run are not kept here.
 
@@ -59,6 +59,12 @@ The margin is not met: `dev_real` accuracy on automated documents is 0.908, agai
 Training longer made the model more sure of its wrong answers. On `dev_real` four wrong account and VAT answers that no rule catches sit at a confidence of 0.9993 to 0.9998, so no threshold separates them from the right ones: raising it to 0.99 still leaves 1 critical error in 54 automated documents. The wrong answers are the same kind each time: neighbouring accounts (4805 and 4964 for a maintenance or support contract, 4945 and 4950 for consulting work) and food against non-food VAT on a receipt with no printed cue.
 
 I first scored this run before the VAT check read the "incl." lines of a receipt. A critical error on dev passed that check, and the threshold had to go to 0.9999, which left an automation rate of 0.20 on dev and 0.04 on `dev_real`. The numbers above use the check after the fix, and the one-epoch model is the same under both.
+
+### The 1.7B on round 3
+
+I trained Qwen3-1.7B on the round 3 data for one epoch (375 steps, seed 0, run `qwen3-1.7b-r3-0`, about 45 minutes on two T4 GPUs) after the 4B had failed, so that both sizes have a round 3 result. It ran on dev and `dev_real` only (`FINAL = False`), so it has no test-split result and no gate. I scored steps 150, 225, 300 and 375 on `dev_real` and kept step 300 (critical-error rate 0.143, document accuracy 0.656; step 375 had 0.157 and 0.646).
+
+It is far behind the 4B. Without a confidence threshold, 38 of 265 automated dev documents and 10 of 70 on `dev_real` have a critical error (0.143 on both), against 1 of 205 and 0 of 50 for the 4B at its threshold. The threshold chosen on dev and `dev_real` together is 0.9997, and it leaves an automation rate of 0.049 on dev and 0.052 on `dev_real`, against the limit of 0.6 (`make stage-gate SYSTEM=qwen3-1.7b-sft-r3-0 ROUND=3 OUT_DIR=results/round3/rescored`). The other checks pass only because almost nothing is automated.
 
 ### Post-hoc re-scoring of round 3
 
