@@ -5,7 +5,8 @@ the queue is empty the server answers 500. Requests are kept in `server.requests
 
 For tests that send many requests at once, set `server.handler` instead. It is called with the
 request body and returns the `Reply`, so the answer does not depend on the order of requests.
-Set `server.version` to make `GET /version` answer like vLLM does.
+Set `server.version` to make `GET /version` answer like vLLM does, and `server.models` (a list
+of names) to make `GET /v1/models` list them.
 """
 
 import json
@@ -86,6 +87,7 @@ class FakeServer:
         self.requests: list[Request] = []
         self.handler: Callable[[dict[str, Any]], Reply] | None = None
         self.version: str | None = None
+        self.models: list[str] | None = None
         self._replies: list[Reply] = []
         self._lock = threading.Lock()
         outer = self
@@ -123,6 +125,10 @@ class FakeServer:
             def do_GET(self) -> None:
                 found = self.path == "/version" and outer.version is not None
                 data = json.dumps({"version": outer.version} if found else {}).encode()
+                if self.path == "/v1/models" and outer.models is not None:
+                    found = True
+                    listed = [{"id": name, "object": "model"} for name in outer.models]
+                    data = json.dumps({"object": "list", "data": listed}).encode()
                 self.send_response(200 if found else 404)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(data)))

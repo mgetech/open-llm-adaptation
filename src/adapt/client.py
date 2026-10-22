@@ -78,6 +78,19 @@ class ModelClient:
     def close(self) -> None:
         self._http.close()
 
+    def models(self, timeout: float = 5.0) -> list[str]:
+        """The names the server serves: the base model and its adapters."""
+        try:
+            response = self._http.get("models", timeout=timeout)
+        except httpx.HTTPError as error:
+            raise ModelError("unavailable", f"server not reachable: {error!r}") from error
+        if response.status_code != 200:
+            raise ModelError("unavailable", f"the model server returned {response.status_code}")
+        try:
+            return [entry["id"] for entry in response.json()["data"]]
+        except (ValueError, KeyError, TypeError) as error:
+            raise ModelError("invalid_output", f"unexpected response shape: {error!r}") from error
+
     def complete(
         self, model: str, messages: Sequence[Mapping[str, str]], schema: Mapping[str, Any]
     ) -> Completion:

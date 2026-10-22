@@ -15,13 +15,16 @@ from contextlib import asynccontextmanager
 from decimal import Decimal
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Response
+from fastapi.responses import JSONResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
 
 from adapt.client import ModelClient
 from adapt.config import Platform, load_platform
 from adapt.data.pseudonymise import pseudonymise
 from adapt.gateway.audit import AuditLog, AuditRecord, Outcome, now
+from adapt.gateway.health import AdapterHashes, Metrics, readiness
 from adapt.gateway.keys import ApiKey, KeyFile, find_key
 from adapt.models import Registry, load_registry
 from adapt.pipeline import Pipeline, Result
@@ -126,6 +129,8 @@ def create_app(
     client = ModelClient(vllm_url, timeout=timeout)
     pipelines = build_pipelines(serve, client, platforms)
     base_revision = (registry or load_registry()).models[serve.model].revision
+    metrics = Metrics(list(pipelines))
+    hashes = AdapterHashes()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -137,11 +142,14 @@ def create_app(
     app.state.keys = keys
     app.state.pipelines = pipelines
     app.state.audit = audit
+    app.state.metrics = metrics
 
     def log(
         request_id: str, platform: str, outcome: Outcome, started: float, **fields: Any
     ) -> None:
-        """Write the record of a request. If it cannot be written, the request fails."""
+        """Write the record of a request and count it. If the record cannot be written, the
+        request fails."""
+        seconds = time.monotonic() - started
         try:
             audit.write(
                 AuditRecord(
@@ -163,9 +171,11 @@ def create_app(
                 )
             )
         except OSError as error:
+            metrics.observe(platform, "error", [], seconds)
             raise HTTPException(
                 status_code=500, detail="the audit log cannot be written"
             ) from error
+        metrics.observe(platform, outcome, fields.get("review_reasons", []), seconds)
 
     def require_key(
         platform: str,
@@ -216,5 +226,19 @@ def create_app(
             review_reasons=[str(reason) for reason in result.reasons],
         )
         return response_from(result)
+
+    @app.get("/healthz")
+    def healthz() -> dict[str, str]:
+        return {"status": "ok"}
+
+    @app.get("/readyz")
+    def readyz() -> JSONResponse:
+        problems = readiness(serve, client, hashes)
+        body = {"ready": not problems, "problems": problems}
+        return JSONResponse(body, status_code=503 if problems else 200)
+
+    @app.get("/metrics")
+    def metrics_endpoint() -> Response:
+        return Response(generate_latest(metrics.registry), media_type=CONTENT_TYPE_LATEST)
 
     return app
