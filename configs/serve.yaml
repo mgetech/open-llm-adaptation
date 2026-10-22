@@ -1,0 +1,29 @@
+# How I serve the shipped model. The local launcher (`make serve-local`) and the container
+# read this file, so both start vLLM the same way.
+
+# A key of configs/models.yaml. The base model is served at the pinned revision.
+model: qwen3-4b
+
+port: 8000
+dtype: half                  # a T4 has no bf16
+max_model_len: 4096          # the length the evaluation used
+gpu_memory_utilization: 0.9
+prefix_caching: true
+
+# One server holds the adapters below. `max_lora_rank` is the rank I trained with.
+lora:
+  max_loras: 2
+  max_lora_rank: 16
+
+# Adapters by the name a request uses. `sha256` is the hash over adapter_config.json and
+# adapter_model.safetensors; the launcher refuses an adapter whose files do not match it.
+adapters:
+  - name: tax-booking
+    path: adapters/tax-booking/qwen3-4b-r3-0
+    sha256: 2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c
+
+# Serving is offline: `make fetch-weights` downloads the base model once.
+environment:
+  VLLM_NO_USAGE_STATS: "1"
+  DO_NOT_TRACK: "1"
+  HF_HUB_OFFLINE: "1"
