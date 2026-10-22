@@ -63,6 +63,9 @@ SPLITS = ("dev", "test_iid", "test_ood", "edge", "gold")
 # is never part of the gate or of a report.
 HAND_WRITTEN_SPLITS = ("gold", "gold_v2", "dev_real")
 ALL_SPLITS = (*SPLITS, "gold_v2", "dev_real")
+# The files that make an adapter. A folder with more files (a readme, a tokenizer) has the same
+# adapter, so the final claim hashes only these.
+ADAPTER_FILES = ("adapter_config.json", "adapter_model.safetensors")
 SYSTEM_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # A request waits for its turn on a busy server. The 30 seconds of the gateway are too short
 # for 8 requests in flight on a T4, and a timeout would count as an error of the model.
@@ -155,15 +158,20 @@ def hash_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def hash_directory(path: Path) -> str:
-    """One hash for all files below `path`, from their relative names and contents.
+def hash_directory(path: Path, names: Sequence[str] | None = None) -> str:
+    """One hash for all files below `path`, from their relative names and contents. With `names`,
+    only the files with those relative names.
 
     The files are sorted by the text of their names. Sorting the paths themselves is not the
     same on every system: Windows ignores case, so "README.md" would come last."""
     if not path.is_dir():
         raise ValueError(f"{path} is not a directory")
     digest = hashlib.sha256()
-    files = [p for p in path.rglob("*") if p.is_file()]
+    files = [
+        p
+        for p in path.rglob("*")
+        if p.is_file() and (names is None or p.relative_to(path).as_posix() in names)
+    ]
     for file in sorted(files, key=lambda p: p.relative_to(path).parts):
         digest.update(file.relative_to(path).as_posix().encode() + b"\0")
         digest.update(hash_file(file).encode() + b"\n")
@@ -370,6 +378,8 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
             confidence_threshold["source"] = "dev target not reached, no confidence limit"
         elif not tuned.critical_reached:
             confidence_threshold["source"] = "tuned on dev, critical-error limit not reached"
+        elif not tuned.accuracy_reached:
+            confidence_threshold["source"] = "tuned on dev, accuracy target not reached"
         confidence_threshold |= tuning_record(tuned)
         results = [apply_threshold(result, threshold) for result in results]
 
@@ -419,11 +429,14 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
 def final_files(
     platform: str, data_dir: Path = DATA_DIR, data_round: int | None = None
 ) -> dict[str, Any]:
-    """The files a final claim stands on: test_ood of the round and the gold sets, by hash."""
+    """The test splits the gate reads and the gold sets, by hash: the files of a final claim."""
     data_round = resolve_round(data_round, data_dir)
     platforms = data_dir.parent / "platforms"
     return {
-        "test_ood_sha256": hash_file(split_path(platform, "test_ood", data_dir, data_round)),
+        **{
+            f"{name}_sha256": hash_file(split_path(platform, name, data_dir, data_round))
+            for name in ("test_iid", "test_ood", "edge")
+        },
         "gold_sha256": {
             name: hash_file(gold_path(platform, platforms, name))
             for name in ("gold", "gold_v2")
@@ -450,7 +463,7 @@ def claim_final_split(
     path = lock_file(out_dir, results_root)
     if split not in CLAIM_SPLITS or few_shot or path is None:
         return
-    adapter_hash = hash_directory(adapter_path) if adapter_path else None
+    adapter_hash = hash_directory(adapter_path, ADAPTER_FILES) if adapter_path else None
     files = final_files(platform, data_dir, data_round)
     start_run(path, files, system, adapter_hash, override)
 

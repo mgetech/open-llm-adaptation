@@ -302,6 +302,7 @@ def rule_report(results: Results, gold: str = "gold") -> list[tuple[str, str]]:
     detail = f"{currency} of them for foreign currency"
     for reason, label in (
         ("heavy_noise", "heavy noise"),
+        ("injection_suspected", "suspected instructions in the text"),
         ("vat_mismatch", "a VAT mismatch"),
         ("mixed_private", "private and business items together"),
         ("reverse_charge_cue", "a reverse-charge cue"),

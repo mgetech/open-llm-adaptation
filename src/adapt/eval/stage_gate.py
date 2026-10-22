@@ -9,6 +9,10 @@ chosen on dev.
 Two checks cannot be shown here: the generalisation gap needs test_iid and test_ood, and the
 test against few-shot is on test_ood. Review-flag recall is the gate's check on the edge split;
 here it is the recall on the documents of dev or dev_real that should be reviewed.
+
+`--margin` also reads `configs/margin.yaml`: the stricter numbers a configuration has to meet on
+dev and dev_real before it is chosen for the claim. They were fixed before the runs they are read
+on.
 """
 
 import argparse
@@ -18,11 +22,14 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from adapt.config import Gate, load_platform
 from adapt.data.rounds import eval_dir
 from adapt.eval.runner import results_file
 
 STAGE_SPLITS = ("dev", "dev_real")
+MARGIN_FILE = Path(__file__).resolve().parents[3] / "configs" / "margin.yaml"
 NOT_SHOWN = (
     "generalisation gap: needs test_iid and test_ood",
     "fine-tuned vs few-shot: needs the few-shot baseline on test_ood",
@@ -116,12 +123,41 @@ def report(gate: Gate, results: dict[str, dict[str, Any]], system: str) -> tuple
     return "\n".join(lines), not failed
 
 
+def load_margin(path: Path = MARGIN_FILE) -> dict[str, dict[str, float]]:
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def margin_report(
+    margin: dict[str, dict[str, float]], results: dict[str, dict[str, Any]]
+) -> tuple[str, bool]:
+    """Each margin number against the results of its split, and whether all of them are met. A
+    split without results does not meet its margin."""
+    names = {
+        "critical_error_rate_max": ("critical-error rate", "critical_error_rate", "<="),
+        "automation_rate_min": ("automation rate", "automation_rate", ">="),
+        "accuracy_on_automated_min": ("accuracy on automated", "accuracy_on_automated", ">="),
+    }
+    lines = ["margin (fixed before the runs):"]
+    met = True
+    for split, numbers in margin.items():
+        for key, limit in numbers.items():
+            label, metric, operator = names[key]
+            value = _value(results[split], metric) if split in results else None
+            result = verdict(value, operator, limit)
+            met = met and result == "pass"
+            shown = "no results" if value is None else f"{value:.4f}"
+            lines.append(f"  {split} {label} {operator} {limit:g}: {shown} {result}")
+    lines.append("margin: MET" if met else "margin: NOT MET")
+    return "\n".join(lines), met
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Gate checks on dev and dev_real.")
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument("--system", required=True)
     parser.add_argument("--round", type=int, help="round of the results (default: the current one)")
     parser.add_argument("--out-dir", type=Path, help="default: results/round<N>/eval")
+    parser.add_argument("--margin", action="store_true", help="also check configs/margin.yaml")
     args = parser.parse_args(argv)
     try:
         out_dir = args.out_dir or eval_dir(args.round)
@@ -136,6 +172,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         sys.exit(f"error: no dev or dev_real results for {args.system} in {out_dir}")
     text, passed = report(load_platform(args.platform).config.gate, results, args.system)
     print(text)
+    if args.margin:
+        margin_text, met = margin_report(load_margin(), results)
+        print()
+        print(margin_text)
+        passed = passed and met
     return 0 if passed else 1
 
 

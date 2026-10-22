@@ -291,3 +291,9 @@ def test_the_command_reports_a_missing_adapter(tmp_path):
     with pytest.raises(SystemExit) as stop:
         main(["--model", "qwen3-4b", "--adapters-dir", str(tmp_path), "--dry-run"])
     assert "train it first" in str(stop.value)
+
+
+def test_the_epochs_are_part_of_the_system_name_so_a_second_run_has_its_own():
+    assert system_name("qwen3-4b", 1, data_round=3, epochs=2) == "qwen3-4b-sft-r3-e2-1"
+    assert system_name("qwen3-4b", 1, data_round=3) == "qwen3-4b-sft-r3-1"
+    assert system_name(None, 1, smoke=True, epochs=2) == "smoke-sft-1"

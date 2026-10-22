@@ -15,6 +15,7 @@ from adapt.eval.rescore import (
     rows_without_limit,
     rule_effects,
     tune_on_dev,
+    tune_pooled,
 )
 from adapt.eval.runner import DATA_DIR, load_documents, results_file
 from adapt.eval.scoring import EvalDocument
@@ -150,6 +151,7 @@ def test_saved_round_2_results_can_only_lose_automated_documents(tmp_path):
     assert now <= was and now != was
     assert new["manifest"]["rescored"]["checks"] == [
         "heavy_noise",
+        "injection_suspected",
         "vat_mismatch",
         "mixed_private",
         "reverse_charge_cue",
@@ -291,3 +293,61 @@ def test_the_command_chooses_the_threshold_on_dev_and_uses_it_on_dev_real(tmp_pa
 def test_retuning_needs_the_saved_dev_results(tmp_path):
     with pytest.raises(SystemExit, match="needs the saved dev results"):
         main(["--systems", SYSTEM_THREE, "--round", "3", "--in-dir", str(tmp_path), "--retune"])
+
+
+def small(prefix, confidences):
+    """Three documents with the given confidences: the second has a critical error."""
+    documents = [EvalDocument(f"{prefix}{i}", TEXT, "SKR03", TARGET, False) for i in (1, 2, 3)]
+    outputs = [None, asset_account(), None]
+    rows = [
+        {**row(output), "id": f"{prefix}{i}", "confidence": confidence}
+        for i, output, confidence in zip((1, 2, 3), outputs, confidences, strict=True)
+    ]
+    rows[1].update(answer_correct=False, correct=False)
+    saved = {
+        "system": "x",
+        "documents": rows,
+        "metrics": {"canary_leak_rate": {"value": 0.0, "documents": 0}},
+        "manifest": {"threshold": 0.0},
+        "confidence_threshold": {"value": 0.0, "source": "given"},
+    }
+    return saved, documents
+
+
+def test_the_threshold_chosen_on_two_splits_together_clears_the_critical_errors_of_both(platform):
+    first = small("a", (0.99, 0.90, 0.95))
+    second = small("b", (0.99, 0.96, 0.97))
+    assert tune_pooled([first], platform).threshold == 0.95
+    assert tune_pooled([second], platform).threshold == 0.97
+    assert tune_pooled([first, second], platform).threshold == 0.97
+
+
+def test_the_result_names_the_splits_the_threshold_was_chosen_on(platform):
+    first, second = small("a", (0.99, 0.90, 0.95)), small("b", (0.99, 0.96, 0.97))
+    tuned = tune_pooled([first, second], platform)
+    names = ("dev", "dev_real")
+    on_first, _ = rescore(first[0], first[1], platform, tuned, "dev", names)
+    other, _ = rescore(second[0], second[1], platform, tuned, "test_ood", names)
+    assert on_first["confidence_threshold"]["source"] == "tuned again on dev and dev_real"
+    assert "curve" in on_first["confidence_threshold"]
+    assert "curve" not in other["confidence_threshold"]
+    assert on_first["manifest"]["threshold"] == other["manifest"]["threshold"] == 0.97
+
+
+def test_the_command_chooses_the_threshold_on_dev_and_dev_real_together(tmp_path):
+    for split in ("dev", "dev_real"):
+        copied = results_file(tmp_path / "in", "tax-booking", SYSTEM_THREE, split)
+        copied.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(results_file(ROUND_THREE, "tax-booking", SYSTEM_THREE, split), copied)
+    out = tmp_path / "out"
+    arguments = ["--systems", SYSTEM_THREE, "--splits", "dev", "dev_real", "--round", "3"]
+    arguments += ["--in-dir", str(tmp_path / "in"), "--out-dir", str(out)]
+    assert main([*arguments, "--retune", "--tune-on", "dev", "dev_real"]) == 0
+    both = [
+        json.loads(results_file(out, "tax-booking", SYSTEM_THREE, s).read_text(encoding="utf-8"))
+        for s in ("dev", "dev_real")
+    ]
+    assert both[0]["manifest"]["threshold"] == both[1]["manifest"]["threshold"]
+    for data in both:
+        assert data["confidence_threshold"]["source"] == "tuned again on dev and dev_real"
+        assert "curve" in data["confidence_threshold"]

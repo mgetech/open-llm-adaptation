@@ -17,7 +17,7 @@ from adapt.train.data import (
     load_train_records,
     render_prompt,
 )
-from adapt.train.run import TrainSettings, lora_to_float32, main, run
+from adapt.train.run import TrainSettings, lora_to_float32, main, run, run_name
 from adapt.train.smoke import tiny_tokenizer
 from chat_template import TEMPLATE, render_chat
 
@@ -298,3 +298,19 @@ def test_a_run_continues_from_its_last_checkpoint(tmp_path):
     )
     assert second["resumed_from_step"] == 1 and second["steps"] == 2
     assert (tmp_path / "tax-booking" / "smoke-0-checkpoints" / "checkpoint-2").is_dir()
+
+
+def test_the_epochs_are_part_of_the_run_name_so_a_second_run_has_its_own_folder():
+    plain = TrainSettings("tax-booking", 1, model="qwen3-4b", data_round=3)
+    two = TrainSettings("tax-booking", 1, model="qwen3-4b", data_round=3, epochs=2)
+    assert run_name(plain) == "qwen3-4b-r3-1" and run_name(two) == "qwen3-4b-r3-e2-1"
+    short = TrainSettings("tax-booking", 1, model="qwen3-4b", data_round=3, epochs=2, max_steps=3)
+    assert run_name(short) == "qwen3-4b-r3-e2-1-steps3-gpus1"
+    assert run_name(TrainSettings("tax-booking", 1, smoke=True, epochs=2)) == "smoke-1"
+
+
+def test_the_manifest_says_how_many_epochs_the_run_used(smoke, tmp_path):
+    _, manifest = smoke
+    assert manifest["epochs"] == 1 and manifest["config"]["optimiser"]["epochs"] == 1
+    again = run(TrainSettings("tax-booking", 0, smoke=True, epochs=2, adapters_dir=tmp_path))
+    assert again["epochs"] == 2 and again["config"]["optimiser"]["epochs"] == 2

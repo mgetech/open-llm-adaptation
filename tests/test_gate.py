@@ -1,4 +1,5 @@
 import copy
+import re
 
 import pytest
 
@@ -430,7 +431,9 @@ def test_a_perfect_system_passes_the_gate_from_real_results_files(results_dir, c
     assert code == 0
     assert "gate for good against weak" in out
     assert "gate: PASS (10 of 10 checks)" in out
-    assert "report only: item F1: 1.000" in out
+    # The injection documents are stopped by the input guard and have no items, so F1 is below 1.
+    f1 = float(re.search(r"report only: item F1: (\d\.\d+)", out).group(1))
+    assert 0.95 <= f1 < 1.0
     assert out.count("pass") >= 10
 
 

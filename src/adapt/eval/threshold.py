@@ -4,8 +4,9 @@ A document is automated at threshold `t` when nothing else sent it to review and
 confidence is at least `t`. The rows of a run hold what is needed to try any `t` without
 running the model again. The threshold chosen is the lowest one, so the most documents are
 automated, at which the accuracy on automated documents reaches its target and the share of
-automated documents with a critical error is within its limit. If no threshold meets both, the
-one that meets the accuracy target alone is used, and the record says so.
+automated documents with a critical error is within its limit. The limit comes first: if no
+threshold meets both, the one with the best accuracy among those within the limit is used, and
+without any within the limit, the one that meets the accuracy target alone. The record says which.
 """
 
 import json
@@ -31,15 +32,15 @@ class CurvePoint:
 
 @dataclass(frozen=True)
 class Tuned:
-    """The curve and the point chosen from it. `chosen` is None if no point reaches the accuracy
-    target. `critical_reached` is False when the point chosen meets the accuracy target but not
-    the limit on critical errors."""
+    """The curve and the point chosen from it. `chosen` is None if no point meets either target.
+    `critical_reached` and `accuracy_reached` say which of the two targets the point meets."""
 
     target_accuracy: float
     curve: list[CurvePoint]
     chosen: CurvePoint | None
     max_critical_error_rate: float | None = None
     critical_reached: bool = True
+    accuracy_reached: bool = True
 
     @property
     def threshold(self) -> float | None:
@@ -105,17 +106,29 @@ def tune_threshold(
     max_critical_error_rate: float | None = None,
 ) -> Tuned:
     """The lowest threshold whose accuracy on automated documents is at least the target and
-    whose critical-error rate is at most the limit (when one is given). Without a threshold that
-    meets both, the lowest one that meets the accuracy target alone."""
+    whose critical-error rate is at most the limit (when one is given).
+
+    The limit on critical errors comes first. Without a threshold that meets both, the point with
+    the best accuracy among those that meet the limit is used (the lowest threshold on a tie),
+    and without any that meets the limit, the lowest one that meets the accuracy target."""
     curve = coverage_curve(rows)
     for point in curve:
         if _meets(point, target_accuracy, max_critical_error_rate):
             return Tuned(target_accuracy, curve, point, max_critical_error_rate)
     if max_critical_error_rate is not None:
+        within = [
+            p
+            for p in curve
+            if p.critical_error_rate is not None
+            and p.critical_error_rate <= max_critical_error_rate
+        ]
+        if within:
+            best = max(within, key=lambda p: (p.accuracy_on_automated or 0.0, -p.threshold))
+            return Tuned(target_accuracy, curve, best, max_critical_error_rate, True, False)
         for point in curve:
             if _meets(point, target_accuracy, None):
-                return Tuned(target_accuracy, curve, point, max_critical_error_rate, False)
-    return Tuned(target_accuracy, curve, None, max_critical_error_rate, False)
+                return Tuned(target_accuracy, curve, point, max_critical_error_rate, False, True)
+    return Tuned(target_accuracy, curve, None, max_critical_error_rate, False, False)
 
 
 def tuning_record(tuned: Tuned) -> dict[str, Any]:
@@ -125,7 +138,7 @@ def tuning_record(tuned: Tuned) -> dict[str, Any]:
         "value": tuned.threshold,
         "target_accuracy": tuned.target_accuracy,
         "target_critical_error_rate": tuned.max_critical_error_rate,
-        "target_reached": chosen is not None,
+        "target_reached": chosen is not None and tuned.accuracy_reached,
         "critical_target_reached": chosen is not None and tuned.critical_reached,
         "automation_rate": chosen.automation_rate if chosen else None,
         "accuracy_on_automated": chosen.accuracy_on_automated if chosen else None,

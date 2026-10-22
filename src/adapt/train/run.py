@@ -59,6 +59,7 @@ class TrainSettings:
     model: str | None = None  # a key of configs/models.yaml, not needed for a smoke run
     smoke: bool = False
     max_steps: int | None = None
+    epochs: int | None = None  # None: the epochs of the config. A number is part of the names
     resume: bool = False
     num_gpus: int = 1  # processes: one per GPU (on the CPU in a smoke run)
     adapters_dir: Path = ADAPTERS_DIR
@@ -66,10 +67,16 @@ class TrainSettings:
     data_round: int | None = None  # None: the current round
 
 
+def epoch_tag(epochs: int | None) -> str:
+    """`-e2` for a run that trains two epochs whatever the config says, and nothing otherwise."""
+    return f"-e{epochs}" if epochs else ""
+
+
 def run_name(settings: TrainSettings) -> str:
     if settings.smoke:
         return f"smoke-{settings.seed}"
-    name = f"{settings.model}{round_tag(resolve_round(settings.data_round))}-{settings.seed}"
+    tag = round_tag(resolve_round(settings.data_round)) + epoch_tag(settings.epochs)
+    name = f"{settings.model}{tag}-{settings.seed}"
     if settings.max_steps:
         return f"{name}-steps{settings.max_steps}-gpus{settings.num_gpus}"
     return name
@@ -286,7 +293,7 @@ def run(
         learning_rate=optimiser.learning_rate,
         lr_scheduler_type=optimiser.lr_scheduler,
         warmup_steps=optimiser.warmup_ratio,
-        num_train_epochs=optimiser.epochs,
+        num_train_epochs=settings.epochs or optimiser.epochs,
         max_steps=max_steps,
         optim="adamw_torch" if settings.smoke else optimiser.optim,
         fp16=not settings.smoke,
@@ -326,6 +333,9 @@ def run(
     peak_memory = None if settings.smoke else torch.cuda.max_memory_reserved() / 2**30
     commit, dirty = git_state()
     train_file = split_path(settings.platform, "train", data_round=data_round)
+    epochs = settings.epochs or config.optimiser.epochs
+    config_values = config.model_dump()
+    config_values["optimiser"]["epochs"] = epochs  # what the run used, not the default
     manifest = {
         "run_id": run_id,
         "platform": settings.platform,
@@ -335,7 +345,8 @@ def run(
         "seed": settings.seed,
         "smoke": settings.smoke,
         "max_steps": settings.max_steps,
-        "config": config.model_dump(),
+        "epochs": epochs,
+        "config": config_values,
         "prompt_sha256": hashlib.sha256(
             system_prompt(settings.platform, platform.rules.chart, platform.rules).encode()
         ).hexdigest(),
@@ -382,6 +393,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--smoke", action="store_true", help="a tiny random model on the CPU")
     parser.add_argument("--max-steps", type=int, help="stop after this many steps")
+    parser.add_argument(
+        "--epochs", type=int, help="train this many epochs (default: the config), part of the names"
+    )
     parser.add_argument("--resume", action="store_true", help="continue from the last checkpoint")
     parser.add_argument(
         "--num-gpus", type=int, default=1, help="processes started by the launcher, one per GPU"
@@ -399,6 +413,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         model=args.model,
         smoke=args.smoke,
         max_steps=args.max_steps,
+        epochs=args.epochs,
         resume=args.resume,
         num_gpus=args.num_gpus,
         adapters_dir=args.adapters_dir,

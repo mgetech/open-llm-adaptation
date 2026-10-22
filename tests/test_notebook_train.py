@@ -122,7 +122,7 @@ def test_the_checkpoint_is_chosen_after_training_and_before_the_adapter_is_evalu
 
 def test_a_dry_run_chooses_between_the_two_checkpoints_of_the_tiny_run(code):
     settings = code[0]
-    assert 'SELECT_STEPS = ["STEPS=1 2"] if DRY_RUN else []' in settings
+    assert 'SELECT_STEPS = ["STEPS=1 2"] if DRY_RUN else' in settings
 
 
 def test_the_notebook_trains_on_two_gpus_but_a_dry_run_has_no_gpu(code):
@@ -239,9 +239,14 @@ def test_the_names_in_the_notebook_are_the_names_the_code_writes(code, dry_run):
     exec(code[1], namespace)
     model, seed = namespace["MODEL"], namespace["SEED"]
     data_round = namespace["ROUND"]
-    train = TrainSettings("tax-booking", seed, model=model, smoke=dry_run, data_round=data_round)
+    epochs = namespace["EPOCHS"]
+    train = TrainSettings(
+        "tax-booking", seed, model=model, smoke=dry_run, epochs=epochs, data_round=data_round
+    )
     assert namespace["RUN"] == run_name(train)
-    assert namespace["SYSTEM"] == system_name(model, seed, smoke=dry_run, data_round=data_round)
+    assert namespace["SYSTEM"] == system_name(
+        model, seed, smoke=dry_run, data_round=data_round, epochs=epochs
+    )
     if dry_run:
         assert namespace["BASELINE"] == []
     else:
@@ -266,3 +271,79 @@ def test_the_stage_report_follows_the_evaluation_whatever_the_final_setting_is(c
     index = code.index(stage)
     assert index == evaluation + 1
     assert index < next(i for i, s in enumerate(code) if 'make("gate"' in s)
+
+
+def test_two_epochs_have_their_own_names_and_their_own_checkpoints_to_choose_from(code):
+    """The run of two epochs must not share a name with the one-epoch claim run, and its
+    candidates are the later checkpoints of its 750 steps."""
+    namespace: dict = {}
+    exec(code[0], namespace)
+    exec(code[1], namespace)
+    assert namespace["EPOCHS"] == 2
+    assert namespace["RUN"] == "qwen3-4b-r3-e2-0" and namespace["SYSTEM"] == "qwen3-4b-sft-r3-e2-0"
+    assert namespace["EPOCH_ARGS"] == ["EPOCHS=2"]
+    assert namespace["SELECT_STEPS"] == ["STEPS=450 525 600 675 750"]
+    assert namespace["BASELINE"] == ["BASELINE=qwen3-4b-fewshot-r3"]
+    steps = [int(n) for n in namespace["SELECT_STEPS"][0].removeprefix("STEPS=").split()]
+    assert all(step % 75 == 0 and step <= 750 for step in steps)
+
+
+def test_the_run_calls_pass_the_epochs_but_the_short_check_does_not(code):
+    real = [s for s in code if '"train"' in s and "MAX_STEPS" not in s]
+    short = [s for s in code if '"train"' in s and "MAX_STEPS" in s]
+    assert len(real) == 1 and "*EPOCH_ARGS" in real[0] and "*EPOCH_ARGS" not in short[0]
+    for command in ('"select"', '"eval-sft"'):
+        calls = [s for s in code if command in s and "MAX_STEPS" not in s]
+        assert len(calls) == 1 and "*EPOCH_ARGS" in calls[0], command
+
+
+def test_the_short_check_can_be_skipped_with_one_setting(code):
+    assert settings_of(code[0])["SHORT_CHECK"] is True
+    checks = [s for s in code if "{CHECK_MODEL}" in s]
+    assert len(checks) == 2 and all(s.startswith("if SHORT_CHECK:") for s in checks)
+    for source in checks:
+        compile(source, "<cell>", "exec")
+
+
+def make_variables(code) -> dict[str, set[str]]:
+    """The variables each `make` call of the notebook sets, with the lists it spreads."""
+    namespace: dict = {}
+    exec(code[0], namespace)  # the settings cell
+    lists = {name: value for name, value in namespace.items() if isinstance(value, list)}
+    for name, value in re.findall(r'^\s*(\w+) = \[f?"(\w+)=', "\n".join(code[1:2]), re.MULTILINE):
+        lists.setdefault(name, [f"{value}="])
+    found: dict[str, set[str]] = {}
+    for source in code:
+        for call in (n for n in ast.walk(ast.parse(source)) if isinstance(n, ast.Call)):
+            if not (isinstance(call.func, ast.Name) and call.func.id == "make" and call.args):
+                continue
+            target = ast.literal_eval(call.args[0])
+            names = found.setdefault(target, set())
+            for arg in call.args[1:]:
+                if isinstance(arg, ast.Starred):
+                    items = lists[arg.value.id]
+                    names.update(item.split("=")[0] for item in items)
+                else:
+                    text = ast.get_source_segment(source, arg) or ""
+                    names.update(re.findall(r'"?(\b[A-Z_]+)=', text))
+    return found
+
+
+def recipe_of(target: str) -> str:
+    lines = MAKEFILE.read_text(encoding="utf-8").splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith(f"{target}:"))
+    block = [lines[start]]
+    for line in lines[start + 1 :]:
+        if not line.startswith("\t"):
+            break
+        block.append(line)
+    return "\n".join(block)
+
+
+def test_every_variable_the_notebook_gives_to_make_is_used_by_that_target(code):
+    """A setting that a target ignores would run without an error and with the wrong settings."""
+    ignored = []
+    for target, names in make_variables(code).items():
+        recipe = recipe_of(target)
+        ignored += [f"{target}: {name}" for name in sorted(names) if f"$({name})" not in recipe]
+    assert not ignored

@@ -47,7 +47,7 @@ from adapt.eval.runner import (
 )
 from adapt.models import Registry, load_registry
 from adapt.train.config import load_train_config
-from adapt.train.run import ADAPTERS_DIR, TrainSettings, run_name, trainable_entry
+from adapt.train.run import ADAPTERS_DIR, TrainSettings, epoch_tag, run_name, trainable_entry
 
 
 def system_name(
@@ -57,12 +57,13 @@ def system_name(
     smoke: bool = False,
     max_steps: int | None = None,
     data_round: int = 1,
+    epochs: int | None = None,
 ) -> str:
     """The name of the system in the results: `qwen3-4b-sft-0`, `qwen3-4b-sft-r2-0` for round 2,
     and `-steps3` after a short check."""
     if smoke:
         return f"smoke-sft-{seed}"
-    name = f"{key}-sft{round_tag(data_round)}-{seed}"
+    name = f"{key}-sft{round_tag(data_round)}{epoch_tag(epochs)}-{seed}"
     return f"{name}-steps{max_steps}" if max_steps else name
 
 
@@ -213,6 +214,8 @@ def evaluate_adapter(
     timeout: float = START_TIMEOUT_SECONDS,
     data_round: int | None = None,
     override_final_lock: bool = False,
+    threshold: float | None = None,
+    epochs: int | None = None,
 ) -> list[Path]:
     """Evaluate the adapter of a run on `splits`. Returns the results files."""
     splits = default_splits(platform) if splits is None else splits
@@ -224,10 +227,13 @@ def evaluate_adapter(
         smoke=smoke,
         max_steps=max_steps,
         num_gpus=num_gpus,
+        epochs=epochs,
         data_round=data_round,
     )
     adapter_dir = adapters_dir / platform / run_name(train)
-    system = system_name(key, seed, smoke=smoke, max_steps=max_steps, data_round=data_round)
+    system = system_name(
+        key, seed, smoke=smoke, max_steps=max_steps, data_round=data_round, epochs=epochs
+    )
     written = evaluate_adapters(
         registry,
         key,
@@ -243,6 +249,7 @@ def evaluate_adapter(
         timeout=timeout,
         data_round=data_round,
         override_final_lock=override_final_lock,
+        threshold=threshold,
     )
     return written[system]
 
@@ -254,6 +261,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--smoke", action="store_true", help="the adapter of a smoke run")
     parser.add_argument("--max-steps", type=int, help="the adapter of a run with this limit")
+    parser.add_argument("--epochs", type=int, help="the adapter of a run with this many epochs")
     parser.add_argument(
         "--num-gpus", type=int, default=1, help="GPUs of that run (only its folder name has it)"
     )
@@ -271,6 +279,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--servers", type=int, default=1, help="servers, one per GPU")
     parser.add_argument("--round", type=int, help="round of the data (default: the current one)")
     parser.add_argument("--dry-run", action="store_true", help="use the fake server, not vLLM")
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        help="confidence threshold for every split (default: chosen on dev during the run)",
+    )
     parser.add_argument(
         "--override-final-lock",
         action="store_true",
@@ -299,6 +312,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             workers=args.workers,
             data_round=args.round,
             override_final_lock=args.override_final_lock,
+            threshold=args.threshold,
+            epochs=args.epochs,
         )
     except (RuntimeError, ValueError) as error:
         sys.exit(f"error: {error}")

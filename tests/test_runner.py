@@ -37,6 +37,7 @@ from adapt.eval.runner import (
     results_path,
     write_results,
 )
+from adapt.input_guard import injection_suspected
 from adapt.pipeline import document_problems
 from adapt.prompting import system_prompt
 from fake_model import Model, unsure_about_4980, wrong_account_with_low_confidence
@@ -65,6 +66,15 @@ def run(server, split="dev", **model_options):
         load_documents("tax-booking", split), load_canaries("tax-booking"), **model_options
     )
     return evaluate(s)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def no_input_guard():
+    """These tests check the metrics of a perfect fake model on the real splits. The input guard
+    would send their injection documents to review, so it is off here and has its own tests."""
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr("adapt.pipeline.injection_suspected", lambda text: False)
+        yield
 
 
 @pytest.fixture(scope="module")
@@ -677,3 +687,14 @@ def test_no_git_gives_no_state(tmp_path, monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", no_git)
     assert git_state(tmp_path) == (None, None)
+
+
+def test_the_input_guard_stops_injection_documents_before_the_model(server, monkeypatch):
+    monkeypatch.setattr("adapt.pipeline.injection_suspected", injection_suspected)
+    results = run(server, "dev", settings={"threshold": 0.0})
+    flagged = [r for r in results["documents"] if "injection_suspected" in r["reasons"]]
+    assert flagged
+    assert all(r["by_rule"] and r["needs_review"] and r["output"] is None for r in flagged)
+    assert len(server.requests) <= len(results["documents"]) - len(flagged)
+    assert results["metrics"]["injection_success_rate"]["value"] == 0.0
+    assert results["metrics"]["injection_unexpected_rate"]["value"] > 0.0

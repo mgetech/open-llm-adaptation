@@ -1,15 +1,18 @@
 """The lock on the final claim.
 
-The test_ood and gold files can back one claim. Before the final run, the claim is declared in
-`results/final.lock.json`: the hashes of the test_ood file and of the gold files, the
-configurations that will be evaluated, and the one that is shipped. Both are chosen on dev and
+The test files can back one claim. Before the final run, the claim is declared in
+`results/final.lock.json`: the hashes of the three test files the gate reads (test_iid, test_ood
+and edge) and of the gold files, the configurations that will be evaluated, and the one that is
+shipped. Both are chosen on dev and
 dev_real. A configuration is one adapter, or two adapters that must agree, each given with its
 system name and the hash of its folder.
 
 A run on those files is allowed only for an adapter of a declared configuration. Any other
 system or adapter is refused, and so is a run when nothing was declared. The first run marks
-the claim as started, and from then on the list and the shipped choice cannot change. New
-test_ood or gold files have other hashes, so they need their own declaration. `override` runs
+the claim as started, and from then on the list and the shipped choice cannot change. A new
+claim needs its own declaration, and it must stand on fresh files: a test file that backs a
+started claim cannot back another one, and the gold files must include one that no earlier claim
+used. `override` runs
 an adapter that is not in the list and writes it to the claim with `"override": true`; it never
 changes the shipped choice.
 """
@@ -22,7 +25,8 @@ from typing import Any
 LOCK_NAME = "final.lock.json"
 # The splits that make a final claim. The few-shot baseline does not: it is the system the
 # claim is compared with, and nothing is chosen with it.
-CLAIM_SPLITS = ("test_ood", "gold", "gold_v2")
+CLAIM_SPLITS = ("test_iid", "test_ood", "edge", "gold", "gold_v2")
+TEST_FILES = ("test_iid_sha256", "test_ood_sha256", "edge_sha256")
 MAX_ADAPTERS = 2  # a configuration is one adapter, or two that must agree
 
 
@@ -38,16 +42,49 @@ def lock_file(out_dir: Path, results_root: Path) -> Path | None:
     return results_root / LOCK_NAME
 
 
-def read_claims(path: Path) -> list[dict[str, Any]]:
+def read_lock(path: Path) -> dict[str, Any]:
+    """The whole lock file: the claims and the sealed files."""
     if not path.exists():
-        return []
-    return json.loads(path.read_text(encoding="utf-8"))["claims"]
+        return {"claims": []}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def read_claims(path: Path) -> list[dict[str, Any]]:
+    return read_lock(path)["claims"]
+
+
+def read_sealed(path: Path) -> dict[str, dict[str, str]]:
+    return read_lock(path).get("sealed", {})
+
+
+def _save(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ordered = {"claims": data["claims"], **{k: v for k, v in data.items() if k != "claims"}}
+    with path.open("w", encoding="utf-8", newline="\n") as file:
+        file.write(json.dumps(ordered, indent=2, ensure_ascii=False) + "\n")
 
 
 def _write(path: Path, claims: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as file:
-        file.write(json.dumps({"claims": claims}, indent=2, ensure_ascii=False) + "\n")
+    _save(path, {**read_lock(path), "claims": claims})
+
+
+def seal(path: Path, name: str, file: str, sha256: str, sealed_on: str) -> bool:
+    """Record that `file` had this hash on `sealed_on`, before the decisions that follow. Returns
+    False when the same hash is already sealed. A file sealed with another hash is refused: a
+    sealed file does not change."""
+    data = read_lock(path)
+    sealed = data.setdefault("sealed", {})
+    current = sealed.get(name)
+    if current is not None:
+        if current["sha256"] != sha256:
+            raise FinalLockError(
+                f"{name} was sealed on {current['sealed']} with another hash. "
+                "A sealed file cannot change."
+            )
+        return False
+    sealed[name] = {"file": file, "sha256": sha256, "sealed": sealed_on}
+    _save(path, data)
+    return True
 
 
 def _find(claims: Sequence[dict[str, Any]], files: Mapping[str, Any]) -> dict[str, Any] | None:
@@ -83,16 +120,34 @@ def declare(
     """Declare the claim on `files`: the configurations to evaluate and the shipped one.
 
     A claim that was declared but not started can be declared again. One that has started cannot
-    be changed."""
+    be changed. A claim on files that back another started claim is refused."""
     _check_configurations(configurations, shipped)
     claims = read_claims(path)
     existing = _find(claims, files)
     if existing and existing["started"]:
         raise FinalLockError(
-            f"the claim on these test_ood and gold files has started (shipped: "
+            f"the claim on these test and gold files has started (shipped: "
             f"{existing['shipped']}). The list and the shipped choice cannot change. "
-            "Use new test_ood and gold files for another claim."
+            "Use new files for another claim."
         )
+    for other in claims:
+        if other is existing or not other["started"]:
+            continue
+        reused = [
+            key.removesuffix("_sha256") for key in TEST_FILES if files.get(key) == other.get(key)
+        ]
+        if reused:
+            raise FinalLockError(
+                f"{', '.join(reused)} already backs the claim of round {other['round']} "
+                f"(shipped: {other['shipped']}). A new claim needs fresh test_iid, test_ood and "
+                "edge files."
+            )
+        used = set(other.get("gold_sha256", {}).values())
+        if not set(files.get("gold_sha256", {}).values()) - used:
+            raise FinalLockError(
+                f"no gold file is new since the claim of round {other['round']}. "
+                "A new claim needs a gold file that no earlier claim used."
+            )
     declared = {
         **files,
         "round": data_round,
@@ -120,7 +175,7 @@ def start_run(
     found = _find(claims, files)
     if found is None:
         raise FinalLockError(
-            "no claim is declared for these test_ood and gold files. Declare the "
+            "no claim is declared for these test and gold files. Declare the "
             "configurations and the shipped one first (make declare-claim)."
         )
     declared = {
@@ -132,7 +187,7 @@ def start_run(
     if not allowed and not override:
         names = ", ".join(a for a, _ in sorted(declared))
         raise FinalLockError(
-            f"{system} is not in the claim declared for these test_ood and gold files "
+            f"{system} is not in the claim declared for these test and gold files "
             f"(declared: {names}; shipped: {found['shipped']}). Give the override to run it "
             "anyway; the result is then not a clean claim."
         )

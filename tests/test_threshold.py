@@ -304,3 +304,35 @@ def test_the_record_says_that_both_targets_were_reached():
 def test_rows_without_a_severity_have_no_critical_errors():
     plain = [{k: v for k, v in r.items() if k != "severity"} for r in SYNTHETIC]
     assert coverage_curve(plain)[0].critical_errors == 0
+
+
+# Four documents, none of which can reach an accuracy of 0.95. The one at 0.5 has a critical error.
+NO_ACCURACY = [
+    row(0.99, False),
+    row(0.90, False),
+    row(0.80, True),
+    row(0.50, False, severity="critical"),
+]
+
+
+def test_without_a_point_that_meets_both_the_critical_limit_comes_first():
+    tuned = tune_threshold(NO_ACCURACY, 0.95, 0.0)
+    assert tuned.threshold == 0.8 and tuned.critical_reached and not tuned.accuracy_reached
+    assert tuned.chosen.critical_errors == 0
+    record = tuning_record(tuned)
+    assert record["target_reached"] is False and record["critical_target_reached"] is True
+    assert record["value"] == 0.8
+
+
+def test_among_the_points_within_the_limit_the_best_accuracy_wins_and_a_tie_the_lower_threshold():
+    rows = [row(0.9, True), row(0.8, False), row(0.7, False, severity="critical")]
+    # within the limit: 0.8 (accuracy 1/2) and 0.9 (accuracy 1); 0.0 and 0.7 have the critical one
+    assert tune_threshold(rows, 1.1, 0.0).threshold == 0.9
+    tie = [row(0.9, False), row(0.8, False), row(0.7, False, severity="critical")]
+    assert tune_threshold(tie, 1.1, 0.0).threshold == 0.8
+
+
+def test_the_accuracy_target_alone_is_the_last_resort():
+    rows = [row(0.99, False, severity="critical")]
+    assert tune_threshold(rows, 0.0, 0.0).threshold == 0.0
+    assert tune_threshold([row(0.9, False, severity="critical")], 0.95, 0.0).threshold is None

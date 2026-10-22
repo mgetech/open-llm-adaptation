@@ -66,6 +66,25 @@ def test_the_included_vat_lines_of_a_receipt_are_compared():
     assert vat_mismatch(text, at_rate(items, 1, "7"))
 
 
+@pytest.mark.parametrize(
+    "summary",
+    [
+        "VAT 19% incl.: 1,90\nVAT 7% incl.: 0,70",
+        "incl. 19% VAT: 1,90\nincl. 7% VAT: 0,70",
+        "Incl. VAT: 19% 1,90, 7% 0,70",
+    ],
+)
+def test_every_way_a_receipt_prints_the_included_vat_is_compared(summary):
+    text = f"Shop\nTea 10,70\nCake 11,90\nTotal 22,60\n{summary}"
+    items = [
+        {"description": "Tea", "amount": 10.7, "account": "3300", "vat_rate": "7"},
+        {"description": "Cake", "amount": 11.9, "account": "3400", "vat_rate": "19"},
+    ]
+    assert not vat_mismatch(text, items)
+    assert vat_mismatch(text, at_rate(items, 1, "7"))
+    assert vat_mismatch(text, at_rate(items, 0, "19"))
+
+
 def test_the_vat_sentence_of_a_letter_is_compared():
     text = (
         "Dear Sir,\nTea: 10.70. Cake: 11.90.\n"
