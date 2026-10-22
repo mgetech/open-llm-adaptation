@@ -6,7 +6,10 @@ written before any round-2 result existed, and `dev_real.jsonl`, the realistic d
 to choose between configurations. The last two are checked when they are there. A dev_real
 document must also not appear in any training file. gold_v2 needs at least 40 records: the ids
 `gold2-001` and up are the ones written before round 2, the ids `gold2b-001` and up are the added
-ones.
+ones. gold_v3 needs exactly 80 records with the ids `gold3-001` to `gold3-080`, supplier names that
+are in no data file and no other evaluation file, and documents that are in no training file. Its
+problems are printed without the text of the record, so a failing run shows nothing of the file:
+`--details` (`DETAILS=1`) prints them in full, for the person who wrote it.
 
 Each line of `platforms/<platform>/evals/<name>.jsonl` is one JSON object with:
 - `id`: a unique string;
@@ -35,9 +38,12 @@ REQUIRED_FIELDS = ("id", "platform", "chart", "document_text", "target")
 OPTIONAL_FIELDS = ("layout",)
 GOLD_NAMES = ("gold", "gold_v2")
 DEV_REAL = "dev_real"
+GOLD_V3 = "gold_v3"
 GOLD_V2_MIN = 40
+GOLD_V3_RECORDS = 80
 ORIGINAL_ID = re.compile(r"^gold2-\d{3}$")
 ADDED_ID = re.compile(r"^gold2b-\d{3}$")
+GOLD3_ID = re.compile(r"^gold3-\d{3}$")
 
 
 def gold_path(platform: str, root: Path = PLATFORMS_DIR, name: str = "gold") -> Path:
@@ -156,6 +162,79 @@ def gold_v2_counts(path: Path) -> tuple[int, int]:
     return original, len(ids) - original
 
 
+def _records(path: Path) -> list[dict[str, Any]]:
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+
+
+def _supplier_key(name: str) -> str:
+    return " ".join(name.split()).lower()
+
+
+def known_suppliers(platform: str, data_dir: Path, evals: Path) -> dict[str, str]:
+    """Every supplier name in a data file or in another evaluation file, with where it is."""
+    found: dict[str, str] = {}
+    for file in sorted((data_dir / platform).glob("round*/*.jsonl")):
+        for record in _records(file):
+            for name in (record.get("supplier"), record["target"]["supplier"]):
+                if name:
+                    found.setdefault(_supplier_key(name), f"{file.parent.name}/{file.stem}")
+    for other in (*GOLD_NAMES, DEV_REAL):
+        file = evals / f"{other}.jsonl"
+        if file.is_file():
+            for record in _records(file):
+                found.setdefault(_supplier_key(record["target"]["supplier"]), other)
+    return found
+
+
+def gold_v3_problems(
+    path: Path, platform: str, data_dir: Path = DATA_DIR, evals: Path | None = None
+) -> list[str]:
+    """Check the size and ids of gold_v3, that its suppliers are new, and that no document of it is
+    in a training file or another evaluation file. A problem names the record id, never the text."""
+    evals = evals or path.parent
+    records = _records(path)
+    problems = [
+        f"{record.get('id')}: the id must be gold3-NNN"
+        for record in records
+        if not GOLD3_ID.match(str(record.get("id")))
+    ]
+    if len(records) != GOLD_V3_RECORDS:
+        problems.append(f"{path.name} has {len(records)} records, it needs {GOLD_V3_RECORDS}")
+    known = known_suppliers(platform, data_dir, evals)
+    for record in records:
+        target = record.get("target")
+        supplier = target.get("supplier") if isinstance(target, dict) else None
+        place = known.get(_supplier_key(supplier)) if isinstance(supplier, str) else None
+        if place:
+            problems.append(f"{record.get('id')}: the supplier name is also in {place}")
+    problems += train_overlap(path, platform, data_dir)
+    texts = {
+        _text_key(record["document_text"]): record.get("id")
+        for record in records
+        if isinstance(record.get("document_text"), str)
+    }
+    for other in (*GOLD_NAMES, DEV_REAL):
+        file = evals / f"{other}.jsonl"
+        if file.is_file():
+            problems += [
+                f"{texts[_text_key(r['document_text'])]}: the document is also in {other}"
+                for r in _records(file)
+                if _text_key(r["document_text"]) in texts
+            ]
+    return problems
+
+
+def hide_details(problems: Sequence[str]) -> list[str]:
+    """The problems without their text: where each one is, and how many there are."""
+    counts: dict[str, int] = {}
+    for problem in problems:
+        where = problem.split("): ")[0] + ")" if "): " in problem else problem.split(": ")[0]
+        counts[where] = counts.get(where, 0) + 1
+    return [f"{where}: {count} problem(s)" for where, count in counts.items()]
+
+
 def validate_gold(path: Path, platform: Platform) -> list[str]:
     """Check every line of a gold file. Each problem names the line and the record id."""
     if not path.is_file():
@@ -190,10 +269,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check the hand-written evaluation files.")
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument(
+        "--details", action="store_true", help="print the problems of gold_v3 in full"
+    )
+    parser.add_argument(
         "--path",
         type=Path,
-        help="check this file only (default: gold.jsonl, and gold_v2.jsonl and dev_real.jsonl "
-        "if they exist)",
+        help="check this file only (default: gold.jsonl, and gold_v2.jsonl, gold_v3.jsonl and "
+        "dev_real.jsonl if they exist)",
     )
     args = parser.parse_args(argv)
 
@@ -201,7 +283,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         paths = [args.path]
     else:
         paths = [gold_path(args.platform)]
-        for name in ("gold_v2", DEV_REAL):
+        for name in ("gold_v2", GOLD_V3, DEV_REAL):
             if gold_path(args.platform, name=name).exists():
                 paths.append(gold_path(args.platform, name=name))
     platform = load_platform(args.platform)
@@ -212,6 +294,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             problems = train_overlap(path, args.platform)
         if path.stem == "gold_v2" and not problems:
             problems = gold_v2_problems(path)
+        if path.stem == GOLD_V3:
+            try:
+                problems += gold_v3_problems(path, args.platform)
+            except (KeyError, TypeError, ValueError):
+                problems.append("a record is too broken for the size, supplier and overlap checks")
+            if problems and not args.details:
+                problems = hide_details(problems)
         for problem in problems:
             print(problem, file=sys.stderr)
         if problems:
