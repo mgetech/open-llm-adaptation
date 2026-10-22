@@ -8,6 +8,7 @@ results/
   final.lock.json       the final claim: the files it stands on, the configurations declared for it and the runs
   post_hoc/
     round3_rescored.json                    post-hoc re-scoring of the round 3 claim run, not a claim
+    gold_rescored.json                      post-hoc re-scoring of the shipped configuration on gold and gold_v2, not a claim
   round1/
     eval/<platform>/<system>/<split>.json    metrics, confidence intervals, slices and one row per document
     runs/<platform>-<model>-<seed>.json      manifest of one training run
@@ -62,6 +63,18 @@ I first scored this run before the VAT check read the "incl." lines of a receipt
 ### Post-hoc re-scoring of round 3
 
 `post_hoc/round3_rescored.json` scores the saved outputs of the round 3 claim run again with the changes below: the injection figure and a confidence threshold chosen on dev. It is post-hoc and not a claim. The test splits and `gold_v2` it reads were already evaluated in the claim run, and I made the changes after I saw that result. The threshold comes from dev only. I did not change it after looking at the other splits, and I do not choose anything from this report. The file carries the same label, the hashes of the saved results it read, and every gate check, once with `gold_v2` as the gold set and once with `gold`. `make post-hoc SYSTEM=qwen3-4b-sft-r3-0 BASELINE=qwen3-4b-fewshot-r3 ROUND=3` writes it again from the saved results without running a model. It did not pass the gate: with `gold_v2` as the gold set, the automation rate is below its limit, and the critical-error rate and prompt-injection success are over theirs.
+
+### Post-hoc re-scoring on gold and gold_v2
+
+`post_hoc/gold_rescored.json` scores the saved outputs of the shipped configuration (Qwen3-4B, round 3, one epoch) on `gold` and `gold_v2` with every pipeline check of today: the orders guard, the VAT check that reads the "incl." lines, and the confidence threshold of 0.9817 chosen on dev and `dev_real`. `make post-hoc-gold SYSTEM=qwen3-4b-sft-r3-0 ROUND=3` writes it again from the saved results without running a model. Both sets were evaluated before, and some of the checks were written after I saw those results, so these numbers are post-hoc and not held out. I changed nothing because of them, and `gold_v3` is not read.
+
+| | gold | gold_v2 |
+|---|---|---|
+| documents | 80 | 44 |
+| automation rate | 0.625 (40 of 64 that need no review) | 0.471 (16 of 34) |
+| accuracy on automated documents | 1.000 | 0.938 |
+| critical errors | 0 of 40 automated | 1 of 16 automated |
+| review recall | 1.000 | 1.000 |
 
 ### Changes made after the round 3 result
 

@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc gate seal declare-claim lint format test requirements
+.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc post-hoc-gold gate seal declare-claim lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -78,6 +78,9 @@ rescore:  ## Score saved results again with the newer pipeline checks, no model 
 
 post-hoc:  ## Re-score the saved outputs of a claim run with later changes, labelled post-hoc, not a claim (SYSTEM=, BASELINE=; optional ROUND=, IN_DIR=, OUT=)
 	uv run python -m adapt.eval.post_hoc --platform $(PLATFORM) --system $(SYSTEM) --baseline $(BASELINE) $(if $(ROUND),--round $(ROUND)) $(if $(IN_DIR),--in-dir $(IN_DIR)) $(if $(OUT),--out $(OUT))
+
+post-hoc-gold:  ## Re-score the shipped configuration on gold and gold_v2 from saved outputs, labelled post-hoc, not a claim (SYSTEM=; optional ROUND=, IN_DIR=, OUT=)
+	uv run python -m adapt.eval.post_hoc_gold --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(IN_DIR),--in-dir $(IN_DIR)) $(if $(OUT),--out $(OUT))
 
 stage-gate:  ## Gate checks on dev and dev_real of a system, a pass or fail for each, not the claim (SYSTEM=; optional ROUND=, OUT_DIR=, MARGIN=1)
 	uv run python -m adapt.eval.stage_gate --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(MARGIN),--margin)

@@ -1,0 +1,66 @@
+{
+  "post_hoc": true,
+  "claim": false,
+  "label": "POST-HOC, NOT A CLAIM. The saved outputs of the shipped configuration on gold and gold_v2, scored again with every pipeline check of today and a confidence threshold chosen on dev and dev_real together. Both sets were evaluated before, and some of the checks were written after I saw those results, so these numbers are not held out. Nothing was changed because of them.",
+  "round": 3,
+  "system": "qwen3-4b-sft-r3-0",
+  "git_commit": "f7a4380d1ac715f7884a29b40a1495eadf1273e6",
+  "git_dirty": true,
+  "threshold": {
+    "value": 0.9817172787547637,
+    "chosen_on": "dev and dev_real",
+    "rule": "the limit on critical errors first, then the accuracy target on automated documents"
+  },
+  "inputs_sha256": {
+    "qwen3-4b-sft-r3-0/dev": "86f9622d52c65a3aa745eedceefa627102a8b460eec14b02e3e811648b45561f",
+    "qwen3-4b-sft-r3-0/dev_real": "33c6725fc84831656b3778cbf589d4a6b51ebff599a36b033b2b1ff1b40e87be",
+    "qwen3-4b-sft-r3-0/gold": "bf590332566202a289babc68ede27a131da307036a3fb09a951ea5becbf6cd31",
+    "qwen3-4b-sft-r3-0/gold_v2": "89588f740514a087ad2a2f379f7f957226ecbb803949f722acc966c2b5e6cc85"
+  },
+  "splits": {
+    "gold": {
+      "documents": 80,
+      "automatable": 64,
+      "automated": 40,
+      "automated_correct": 40,
+      "critical_errors": 0,
+      "metrics": {
+        "document_accuracy": 0.7,
+        "automation_rate": 0.625,
+        "accuracy_on_automated": 1.0,
+        "critical_error_rate": 0.0,
+        "review_recall": 1.0,
+        "injection_success_rate": null,
+        "injection_unexpected_rate": null,
+        "canary_leak_rate": 0.0
+      },
+      "severity_counts": {
+        "critical": 0,
+        "major": 0,
+        "minor": 0
+      }
+    },
+    "gold_v2": {
+      "documents": 44,
+      "automatable": 34,
+      "automated": 16,
+      "automated_correct": 15,
+      "critical_errors": 1,
+      "metrics": {
+        "document_accuracy": 0.5681818181818182,
+        "automation_rate": 0.47058823529411764,
+        "accuracy_on_automated": 0.9375,
+        "critical_error_rate": 0.0625,
+        "review_recall": 1.0,
+        "injection_success_rate": null,
+        "injection_unexpected_rate": null,
+        "canary_leak_rate": 0.0
+      },
+      "severity_counts": {
+        "critical": 1,
+        "major": 0,
+        "minor": 0
+      }
+    }
+  }
+}
