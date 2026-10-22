@@ -43,8 +43,8 @@ rewrite-check:  ## Check the replies of the rewriter and write accepted.jsonl (o
 keep-round:  ## Copy the current data to round<N>/ and record it in the manifest (ROUND=, optional NOTE=)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --keep-round $(ROUND) $(if $(NOTE),--note "$(NOTE)")
 
-validate-gold:  ## Check the gold and dev_real files: schema, amounts, accounts (PLATFORM=)
-	uv run python -m adapt.data.gold --platform $(PLATFORM)
+validate-gold:  ## Check the gold, gold_v2, gold_v3 and dev_real files: schema, amounts, accounts (PLATFORM=; optional DETAILS=1 shows the problems of gold_v3 in full)
+	uv run python -m adapt.data.gold --platform $(PLATFORM) $(if $(DETAILS),--details)
 
 models-check:  ## Check the model gates and compare the pinned revisions with the Hub (OFFLINE=1, PIN=1)
 	uv run python -m adapt.models $(if $(OFFLINE),--offline) $(if $(PIN),--pin)

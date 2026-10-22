@@ -13,14 +13,18 @@ from pathlib import Path
 import uvicorn
 
 from adapt.gateway.app import create_app
+from adapt.gateway.audit import AuditLog
 from adapt.gateway.keys import KEYS_FILE, load_keys
 from adapt.serve import SERVE_FILE, load_serve_config
+
+AUDIT_FILE = Path("logs") / "audit.jsonl"
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the gateway.")
     parser.add_argument("--serve-file", type=Path, default=SERVE_FILE)
     parser.add_argument("--keys-file", type=Path, default=KEYS_FILE)
+    parser.add_argument("--audit-log", type=Path, default=AUDIT_FILE, help="JSON lines, no text")
     parser.add_argument("--vllm-url", help="default: $VLLM_URL, else vLLM on this machine")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8080)
@@ -31,7 +35,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         vllm_url = (
             args.vllm_url or os.environ.get("VLLM_URL") or f"http://127.0.0.1:{serve.port}/v1"
         )
-        app = create_app(serve, keys, vllm_url)
+        app = create_app(serve, keys, vllm_url, AuditLog(args.audit_log))
     except (ValueError, OSError) as error:
         sys.exit(f"error: {error}")
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

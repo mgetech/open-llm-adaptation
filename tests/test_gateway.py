@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from adapt.eval.runner import RESULTS_ROOT
 from adapt.gateway import __main__ as gateway_main
 from adapt.gateway.app import MAX_BODY_CHARACTERS, create_app
+from adapt.gateway.audit import AuditLog
 from adapt.gateway.keys import (
     EXAMPLE_FILE,
     KeyFile,
@@ -41,8 +42,11 @@ def bearer(key: str) -> dict[str, str]:
 
 
 @pytest.fixture
-def client(server):
-    with TestClient(create_app(load_serve_config(), KEYS, server.url, timeout=2.0)) as client:
+def client(server, tmp_path):
+    audit = AuditLog(tmp_path / "audit.jsonl")
+    with TestClient(
+        create_app(load_serve_config(), KEYS, server.url, audit, timeout=2.0)
+    ) as client:
         yield client
 
 

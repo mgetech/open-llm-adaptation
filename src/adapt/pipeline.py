@@ -5,6 +5,7 @@ confidence check. Any failure, and any exception, ends in `needs_review` with a 
 Nothing on a failure path is returned as automated.
 """
 
+import hashlib
 import logging
 import math
 import re
@@ -178,6 +179,7 @@ class Pipeline:
         self._system = system_prompt(
             platform.config.name, platform.rules.chart, platform.rules, few_shot=few_shot
         )
+        self.prompt_sha256 = hashlib.sha256(self._system.encode()).hexdigest()
 
     def process(self, document_text: str, chart: str, request_id: str | None = None) -> Result:
         request_id = request_id or uuid.uuid4().hex

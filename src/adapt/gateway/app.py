@@ -6,7 +6,9 @@ by the adapter of the same name in `configs/serve.yaml`, and a request cannot na
 adapter or model. Every failure of the model ends in a review, never in an automated booking.
 """
 
+import hashlib
 import re
+import time
 import uuid
 from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
@@ -18,7 +20,10 @@ from pydantic import BaseModel, Field
 
 from adapt.client import ModelClient
 from adapt.config import Platform, load_platform
+from adapt.data.pseudonymise import pseudonymise
+from adapt.gateway.audit import AuditLog, AuditRecord, Outcome, now
 from adapt.gateway.keys import ApiKey, KeyFile, find_key
+from adapt.models import Registry, load_registry
 from adapt.pipeline import Pipeline, Result
 from adapt.serve import ServeConfig
 
@@ -112,12 +117,15 @@ def create_app(
     serve: ServeConfig,
     keys: KeyFile,
     vllm_url: str,
+    audit: AuditLog,
     *,
     platforms: Mapping[str, Platform] | None = None,
+    registry: Registry | None = None,
     timeout: float = 120.0,
 ) -> FastAPI:
     client = ModelClient(vllm_url, timeout=timeout)
     pipelines = build_pipelines(serve, client, platforms)
+    base_revision = (registry or load_registry()).models[serve.model].revision
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -128,17 +136,56 @@ def create_app(
     app.state.serve = serve
     app.state.keys = keys
     app.state.pipelines = pipelines
+    app.state.audit = audit
 
-    def require_key(authorization: Annotated[str | None, Header()] = None) -> ApiKey:
+    def log(
+        request_id: str, platform: str, outcome: Outcome, started: float, **fields: Any
+    ) -> None:
+        """Write the record of a request. If it cannot be written, the request fails."""
+        try:
+            audit.write(
+                AuditRecord(
+                    timestamp=now(),
+                    request_id=request_id,
+                    platform=platform,
+                    outcome=outcome,
+                    latency_ms=round((time.monotonic() - started) * 1000),
+                    **{
+                        "key_id": None,
+                        "input_sha256": None,
+                        "adapter": None,
+                        "adapter_sha256": None,
+                        "base_revision": None,
+                        "prompt_sha256": None,
+                        "review_reasons": [],
+                    }
+                    | fields,
+                )
+            )
+        except OSError as error:
+            raise HTTPException(
+                status_code=500, detail="the audit log cannot be written"
+            ) from error
+
+    def require_key(
+        platform: str,
+        authorization: Annotated[str | None, Header()] = None,
+        x_request_id: Annotated[str | None, Header()] = None,
+    ) -> ApiKey:
+        started = time.monotonic()
         scheme, _, presented = (authorization or "").partition(" ")
         key = find_key(keys, presented.strip()) if scheme.lower() == "bearer" else None
         if key is None:
+            log(request_id_of(x_request_id), platform, "unauthorized", started)
             raise HTTPException(
                 status_code=401,
                 detail="missing or unknown API key",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         return key
+
+    def request_id_of(header: str | None) -> str:
+        return header if header and REQUEST_ID.match(header) else uuid.uuid4().hex
 
     @app.post("/v1/{platform}/process", response_model=ProcessResponse)
     def process(
@@ -147,12 +194,27 @@ def create_app(
         key: Annotated[ApiKey, Depends(require_key)],
         x_request_id: Annotated[str | None, Header()] = None,
     ) -> ProcessResponse:
+        started = time.monotonic()
+        request_id = request_id_of(x_request_id)
         # A key without the platform gets the same answer whether the platform exists or not.
         pipeline = pipelines.get(platform)
         if platform not in key.platforms or pipeline is None:
+            log(request_id, platform, "forbidden", started, key_id=key.id)
             raise HTTPException(status_code=403, detail="this key may not use this platform")
-        request_id = x_request_id if x_request_id and REQUEST_ID.match(x_request_id) else None
-        result = pipeline.process(body.document_text, body.chart, request_id or uuid.uuid4().hex)
+        result = pipeline.process(body.document_text, body.chart, request_id)
+        log(
+            request_id,
+            platform,
+            "review" if result.needs_review else "automated",
+            started,
+            key_id=key.id,
+            input_sha256=hashlib.sha256(pseudonymise(body.document_text).encode()).hexdigest(),
+            adapter=result.adapter,
+            adapter_sha256=result.adapter_version,
+            base_revision=base_revision,
+            prompt_sha256=pipeline.prompt_sha256,
+            review_reasons=[str(reason) for reason in result.reasons],
+        )
         return response_from(result)
 
     return app
