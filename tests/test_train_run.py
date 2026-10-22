@@ -235,6 +235,12 @@ def test_one_gpu_is_the_default_and_needs_no_launcher():
 
 
 @needs_make
+def test_the_epochs_of_a_run_reach_the_training_command():
+    assert "--epochs 2" in planned("MODEL=qwen3-4b", "ROUND=3", "EPOCHS=2")
+    assert "--epochs" not in planned("MODEL=qwen3-4b", "ROUND=3")
+
+
+@needs_make
 def test_a_short_run_passes_its_steps_and_gpus_on():
     command = planned("MODEL=qwen3-1.7b", "NUM_GPUS=2", "MAX_STEPS=50")
     assert "--num_processes 2" in command and "--num-gpus 2" in command

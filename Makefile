@@ -43,7 +43,7 @@ models-check:  ## Check the model gates and compare the pinned revisions with th
 train:  ## QLoRA fine-tuning of one model (MODEL=, SEED=; optional ROUND=, EPOCHS=2, NUM_GPUS=2, SMOKE=1, RESUME=1, MAX_STEPS=, ADAPTERS_DIR=, RUNS_DIR=)
 	uv run --group gpu $(if $(filter-out 1,$(NUM_GPUS)),accelerate launch --multi_gpu --num_processes $(NUM_GPUS) -m adapt.train,python -m adapt.train) \
 		--platform $(PLATFORM) --seed $(SEED) --num-gpus $(NUM_GPUS) \
-		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(RESUME),--resume) \
+		$(if $(SMOKE),--smoke,--model $(MODEL)) $(if $(RESUME),--resume) $(if $(EPOCHS),--epochs $(EPOCHS)) \
 		$(if $(MAX_STEPS),--max-steps $(MAX_STEPS)) $(if $(ROUND),--round $(ROUND)) \
 		$(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR)) $(if $(RUNS_DIR),--runs-dir $(RUNS_DIR))
 

@@ -303,3 +303,47 @@ def test_the_short_check_can_be_skipped_with_one_setting(code):
     assert len(checks) == 2 and all(s.startswith("if SHORT_CHECK:") for s in checks)
     for source in checks:
         compile(source, "<cell>", "exec")
+
+
+def make_variables(code) -> dict[str, set[str]]:
+    """The variables each `make` call of the notebook sets, with the lists it spreads."""
+    namespace: dict = {}
+    exec(code[0], namespace)  # the settings cell
+    lists = {name: value for name, value in namespace.items() if isinstance(value, list)}
+    for name, value in re.findall(r'^\s*(\w+) = \[f?"(\w+)=', "\n".join(code[1:2]), re.MULTILINE):
+        lists.setdefault(name, [f"{value}="])
+    found: dict[str, set[str]] = {}
+    for source in code:
+        for call in (n for n in ast.walk(ast.parse(source)) if isinstance(n, ast.Call)):
+            if not (isinstance(call.func, ast.Name) and call.func.id == "make" and call.args):
+                continue
+            target = ast.literal_eval(call.args[0])
+            names = found.setdefault(target, set())
+            for arg in call.args[1:]:
+                if isinstance(arg, ast.Starred):
+                    items = lists[arg.value.id]
+                    names.update(item.split("=")[0] for item in items)
+                else:
+                    text = ast.get_source_segment(source, arg) or ""
+                    names.update(re.findall(r'"?(\b[A-Z_]+)=', text))
+    return found
+
+
+def recipe_of(target: str) -> str:
+    lines = MAKEFILE.read_text(encoding="utf-8").splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith(f"{target}:"))
+    block = [lines[start]]
+    for line in lines[start + 1 :]:
+        if not line.startswith("\t"):
+            break
+        block.append(line)
+    return "\n".join(block)
+
+
+def test_every_variable_the_notebook_gives_to_make_is_used_by_that_target(code):
+    """A setting that a target ignores would run without an error and with the wrong settings."""
+    ignored = []
+    for target, names in make_variables(code).items():
+        recipe = recipe_of(target)
+        ignored += [f"{target}: {name}" for name in sorted(names) if f"$({name})" not in recipe]
+    assert not ignored
