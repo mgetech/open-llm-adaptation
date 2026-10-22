@@ -1,0 +1,6608 @@
+{
+  "platform": "tax-booking",
+  "system": "qwen3-4b-sft-r3-e2-0",
+  "split": "dev_real",
+  "manifest": {
+    "model": "qwen3-4b-sft-r3-e2-0",
+    "model_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "adapter_hash": "2f06528f39d55db2d8144ad89788344df4eab73705c4b04d58ee1c9958324d29",
+    "vllm_version": "0.30.0",
+    "servers": 2,
+    "gpu": "Tesla T4",
+    "prompt_sha256": "2f3789f30dd9234c912df016d6c5687b85920d701c0bdf5d4dffe1f1e13edcb7",
+    "few_shot": false,
+    "data_round": 3,
+    "data_generator": 3,
+    "data_sha256": "d1996227863aeb15611d8a778c3ba53002044cd373f73fc0e0b57091267f0e11",
+    "git_commit": "4e97335db7117d4823356e4d137501ada04aaab5",
+    "git_dirty": false,
+    "seed": 0,
+    "threshold": 0.9999117917961754,
+    "documents": 96,
+    "rescored": {
+      "checks": [
+        "heavy_noise",
+        "injection_suspected",
+        "vat_mismatch",
+        "mixed_private",
+        "reverse_charge_cue"
+      ],
+      "git_commit": "4e97335db7117d4823356e4d137501ada04aaab5",
+      "git_dirty": false
+    }
+  },
+  "confidence_threshold": {
+    "value": 0.9999117917961754,
+    "source": "tuned again on dev and dev_real",
+    "target_accuracy": 0.95,
+    "target_critical_error_rate": 0.005,
+    "target_reached": true,
+    "critical_target_reached": true,
+    "automation_rate": 0.16521739130434782,
+    "accuracy_on_automated": 1.0,
+    "critical_error_rate": 0.0,
+    "curve": [
+      {
+        "threshold": 0.0,
+        "automated": 316,
+        "automation_rate": 0.9159420289855073,
+        "accuracy_on_automated": 0.9556962025316456,
+        "critical_errors": 4,
+        "critical_error_rate": 0.012658227848101266
+      },
+      {
+        "threshold": 0.43381744764465896,
+        "automated": 316,
+        "automation_rate": 0.9159420289855073,
+        "accuracy_on_automated": 0.9556962025316456,
+        "critical_errors": 4,
+        "critical_error_rate": 0.012658227848101266
+      },
+      {
+        "threshold": 0.5151684305074058,
+        "automated": 315,
+        "automation_rate": 0.9130434782608695,
+        "accuracy_on_automated": 0.9555555555555556,
+        "critical_errors": 4,
+        "critical_error_rate": 0.012698412698412698
+      },
+      {
+        "threshold": 0.5161468395271246,
+        "automated": 314,
+        "automation_rate": 0.9101449275362319,
+        "accuracy_on_automated": 0.9554140127388535,
+        "critical_errors": 4,
+        "critical_error_rate": 0.012738853503184714
+      },
+      {
+        "threshold": 0.5211614079737762,
+        "automated": 313,
+        "automation_rate": 0.9072463768115943,
+        "accuracy_on_automated": 0.9552715654952076,
+        "critical_errors": 4,
+        "critical_error_rate": 0.012779552715654952
+      },
+      {
+        "threshold": 0.5231539846831094,
+        "automated": 312,
+        "automation_rate": 0.9043478260869565,
+        "accuracy_on_automated": 0.9583333333333334,
+        "critical_errors": 3,
+        "critical_error_rate": 0.009615384615384616
+      },
+      {
+        "threshold": 0.5271466468017765,
+        "automated": 311,
+        "automation_rate": 0.9014492753623189,
+        "accuracy_on_automated": 0.9581993569131833,
+        "critical_errors": 3,
+        "critical_error_rate": 0.00964630225080386
+      },
+      {
+        "threshold": 0.533405986570184,
+        "automated": 310,
+        "automation_rate": 0.8985507246376812,
+        "accuracy_on_automated": 0.9580645161290322,
+        "critical_errors": 3,
+        "critical_error_rate": 0.00967741935483871
+      },
+      {
+        "threshold": 0.6956049833636673,
+        "automated": 309,
+        "automation_rate": 0.8956521739130435,
+        "accuracy_on_automated": 0.9579288025889967,
+        "critical_errors": 3,
+        "critical_error_rate": 0.009708737864077669
+      },
+      {
+        "threshold": 0.7185393251645275,
+        "automated": 308,
+        "automation_rate": 0.8927536231884058,
+        "accuracy_on_automated": 0.9577922077922078,
+        "critical_errors": 3,
+        "critical_error_rate": 0.00974025974025974
+      },
+      {
+        "threshold": 0.7360308129115041,
+        "automated": 307,
+        "automation_rate": 0.8898550724637682,
+        "accuracy_on_automated": 0.9609120521172638,
+        "critical_errors": 3,
+        "critical_error_rate": 0.009771986970684038
+      },
+      {
+        "threshold": 0.7467257432559594,
+        "automated": 306,
+        "automation_rate": 0.8869565217391304,
+        "accuracy_on_automated": 0.9607843137254902,
+        "critical_errors": 3,
+        "critical_error_rate": 0.00980392156862745
+      },
+      {
+        "threshold": 0.7608486829809448,
+        "automated": 305,
+        "automation_rate": 0.8840579710144928,
+        "accuracy_on_automated": 0.9606557377049181,
+        "critical_errors": 3,
+        "critical_error_rate": 0.009836065573770493
+      },
+      {
+        "threshold": 0.7716662539506278,
+        "automated": 304,
+        "automation_rate": 0.881159420289855,
+        "accuracy_on_automated": 0.9605263157894737,
+        "critical_errors": 3,
+        "critical_error_rate": 0.009868421052631578
+      },
+      {
+        "threshold": 0.8132454087740388,
+        "automated": 303,
+        "automation_rate": 0.8782608695652174,
+        "accuracy_on_automated": 0.9603960396039604,
+        "critical_errors": 3,
+        "critical_error_rate": 0.009900990099009901
+      },
+      {
+        "threshold": 0.8332679150220246,
+        "automated": 302,
+        "automation_rate": 0.8753623188405797,
+        "accuracy_on_automated": 0.9635761589403974,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006622516556291391
+      },
+      {
+        "threshold": 0.84177294378138,
+        "automated": 301,
+        "automation_rate": 0.8724637681159421,
+        "accuracy_on_automated": 0.9634551495016611,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006644518272425249
+      },
+      {
+        "threshold": 0.8683977013789007,
+        "automated": 300,
+        "automation_rate": 0.8695652173913043,
+        "accuracy_on_automated": 0.9666666666666667,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006666666666666667
+      },
+      {
+        "threshold": 0.8887533347214094,
+        "automated": 299,
+        "automation_rate": 0.8666666666666667,
+        "accuracy_on_automated": 0.9665551839464883,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006688963210702341
+      },
+      {
+        "threshold": 0.9031089329246528,
+        "automated": 298,
+        "automation_rate": 0.863768115942029,
+        "accuracy_on_automated": 0.9664429530201343,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006711409395973154
+      },
+      {
+        "threshold": 0.9103870453147931,
+        "automated": 297,
+        "automation_rate": 0.8608695652173913,
+        "accuracy_on_automated": 0.9663299663299664,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006734006734006734
+      },
+      {
+        "threshold": 0.9192572745921367,
+        "automated": 296,
+        "automation_rate": 0.8579710144927536,
+        "accuracy_on_automated": 0.9662162162162162,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006756756756756757
+      },
+      {
+        "threshold": 0.9213695087392625,
+        "automated": 295,
+        "automation_rate": 0.855072463768116,
+        "accuracy_on_automated": 0.9661016949152542,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006779661016949152
+      },
+      {
+        "threshold": 0.9223616542551085,
+        "automated": 294,
+        "automation_rate": 0.8521739130434782,
+        "accuracy_on_automated": 0.9693877551020408,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006802721088435374
+      },
+      {
+        "threshold": 0.9302563382486859,
+        "automated": 293,
+        "automation_rate": 0.8492753623188406,
+        "accuracy_on_automated": 0.9692832764505119,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006825938566552901
+      },
+      {
+        "threshold": 0.9349058363001134,
+        "automated": 292,
+        "automation_rate": 0.8463768115942029,
+        "accuracy_on_automated": 0.9691780821917808,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00684931506849315
+      },
+      {
+        "threshold": 0.9457092150922185,
+        "automated": 291,
+        "automation_rate": 0.8434782608695652,
+        "accuracy_on_automated": 0.9690721649484536,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006872852233676976
+      },
+      {
+        "threshold": 0.9498690811368442,
+        "automated": 290,
+        "automation_rate": 0.8405797101449275,
+        "accuracy_on_automated": 0.9689655172413794,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006896551724137931
+      },
+      {
+        "threshold": 0.9510825806582464,
+        "automated": 289,
+        "automation_rate": 0.8376811594202899,
+        "accuracy_on_automated": 0.9688581314878892,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006920415224913495
+      },
+      {
+        "threshold": 0.9548952828597065,
+        "automated": 288,
+        "automation_rate": 0.8347826086956521,
+        "accuracy_on_automated": 0.96875,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006944444444444444
+      },
+      {
+        "threshold": 0.9564324185394834,
+        "automated": 287,
+        "automation_rate": 0.8318840579710145,
+        "accuracy_on_automated": 0.9686411149825784,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006968641114982578
+      },
+      {
+        "threshold": 0.9603582050697828,
+        "automated": 286,
+        "automation_rate": 0.8289855072463768,
+        "accuracy_on_automated": 0.9685314685314685,
+        "critical_errors": 2,
+        "critical_error_rate": 0.006993006993006993
+      },
+      {
+        "threshold": 0.9628315010279489,
+        "automated": 285,
+        "automation_rate": 0.8260869565217391,
+        "accuracy_on_automated": 0.968421052631579,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007017543859649123
+      },
+      {
+        "threshold": 0.9636662254921563,
+        "automated": 284,
+        "automation_rate": 0.8231884057971014,
+        "accuracy_on_automated": 0.9683098591549296,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007042253521126761
+      },
+      {
+        "threshold": 0.9669747990927172,
+        "automated": 283,
+        "automation_rate": 0.8202898550724638,
+        "accuracy_on_automated": 0.9681978798586572,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007067137809187279
+      },
+      {
+        "threshold": 0.967278170978667,
+        "automated": 282,
+        "automation_rate": 0.8173913043478261,
+        "accuracy_on_automated": 0.9680851063829787,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0070921985815602835
+      },
+      {
+        "threshold": 0.9679910969180342,
+        "automated": 281,
+        "automation_rate": 0.8144927536231884,
+        "accuracy_on_automated": 0.9715302491103203,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0071174377224199285
+      },
+      {
+        "threshold": 0.9702590521578949,
+        "automated": 280,
+        "automation_rate": 0.8115942028985508,
+        "accuracy_on_automated": 0.975,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007142857142857143
+      },
+      {
+        "threshold": 0.9736400281705176,
+        "automated": 279,
+        "automation_rate": 0.808695652173913,
+        "accuracy_on_automated": 0.974910394265233,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007168458781362007
+      },
+      {
+        "threshold": 0.9746222789166422,
+        "automated": 278,
+        "automation_rate": 0.8057971014492754,
+        "accuracy_on_automated": 0.9748201438848921,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007194244604316547
+      },
+      {
+        "threshold": 0.9748072090719005,
+        "automated": 277,
+        "automation_rate": 0.8028985507246377,
+        "accuracy_on_automated": 0.9747292418772563,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007220216606498195
+      },
+      {
+        "threshold": 0.9749765931368916,
+        "automated": 276,
+        "automation_rate": 0.8,
+        "accuracy_on_automated": 0.9782608695652174,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007246376811594203
+      },
+      {
+        "threshold": 0.9777197919234798,
+        "automated": 275,
+        "automation_rate": 0.7971014492753623,
+        "accuracy_on_automated": 0.9781818181818182,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007272727272727273
+      },
+      {
+        "threshold": 0.9802632842836401,
+        "automated": 274,
+        "automation_rate": 0.7942028985507247,
+        "accuracy_on_automated": 0.9781021897810219,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0072992700729927005
+      },
+      {
+        "threshold": 0.9840866697668093,
+        "automated": 273,
+        "automation_rate": 0.7913043478260869,
+        "accuracy_on_automated": 0.978021978021978,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007326007326007326
+      },
+      {
+        "threshold": 0.9871697110373683,
+        "automated": 272,
+        "automation_rate": 0.7884057971014493,
+        "accuracy_on_automated": 0.9779411764705882,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007352941176470588
+      },
+      {
+        "threshold": 0.9872161946184099,
+        "automated": 271,
+        "automation_rate": 0.7855072463768116,
+        "accuracy_on_automated": 0.977859778597786,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007380073800738007
+      },
+      {
+        "threshold": 0.9884669833505441,
+        "automated": 270,
+        "automation_rate": 0.782608695652174,
+        "accuracy_on_automated": 0.9777777777777777,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007407407407407408
+      },
+      {
+        "threshold": 0.9893366903022274,
+        "automated": 269,
+        "automation_rate": 0.7797101449275362,
+        "accuracy_on_automated": 0.9776951672862454,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007434944237918215
+      },
+      {
+        "threshold": 0.989389252566499,
+        "automated": 268,
+        "automation_rate": 0.7768115942028986,
+        "accuracy_on_automated": 0.9776119402985075,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007462686567164179
+      },
+      {
+        "threshold": 0.989449471200978,
+        "automated": 267,
+        "automation_rate": 0.7739130434782608,
+        "accuracy_on_automated": 0.9775280898876404,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00749063670411985
+      },
+      {
+        "threshold": 0.9894621474330008,
+        "automated": 266,
+        "automation_rate": 0.7710144927536232,
+        "accuracy_on_automated": 0.9774436090225563,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007518796992481203
+      },
+      {
+        "threshold": 0.9900513419649918,
+        "automated": 265,
+        "automation_rate": 0.7681159420289855,
+        "accuracy_on_automated": 0.9773584905660377,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007547169811320755
+      },
+      {
+        "threshold": 0.9913273165476544,
+        "automated": 264,
+        "automation_rate": 0.7652173913043478,
+        "accuracy_on_automated": 0.9772727272727273,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007575757575757576
+      },
+      {
+        "threshold": 0.992283228378286,
+        "automated": 263,
+        "automation_rate": 0.7623188405797101,
+        "accuracy_on_automated": 0.9771863117870723,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0076045627376425855
+      },
+      {
+        "threshold": 0.9931720391520047,
+        "automated": 262,
+        "automation_rate": 0.7594202898550725,
+        "accuracy_on_automated": 0.9770992366412213,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007633587786259542
+      },
+      {
+        "threshold": 0.9932476599608651,
+        "automated": 261,
+        "automation_rate": 0.7565217391304347,
+        "accuracy_on_automated": 0.9770114942528736,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007662835249042145
+      },
+      {
+        "threshold": 0.9933917059337413,
+        "automated": 260,
+        "automation_rate": 0.7536231884057971,
+        "accuracy_on_automated": 0.9769230769230769,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007692307692307693
+      },
+      {
+        "threshold": 0.9939272339079462,
+        "automated": 259,
+        "automation_rate": 0.7507246376811594,
+        "accuracy_on_automated": 0.9768339768339769,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007722007722007722
+      },
+      {
+        "threshold": 0.994189682128096,
+        "automated": 258,
+        "automation_rate": 0.7478260869565218,
+        "accuracy_on_automated": 0.9767441860465116,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007751937984496124
+      },
+      {
+        "threshold": 0.9949530622072459,
+        "automated": 257,
+        "automation_rate": 0.744927536231884,
+        "accuracy_on_automated": 0.9766536964980544,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007782101167315175
+      },
+      {
+        "threshold": 0.9951433927074508,
+        "automated": 256,
+        "automation_rate": 0.7420289855072464,
+        "accuracy_on_automated": 0.9765625,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0078125
+      },
+      {
+        "threshold": 0.9952289326650696,
+        "automated": 255,
+        "automation_rate": 0.7391304347826086,
+        "accuracy_on_automated": 0.9764705882352941,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00784313725490196
+      },
+      {
+        "threshold": 0.9958423522049183,
+        "automated": 254,
+        "automation_rate": 0.736231884057971,
+        "accuracy_on_automated": 0.9763779527559056,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007874015748031496
+      },
+      {
+        "threshold": 0.9958596007034982,
+        "automated": 253,
+        "automation_rate": 0.7333333333333333,
+        "accuracy_on_automated": 0.9762845849802372,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007905138339920948
+      },
+      {
+        "threshold": 0.9963991327761103,
+        "automated": 252,
+        "automation_rate": 0.7304347826086957,
+        "accuracy_on_automated": 0.9761904761904762,
+        "critical_errors": 2,
+        "critical_error_rate": 0.007936507936507936
+      },
+      {
+        "threshold": 0.9964339846685326,
+        "automated": 251,
+        "automation_rate": 0.7275362318840579,
+        "accuracy_on_automated": 0.9760956175298805,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00796812749003984
+      },
+      {
+        "threshold": 0.9965350360372169,
+        "automated": 250,
+        "automation_rate": 0.7246376811594203,
+        "accuracy_on_automated": 0.976,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008
+      },
+      {
+        "threshold": 0.9965828168008791,
+        "automated": 249,
+        "automation_rate": 0.7217391304347827,
+        "accuracy_on_automated": 0.9759036144578314,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008032128514056224
+      },
+      {
+        "threshold": 0.9965891985565678,
+        "automated": 248,
+        "automation_rate": 0.7188405797101449,
+        "accuracy_on_automated": 0.9758064516129032,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008064516129032258
+      },
+      {
+        "threshold": 0.9966988122915283,
+        "automated": 247,
+        "automation_rate": 0.7159420289855073,
+        "accuracy_on_automated": 0.9757085020242915,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008097165991902834
+      },
+      {
+        "threshold": 0.9967275585020754,
+        "automated": 246,
+        "automation_rate": 0.7130434782608696,
+        "accuracy_on_automated": 0.975609756097561,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008130081300813009
+      },
+      {
+        "threshold": 0.9968966621344834,
+        "automated": 245,
+        "automation_rate": 0.7101449275362319,
+        "accuracy_on_automated": 0.9755102040816327,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00816326530612245
+      },
+      {
+        "threshold": 0.9970327836302364,
+        "automated": 244,
+        "automation_rate": 0.7072463768115942,
+        "accuracy_on_automated": 0.9754098360655737,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00819672131147541
+      },
+      {
+        "threshold": 0.9970617371629684,
+        "automated": 243,
+        "automation_rate": 0.7043478260869566,
+        "accuracy_on_automated": 0.9753086419753086,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00823045267489712
+      },
+      {
+        "threshold": 0.9972577583505217,
+        "automated": 242,
+        "automation_rate": 0.7014492753623188,
+        "accuracy_on_automated": 0.9752066115702479,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008264462809917356
+      },
+      {
+        "threshold": 0.9974870901646927,
+        "automated": 241,
+        "automation_rate": 0.6985507246376812,
+        "accuracy_on_automated": 0.975103734439834,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008298755186721992
+      },
+      {
+        "threshold": 0.997521963241826,
+        "automated": 240,
+        "automation_rate": 0.6956521739130435,
+        "accuracy_on_automated": 0.975,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008333333333333333
+      },
+      {
+        "threshold": 0.9975270140091796,
+        "automated": 239,
+        "automation_rate": 0.6927536231884058,
+        "accuracy_on_automated": 0.9748953974895398,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008368200836820083
+      },
+      {
+        "threshold": 0.9975769675630392,
+        "automated": 238,
+        "automation_rate": 0.6898550724637681,
+        "accuracy_on_automated": 0.9747899159663865,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008403361344537815
+      },
+      {
+        "threshold": 0.9976069877414734,
+        "automated": 237,
+        "automation_rate": 0.6869565217391305,
+        "accuracy_on_automated": 0.9746835443037974,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008438818565400843
+      },
+      {
+        "threshold": 0.9976399448398,
+        "automated": 236,
+        "automation_rate": 0.6840579710144927,
+        "accuracy_on_automated": 0.9745762711864406,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00847457627118644
+      },
+      {
+        "threshold": 0.9977122109633964,
+        "automated": 235,
+        "automation_rate": 0.6811594202898551,
+        "accuracy_on_automated": 0.9744680851063829,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00851063829787234
+      },
+      {
+        "threshold": 0.9977867152286325,
+        "automated": 234,
+        "automation_rate": 0.6782608695652174,
+        "accuracy_on_automated": 0.9743589743589743,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008547008547008548
+      },
+      {
+        "threshold": 0.9977873093716183,
+        "automated": 233,
+        "automation_rate": 0.6753623188405797,
+        "accuracy_on_automated": 0.9742489270386266,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008583690987124463
+      },
+      {
+        "threshold": 0.9978965929072187,
+        "automated": 232,
+        "automation_rate": 0.672463768115942,
+        "accuracy_on_automated": 0.9741379310344828,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008620689655172414
+      },
+      {
+        "threshold": 0.9979930124602081,
+        "automated": 231,
+        "automation_rate": 0.6695652173913044,
+        "accuracy_on_automated": 0.9783549783549783,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008658008658008658
+      },
+      {
+        "threshold": 0.9979988109085316,
+        "automated": 230,
+        "automation_rate": 0.6666666666666666,
+        "accuracy_on_automated": 0.9782608695652174,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008695652173913044
+      },
+      {
+        "threshold": 0.9980136724485303,
+        "automated": 229,
+        "automation_rate": 0.663768115942029,
+        "accuracy_on_automated": 0.9781659388646288,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008733624454148471
+      },
+      {
+        "threshold": 0.9980543788186755,
+        "automated": 228,
+        "automation_rate": 0.6608695652173913,
+        "accuracy_on_automated": 0.9780701754385965,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008771929824561403
+      },
+      {
+        "threshold": 0.9980855323637172,
+        "automated": 227,
+        "automation_rate": 0.6579710144927536,
+        "accuracy_on_automated": 0.9779735682819384,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00881057268722467
+      },
+      {
+        "threshold": 0.998100624627809,
+        "automated": 226,
+        "automation_rate": 0.6550724637681159,
+        "accuracy_on_automated": 0.9778761061946902,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008849557522123894
+      },
+      {
+        "threshold": 0.9981125207903575,
+        "automated": 225,
+        "automation_rate": 0.6521739130434783,
+        "accuracy_on_automated": 0.9777777777777777,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008888888888888889
+      },
+      {
+        "threshold": 0.9981231930656139,
+        "automated": 224,
+        "automation_rate": 0.6492753623188405,
+        "accuracy_on_automated": 0.9776785714285714,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008928571428571428
+      },
+      {
+        "threshold": 0.9981642378262487,
+        "automated": 223,
+        "automation_rate": 0.6463768115942029,
+        "accuracy_on_automated": 0.9775784753363229,
+        "critical_errors": 2,
+        "critical_error_rate": 0.008968609865470852
+      },
+      {
+        "threshold": 0.9982803996680508,
+        "automated": 222,
+        "automation_rate": 0.6434782608695652,
+        "accuracy_on_automated": 0.9774774774774775,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009009009009009009
+      },
+      {
+        "threshold": 0.9982948741777143,
+        "automated": 221,
+        "automation_rate": 0.6405797101449275,
+        "accuracy_on_automated": 0.9773755656108597,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00904977375565611
+      },
+      {
+        "threshold": 0.9983602657320627,
+        "automated": 220,
+        "automation_rate": 0.6376811594202898,
+        "accuracy_on_automated": 0.9772727272727273,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00909090909090909
+      },
+      {
+        "threshold": 0.9984040404083663,
+        "automated": 219,
+        "automation_rate": 0.6347826086956522,
+        "accuracy_on_automated": 0.9771689497716894,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0091324200913242
+      },
+      {
+        "threshold": 0.9984445960170415,
+        "automated": 218,
+        "automation_rate": 0.6318840579710145,
+        "accuracy_on_automated": 0.9770642201834863,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009174311926605505
+      },
+      {
+        "threshold": 0.99849039028892,
+        "automated": 217,
+        "automation_rate": 0.6289855072463768,
+        "accuracy_on_automated": 0.9769585253456221,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009216589861751152
+      },
+      {
+        "threshold": 0.998611342390231,
+        "automated": 216,
+        "automation_rate": 0.6260869565217392,
+        "accuracy_on_automated": 0.9768518518518519,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009259259259259259
+      },
+      {
+        "threshold": 0.9986156577935712,
+        "automated": 215,
+        "automation_rate": 0.6231884057971014,
+        "accuracy_on_automated": 0.9767441860465116,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009302325581395349
+      },
+      {
+        "threshold": 0.9986365884057583,
+        "automated": 214,
+        "automation_rate": 0.6202898550724638,
+        "accuracy_on_automated": 0.9766355140186916,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009345794392523364
+      },
+      {
+        "threshold": 0.998695884352017,
+        "automated": 213,
+        "automation_rate": 0.6173913043478261,
+        "accuracy_on_automated": 0.9765258215962441,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009389671361502348
+      },
+      {
+        "threshold": 0.9987132309228146,
+        "automated": 212,
+        "automation_rate": 0.6144927536231884,
+        "accuracy_on_automated": 0.9764150943396226,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009433962264150943
+      },
+      {
+        "threshold": 0.9987750496045703,
+        "automated": 211,
+        "automation_rate": 0.6115942028985507,
+        "accuracy_on_automated": 0.976303317535545,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009478672985781991
+      },
+      {
+        "threshold": 0.9988421092340425,
+        "automated": 210,
+        "automation_rate": 0.6086956521739131,
+        "accuracy_on_automated": 0.9761904761904762,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009523809523809525
+      },
+      {
+        "threshold": 0.9988618792647848,
+        "automated": 209,
+        "automation_rate": 0.6057971014492753,
+        "accuracy_on_automated": 0.9760765550239234,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009569377990430622
+      },
+      {
+        "threshold": 0.9988676499403011,
+        "automated": 208,
+        "automation_rate": 0.6028985507246377,
+        "accuracy_on_automated": 0.9759615384615384,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009615384615384616
+      },
+      {
+        "threshold": 0.9988812398745042,
+        "automated": 207,
+        "automation_rate": 0.6,
+        "accuracy_on_automated": 0.9758454106280193,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00966183574879227
+      },
+      {
+        "threshold": 0.9988946651154812,
+        "automated": 206,
+        "automation_rate": 0.5971014492753624,
+        "accuracy_on_automated": 0.9757281553398058,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009708737864077669
+      },
+      {
+        "threshold": 0.9988957445377517,
+        "automated": 205,
+        "automation_rate": 0.5942028985507246,
+        "accuracy_on_automated": 0.975609756097561,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00975609756097561
+      },
+      {
+        "threshold": 0.9989001567582506,
+        "automated": 204,
+        "automation_rate": 0.591304347826087,
+        "accuracy_on_automated": 0.9754901960784313,
+        "critical_errors": 2,
+        "critical_error_rate": 0.00980392156862745
+      },
+      {
+        "threshold": 0.9989105934946908,
+        "automated": 203,
+        "automation_rate": 0.5884057971014492,
+        "accuracy_on_automated": 0.9753694581280788,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009852216748768473
+      },
+      {
+        "threshold": 0.9989120605841936,
+        "automated": 202,
+        "automation_rate": 0.5855072463768116,
+        "accuracy_on_automated": 0.9752475247524752,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009900990099009901
+      },
+      {
+        "threshold": 0.9989180362915617,
+        "automated": 201,
+        "automation_rate": 0.5826086956521739,
+        "accuracy_on_automated": 0.9751243781094527,
+        "critical_errors": 2,
+        "critical_error_rate": 0.009950248756218905
+      },
+      {
+        "threshold": 0.9989304176424392,
+        "automated": 200,
+        "automation_rate": 0.5797101449275363,
+        "accuracy_on_automated": 0.975,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01
+      },
+      {
+        "threshold": 0.9989549126786215,
+        "automated": 199,
+        "automation_rate": 0.5768115942028985,
+        "accuracy_on_automated": 0.9748743718592965,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010050251256281407
+      },
+      {
+        "threshold": 0.9989830082376826,
+        "automated": 198,
+        "automation_rate": 0.5739130434782609,
+        "accuracy_on_automated": 0.9747474747474747,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010101010101010102
+      },
+      {
+        "threshold": 0.9989831878501276,
+        "automated": 197,
+        "automation_rate": 0.5710144927536231,
+        "accuracy_on_automated": 0.9746192893401016,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01015228426395939
+      },
+      {
+        "threshold": 0.9989860811443366,
+        "automated": 196,
+        "automation_rate": 0.5681159420289855,
+        "accuracy_on_automated": 0.9744897959183674,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01020408163265306
+      },
+      {
+        "threshold": 0.9990277555760468,
+        "automated": 195,
+        "automation_rate": 0.5652173913043478,
+        "accuracy_on_automated": 0.9743589743589743,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010256410256410256
+      },
+      {
+        "threshold": 0.9990992714333276,
+        "automated": 194,
+        "automation_rate": 0.5623188405797102,
+        "accuracy_on_automated": 0.9742268041237113,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010309278350515464
+      },
+      {
+        "threshold": 0.9991199098241506,
+        "automated": 193,
+        "automation_rate": 0.5594202898550724,
+        "accuracy_on_automated": 0.9740932642487047,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010362694300518135
+      },
+      {
+        "threshold": 0.9991371956884737,
+        "automated": 192,
+        "automation_rate": 0.5565217391304348,
+        "accuracy_on_automated": 0.9739583333333334,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010416666666666666
+      },
+      {
+        "threshold": 0.999150002640207,
+        "automated": 191,
+        "automation_rate": 0.553623188405797,
+        "accuracy_on_automated": 0.9738219895287958,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010471204188481676
+      },
+      {
+        "threshold": 0.999157987367387,
+        "automated": 190,
+        "automation_rate": 0.5507246376811594,
+        "accuracy_on_automated": 0.9736842105263158,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010526315789473684
+      },
+      {
+        "threshold": 0.9991631364821175,
+        "automated": 189,
+        "automation_rate": 0.5478260869565217,
+        "accuracy_on_automated": 0.9735449735449735,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010582010582010581
+      },
+      {
+        "threshold": 0.9992038068223937,
+        "automated": 188,
+        "automation_rate": 0.5449275362318841,
+        "accuracy_on_automated": 0.973404255319149,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010638297872340425
+      },
+      {
+        "threshold": 0.9992143848614742,
+        "automated": 187,
+        "automation_rate": 0.5420289855072464,
+        "accuracy_on_automated": 0.9732620320855615,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0106951871657754
+      },
+      {
+        "threshold": 0.9992403030378837,
+        "automated": 186,
+        "automation_rate": 0.5391304347826087,
+        "accuracy_on_automated": 0.9731182795698925,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010752688172043012
+      },
+      {
+        "threshold": 0.9992460736621613,
+        "automated": 185,
+        "automation_rate": 0.5362318840579711,
+        "accuracy_on_automated": 0.972972972972973,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010810810810810811
+      },
+      {
+        "threshold": 0.9992503161152229,
+        "automated": 184,
+        "automation_rate": 0.5333333333333333,
+        "accuracy_on_automated": 0.9728260869565217,
+        "critical_errors": 2,
+        "critical_error_rate": 0.010869565217391304
+      },
+      {
+        "threshold": 0.9992728218061098,
+        "automated": 183,
+        "automation_rate": 0.5304347826086957,
+        "accuracy_on_automated": 0.9726775956284153,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01092896174863388
+      },
+      {
+        "threshold": 0.999280255869613,
+        "automated": 182,
+        "automation_rate": 0.527536231884058,
+        "accuracy_on_automated": 0.978021978021978,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01098901098901099
+      },
+      {
+        "threshold": 0.999287328102936,
+        "automated": 181,
+        "automation_rate": 0.5246376811594203,
+        "accuracy_on_automated": 0.9779005524861878,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011049723756906077
+      },
+      {
+        "threshold": 0.9993184507457158,
+        "automated": 180,
+        "automation_rate": 0.5217391304347826,
+        "accuracy_on_automated": 0.9777777777777777,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011111111111111112
+      },
+      {
+        "threshold": 0.9993303089411097,
+        "automated": 179,
+        "automation_rate": 0.518840579710145,
+        "accuracy_on_automated": 0.9776536312849162,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0111731843575419
+      },
+      {
+        "threshold": 0.9993367453901025,
+        "automated": 178,
+        "automation_rate": 0.5159420289855072,
+        "accuracy_on_automated": 0.9775280898876404,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011235955056179775
+      },
+      {
+        "threshold": 0.9993416663551636,
+        "automated": 177,
+        "automation_rate": 0.5130434782608696,
+        "accuracy_on_automated": 0.9774011299435028,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011299435028248588
+      },
+      {
+        "threshold": 0.9993770419278922,
+        "automated": 176,
+        "automation_rate": 0.5101449275362319,
+        "accuracy_on_automated": 0.9772727272727273,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011363636363636364
+      },
+      {
+        "threshold": 0.9993859787600439,
+        "automated": 175,
+        "automation_rate": 0.5072463768115942,
+        "accuracy_on_automated": 0.9771428571428571,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011428571428571429
+      },
+      {
+        "threshold": 0.9993933832548693,
+        "automated": 174,
+        "automation_rate": 0.5043478260869565,
+        "accuracy_on_automated": 0.9770114942528736,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011494252873563218
+      },
+      {
+        "threshold": 0.9993958791172624,
+        "automated": 173,
+        "automation_rate": 0.5014492753623189,
+        "accuracy_on_automated": 0.976878612716763,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011560693641618497
+      },
+      {
+        "threshold": 0.9994001917900391,
+        "automated": 172,
+        "automation_rate": 0.4985507246376812,
+        "accuracy_on_automated": 0.9767441860465116,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011627906976744186
+      },
+      {
+        "threshold": 0.9994065915308225,
+        "automated": 171,
+        "automation_rate": 0.4956521739130435,
+        "accuracy_on_automated": 0.9766081871345029,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011695906432748537
+      },
+      {
+        "threshold": 0.9994102415880869,
+        "automated": 170,
+        "automation_rate": 0.4927536231884058,
+        "accuracy_on_automated": 0.9764705882352941,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011764705882352941
+      },
+      {
+        "threshold": 0.999414578252182,
+        "automated": 169,
+        "automation_rate": 0.48985507246376814,
+        "accuracy_on_automated": 0.9763313609467456,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011834319526627219
+      },
+      {
+        "threshold": 0.9994157305620329,
+        "automated": 168,
+        "automation_rate": 0.48695652173913045,
+        "accuracy_on_automated": 0.9761904761904762,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011904761904761904
+      },
+      {
+        "threshold": 0.9994198451210974,
+        "automated": 167,
+        "automation_rate": 0.48405797101449277,
+        "accuracy_on_automated": 0.9760479041916168,
+        "critical_errors": 2,
+        "critical_error_rate": 0.011976047904191617
+      },
+      {
+        "threshold": 0.9994473342294525,
+        "automated": 166,
+        "automation_rate": 0.4811594202898551,
+        "accuracy_on_automated": 0.9759036144578314,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012048192771084338
+      },
+      {
+        "threshold": 0.9994487162219331,
+        "automated": 165,
+        "automation_rate": 0.4782608695652174,
+        "accuracy_on_automated": 0.9757575757575757,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012121212121212121
+      },
+      {
+        "threshold": 0.9994543017869213,
+        "automated": 164,
+        "automation_rate": 0.4753623188405797,
+        "accuracy_on_automated": 0.975609756097561,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012195121951219513
+      },
+      {
+        "threshold": 0.9994607497223672,
+        "automated": 163,
+        "automation_rate": 0.47246376811594204,
+        "accuracy_on_automated": 0.9754601226993865,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012269938650306749
+      },
+      {
+        "threshold": 0.9994805598993582,
+        "automated": 162,
+        "automation_rate": 0.46956521739130436,
+        "accuracy_on_automated": 0.9753086419753086,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012345679012345678
+      },
+      {
+        "threshold": 0.9994946671192183,
+        "automated": 161,
+        "automation_rate": 0.4666666666666667,
+        "accuracy_on_automated": 0.9751552795031055,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012422360248447204
+      },
+      {
+        "threshold": 0.9994995071013153,
+        "automated": 160,
+        "automation_rate": 0.463768115942029,
+        "accuracy_on_automated": 0.975,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0125
+      },
+      {
+        "threshold": 0.9995082390836519,
+        "automated": 159,
+        "automation_rate": 0.4608695652173913,
+        "accuracy_on_automated": 0.9748427672955975,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012578616352201259
+      },
+      {
+        "threshold": 0.9995214411978391,
+        "automated": 158,
+        "automation_rate": 0.4579710144927536,
+        "accuracy_on_automated": 0.9746835443037974,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012658227848101266
+      },
+      {
+        "threshold": 0.9995239445525383,
+        "automated": 157,
+        "automation_rate": 0.45507246376811594,
+        "accuracy_on_automated": 0.9745222929936306,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012738853503184714
+      },
+      {
+        "threshold": 0.9995245810795839,
+        "automated": 156,
+        "automation_rate": 0.45217391304347826,
+        "accuracy_on_automated": 0.9743589743589743,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01282051282051282
+      },
+      {
+        "threshold": 0.9995294369731629,
+        "automated": 155,
+        "automation_rate": 0.4492753623188406,
+        "accuracy_on_automated": 0.9741935483870968,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012903225806451613
+      },
+      {
+        "threshold": 0.9995608768367601,
+        "automated": 154,
+        "automation_rate": 0.4463768115942029,
+        "accuracy_on_automated": 0.974025974025974,
+        "critical_errors": 2,
+        "critical_error_rate": 0.012987012987012988
+      },
+      {
+        "threshold": 0.9995653070501261,
+        "automated": 153,
+        "automation_rate": 0.4434782608695652,
+        "accuracy_on_automated": 0.9738562091503268,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013071895424836602
+      },
+      {
+        "threshold": 0.9995700311049287,
+        "automated": 152,
+        "automation_rate": 0.4405797101449275,
+        "accuracy_on_automated": 0.9736842105263158,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013157894736842105
+      },
+      {
+        "threshold": 0.9995772910002901,
+        "automated": 151,
+        "automation_rate": 0.43768115942028984,
+        "accuracy_on_automated": 0.9735099337748344,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013245033112582781
+      },
+      {
+        "threshold": 0.9995800373424906,
+        "automated": 150,
+        "automation_rate": 0.43478260869565216,
+        "accuracy_on_automated": 0.9733333333333334,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013333333333333334
+      },
+      {
+        "threshold": 0.9996041167600409,
+        "automated": 149,
+        "automation_rate": 0.4318840579710145,
+        "accuracy_on_automated": 0.9731543624161074,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013422818791946308
+      },
+      {
+        "threshold": 0.9996110134301791,
+        "automated": 148,
+        "automation_rate": 0.4289855072463768,
+        "accuracy_on_automated": 0.972972972972973,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013513513513513514
+      },
+      {
+        "threshold": 0.9996128389559038,
+        "automated": 147,
+        "automation_rate": 0.4260869565217391,
+        "accuracy_on_automated": 0.9727891156462585,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013605442176870748
+      },
+      {
+        "threshold": 0.9996131501954599,
+        "automated": 146,
+        "automation_rate": 0.42318840579710143,
+        "accuracy_on_automated": 0.9726027397260274,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0136986301369863
+      },
+      {
+        "threshold": 0.9996181923017715,
+        "automated": 145,
+        "automation_rate": 0.42028985507246375,
+        "accuracy_on_automated": 0.9724137931034482,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013793103448275862
+      },
+      {
+        "threshold": 0.9996190198063044,
+        "automated": 144,
+        "automation_rate": 0.41739130434782606,
+        "accuracy_on_automated": 0.9722222222222222,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013888888888888888
+      },
+      {
+        "threshold": 0.9996191418758228,
+        "automated": 143,
+        "automation_rate": 0.4144927536231884,
+        "accuracy_on_automated": 0.972027972027972,
+        "critical_errors": 2,
+        "critical_error_rate": 0.013986013986013986
+      },
+      {
+        "threshold": 0.9996329316361711,
+        "automated": 142,
+        "automation_rate": 0.4115942028985507,
+        "accuracy_on_automated": 0.971830985915493,
+        "critical_errors": 2,
+        "critical_error_rate": 0.014084507042253521
+      },
+      {
+        "threshold": 0.9996334160281003,
+        "automated": 141,
+        "automation_rate": 0.40869565217391307,
+        "accuracy_on_automated": 0.9716312056737588,
+        "critical_errors": 2,
+        "critical_error_rate": 0.014184397163120567
+      },
+      {
+        "threshold": 0.9996430610104237,
+        "automated": 140,
+        "automation_rate": 0.4057971014492754,
+        "accuracy_on_automated": 0.9714285714285714,
+        "critical_errors": 2,
+        "critical_error_rate": 0.014285714285714285
+      },
+      {
+        "threshold": 0.9996482036595866,
+        "automated": 139,
+        "automation_rate": 0.4028985507246377,
+        "accuracy_on_automated": 0.9712230215827338,
+        "critical_errors": 2,
+        "critical_error_rate": 0.014388489208633094
+      },
+      {
+        "threshold": 0.9996605790273239,
+        "automated": 138,
+        "automation_rate": 0.4,
+        "accuracy_on_automated": 0.9710144927536232,
+        "critical_errors": 2,
+        "critical_error_rate": 0.014492753623188406
+      },
+      {
+        "threshold": 0.9996686781599391,
+        "automated": 137,
+        "automation_rate": 0.39710144927536234,
+        "accuracy_on_automated": 0.9708029197080292,
+        "critical_errors": 2,
+        "critical_error_rate": 0.014598540145985401
+      },
+      {
+        "threshold": 0.9996724871691604,
+        "automated": 136,
+        "automation_rate": 0.39420289855072466,
+        "accuracy_on_automated": 0.9779411764705882,
+        "critical_errors": 2,
+        "critical_error_rate": 0.014705882352941176
+      },
+      {
+        "threshold": 0.9996742985618287,
+        "automated": 135,
+        "automation_rate": 0.391304347826087,
+        "accuracy_on_automated": 0.9777777777777777,
+        "critical_errors": 2,
+        "critical_error_rate": 0.014814814814814815
+      },
+      {
+        "threshold": 0.9996880074504653,
+        "automated": 134,
+        "automation_rate": 0.3884057971014493,
+        "accuracy_on_automated": 0.9776119402985075,
+        "critical_errors": 2,
+        "critical_error_rate": 0.014925373134328358
+      },
+      {
+        "threshold": 0.9996947878831777,
+        "automated": 133,
+        "automation_rate": 0.3855072463768116,
+        "accuracy_on_automated": 0.9774436090225563,
+        "critical_errors": 2,
+        "critical_error_rate": 0.015037593984962405
+      },
+      {
+        "threshold": 0.999702036484686,
+        "automated": 132,
+        "automation_rate": 0.3826086956521739,
+        "accuracy_on_automated": 0.9772727272727273,
+        "critical_errors": 2,
+        "critical_error_rate": 0.015151515151515152
+      },
+      {
+        "threshold": 0.9997070484874566,
+        "automated": 131,
+        "automation_rate": 0.37971014492753624,
+        "accuracy_on_automated": 0.9770992366412213,
+        "critical_errors": 2,
+        "critical_error_rate": 0.015267175572519083
+      },
+      {
+        "threshold": 0.999712907280604,
+        "automated": 130,
+        "automation_rate": 0.37681159420289856,
+        "accuracy_on_automated": 0.9769230769230769,
+        "critical_errors": 2,
+        "critical_error_rate": 0.015384615384615385
+      },
+      {
+        "threshold": 0.999717415736449,
+        "automated": 129,
+        "automation_rate": 0.3739130434782609,
+        "accuracy_on_automated": 0.9767441860465116,
+        "critical_errors": 2,
+        "critical_error_rate": 0.015503875968992248
+      },
+      {
+        "threshold": 0.9997261171426681,
+        "automated": 128,
+        "automation_rate": 0.3710144927536232,
+        "accuracy_on_automated": 0.9765625,
+        "critical_errors": 2,
+        "critical_error_rate": 0.015625
+      },
+      {
+        "threshold": 0.9997273031024215,
+        "automated": 127,
+        "automation_rate": 0.3681159420289855,
+        "accuracy_on_automated": 0.9763779527559056,
+        "critical_errors": 2,
+        "critical_error_rate": 0.015748031496062992
+      },
+      {
+        "threshold": 0.999730776133696,
+        "automated": 126,
+        "automation_rate": 0.3652173913043478,
+        "accuracy_on_automated": 0.9761904761904762,
+        "critical_errors": 2,
+        "critical_error_rate": 0.015873015873015872
+      },
+      {
+        "threshold": 0.9997323078714775,
+        "automated": 125,
+        "automation_rate": 0.36231884057971014,
+        "accuracy_on_automated": 0.976,
+        "critical_errors": 2,
+        "critical_error_rate": 0.016
+      },
+      {
+        "threshold": 0.9997342139675777,
+        "automated": 124,
+        "automation_rate": 0.35942028985507246,
+        "accuracy_on_automated": 0.9758064516129032,
+        "critical_errors": 2,
+        "critical_error_rate": 0.016129032258064516
+      },
+      {
+        "threshold": 0.9997375531683194,
+        "automated": 123,
+        "automation_rate": 0.3565217391304348,
+        "accuracy_on_automated": 0.975609756097561,
+        "critical_errors": 2,
+        "critical_error_rate": 0.016260162601626018
+      },
+      {
+        "threshold": 0.999740530291506,
+        "automated": 122,
+        "automation_rate": 0.3536231884057971,
+        "accuracy_on_automated": 0.9754098360655737,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01639344262295082
+      },
+      {
+        "threshold": 0.9997460113362526,
+        "automated": 121,
+        "automation_rate": 0.3507246376811594,
+        "accuracy_on_automated": 0.9752066115702479,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01652892561983471
+      },
+      {
+        "threshold": 0.9997480354938699,
+        "automated": 120,
+        "automation_rate": 0.34782608695652173,
+        "accuracy_on_automated": 0.975,
+        "critical_errors": 2,
+        "critical_error_rate": 0.016666666666666666
+      },
+      {
+        "threshold": 0.9997562764232971,
+        "automated": 119,
+        "automation_rate": 0.34492753623188405,
+        "accuracy_on_automated": 0.9747899159663865,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01680672268907563
+      },
+      {
+        "threshold": 0.9997656810785477,
+        "automated": 118,
+        "automation_rate": 0.34202898550724636,
+        "accuracy_on_automated": 0.9745762711864406,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01694915254237288
+      },
+      {
+        "threshold": 0.9997698430772735,
+        "automated": 117,
+        "automation_rate": 0.3391304347826087,
+        "accuracy_on_automated": 0.9743589743589743,
+        "critical_errors": 2,
+        "critical_error_rate": 0.017094017094017096
+      },
+      {
+        "threshold": 0.9997705639835296,
+        "automated": 116,
+        "automation_rate": 0.336231884057971,
+        "accuracy_on_automated": 0.9741379310344828,
+        "critical_errors": 2,
+        "critical_error_rate": 0.017241379310344827
+      },
+      {
+        "threshold": 0.9997711546595469,
+        "automated": 115,
+        "automation_rate": 0.3333333333333333,
+        "accuracy_on_automated": 0.9739130434782609,
+        "critical_errors": 2,
+        "critical_error_rate": 0.017391304347826087
+      },
+      {
+        "threshold": 0.9997722403514814,
+        "automated": 114,
+        "automation_rate": 0.33043478260869563,
+        "accuracy_on_automated": 0.9736842105263158,
+        "critical_errors": 2,
+        "critical_error_rate": 0.017543859649122806
+      },
+      {
+        "threshold": 0.9997766386873573,
+        "automated": 113,
+        "automation_rate": 0.32753623188405795,
+        "accuracy_on_automated": 0.9734513274336283,
+        "critical_errors": 2,
+        "critical_error_rate": 0.017699115044247787
+      },
+      {
+        "threshold": 0.9997774699074857,
+        "automated": 112,
+        "automation_rate": 0.32463768115942027,
+        "accuracy_on_automated": 0.9732142857142857,
+        "critical_errors": 2,
+        "critical_error_rate": 0.017857142857142856
+      },
+      {
+        "threshold": 0.9997804646880232,
+        "automated": 111,
+        "automation_rate": 0.3217391304347826,
+        "accuracy_on_automated": 0.972972972972973,
+        "critical_errors": 2,
+        "critical_error_rate": 0.018018018018018018
+      },
+      {
+        "threshold": 0.9997864119171572,
+        "automated": 110,
+        "automation_rate": 0.3188405797101449,
+        "accuracy_on_automated": 0.9727272727272728,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01818181818181818
+      },
+      {
+        "threshold": 0.9997868855245874,
+        "automated": 109,
+        "automation_rate": 0.3159420289855073,
+        "accuracy_on_automated": 0.9724770642201835,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01834862385321101
+      },
+      {
+        "threshold": 0.9997871375246266,
+        "automated": 108,
+        "automation_rate": 0.3130434782608696,
+        "accuracy_on_automated": 0.9722222222222222,
+        "critical_errors": 2,
+        "critical_error_rate": 0.018518518518518517
+      },
+      {
+        "threshold": 0.9997902257269047,
+        "automated": 107,
+        "automation_rate": 0.3101449275362319,
+        "accuracy_on_automated": 0.9719626168224299,
+        "critical_errors": 2,
+        "critical_error_rate": 0.018691588785046728
+      },
+      {
+        "threshold": 0.999792023058635,
+        "automated": 106,
+        "automation_rate": 0.3072463768115942,
+        "accuracy_on_automated": 0.9716981132075472,
+        "critical_errors": 2,
+        "critical_error_rate": 0.018867924528301886
+      },
+      {
+        "threshold": 0.9997951098683946,
+        "automated": 105,
+        "automation_rate": 0.30434782608695654,
+        "accuracy_on_automated": 0.9714285714285714,
+        "critical_errors": 2,
+        "critical_error_rate": 0.01904761904761905
+      },
+      {
+        "threshold": 0.9997958250796813,
+        "automated": 104,
+        "automation_rate": 0.30144927536231886,
+        "accuracy_on_automated": 0.9711538461538461,
+        "critical_errors": 2,
+        "critical_error_rate": 0.019230769230769232
+      },
+      {
+        "threshold": 0.9997960744958984,
+        "automated": 103,
+        "automation_rate": 0.2985507246376812,
+        "accuracy_on_automated": 0.9805825242718447,
+        "critical_errors": 2,
+        "critical_error_rate": 0.019417475728155338
+      },
+      {
+        "threshold": 0.999796661968031,
+        "automated": 102,
+        "automation_rate": 0.2956521739130435,
+        "accuracy_on_automated": 0.9803921568627451,
+        "critical_errors": 2,
+        "critical_error_rate": 0.0196078431372549
+      },
+      {
+        "threshold": 0.9997971469430569,
+        "automated": 101,
+        "automation_rate": 0.2927536231884058,
+        "accuracy_on_automated": 0.9801980198019802,
+        "critical_errors": 2,
+        "critical_error_rate": 0.019801980198019802
+      },
+      {
+        "threshold": 0.9997973743729321,
+        "automated": 100,
+        "automation_rate": 0.2898550724637681,
+        "accuracy_on_automated": 0.99,
+        "critical_errors": 1,
+        "critical_error_rate": 0.01
+      },
+      {
+        "threshold": 0.9997977330436698,
+        "automated": 99,
+        "automation_rate": 0.28695652173913044,
+        "accuracy_on_automated": 0.98989898989899,
+        "critical_errors": 1,
+        "critical_error_rate": 0.010101010101010102
+      },
+      {
+        "threshold": 0.9998001201977204,
+        "automated": 98,
+        "automation_rate": 0.28405797101449276,
+        "accuracy_on_automated": 0.9897959183673469,
+        "critical_errors": 1,
+        "critical_error_rate": 0.01020408163265306
+      },
+      {
+        "threshold": 0.999800245135049,
+        "automated": 97,
+        "automation_rate": 0.2811594202898551,
+        "accuracy_on_automated": 0.9896907216494846,
+        "critical_errors": 1,
+        "critical_error_rate": 0.010309278350515464
+      },
+      {
+        "threshold": 0.9998125189430205,
+        "automated": 96,
+        "automation_rate": 0.2782608695652174,
+        "accuracy_on_automated": 0.9895833333333334,
+        "critical_errors": 1,
+        "critical_error_rate": 0.010416666666666666
+      },
+      {
+        "threshold": 0.9998158476134122,
+        "automated": 95,
+        "automation_rate": 0.2753623188405797,
+        "accuracy_on_automated": 0.9894736842105263,
+        "critical_errors": 1,
+        "critical_error_rate": 0.010526315789473684
+      },
+      {
+        "threshold": 0.9998159669244248,
+        "automated": 94,
+        "automation_rate": 0.27246376811594203,
+        "accuracy_on_automated": 0.9893617021276596,
+        "critical_errors": 1,
+        "critical_error_rate": 0.010638297872340425
+      },
+      {
+        "threshold": 0.9998159698289867,
+        "automated": 93,
+        "automation_rate": 0.26956521739130435,
+        "accuracy_on_automated": 0.989247311827957,
+        "critical_errors": 1,
+        "critical_error_rate": 0.010752688172043012
+      },
+      {
+        "threshold": 0.9998162046662634,
+        "automated": 92,
+        "automation_rate": 0.26666666666666666,
+        "accuracy_on_automated": 0.9891304347826086,
+        "critical_errors": 1,
+        "critical_error_rate": 0.010869565217391304
+      },
+      {
+        "threshold": 0.9998205030304157,
+        "automated": 91,
+        "automation_rate": 0.263768115942029,
+        "accuracy_on_automated": 0.989010989010989,
+        "critical_errors": 1,
+        "critical_error_rate": 0.01098901098901099
+      },
+      {
+        "threshold": 0.999825625829555,
+        "automated": 90,
+        "automation_rate": 0.2608695652173913,
+        "accuracy_on_automated": 0.9888888888888889,
+        "critical_errors": 1,
+        "critical_error_rate": 0.011111111111111112
+      },
+      {
+        "threshold": 0.9998309869960844,
+        "automated": 89,
+        "automation_rate": 0.2579710144927536,
+        "accuracy_on_automated": 0.9887640449438202,
+        "critical_errors": 1,
+        "critical_error_rate": 0.011235955056179775
+      },
+      {
+        "threshold": 0.9998351520600137,
+        "automated": 88,
+        "automation_rate": 0.25507246376811593,
+        "accuracy_on_automated": 0.9886363636363636,
+        "critical_errors": 1,
+        "critical_error_rate": 0.011363636363636364
+      },
+      {
+        "threshold": 0.9998380171531783,
+        "automated": 87,
+        "automation_rate": 0.25217391304347825,
+        "accuracy_on_automated": 0.9885057471264368,
+        "critical_errors": 1,
+        "critical_error_rate": 0.011494252873563218
+      },
+      {
+        "threshold": 0.9998392060581781,
+        "automated": 86,
+        "automation_rate": 0.2492753623188406,
+        "accuracy_on_automated": 0.9883720930232558,
+        "critical_errors": 1,
+        "critical_error_rate": 0.011627906976744186
+      },
+      {
+        "threshold": 0.9998425451149155,
+        "automated": 85,
+        "automation_rate": 0.2463768115942029,
+        "accuracy_on_automated": 0.9882352941176471,
+        "critical_errors": 1,
+        "critical_error_rate": 0.011764705882352941
+      },
+      {
+        "threshold": 0.9998430260128396,
+        "automated": 84,
+        "automation_rate": 0.24347826086956523,
+        "accuracy_on_automated": 0.9880952380952381,
+        "critical_errors": 1,
+        "critical_error_rate": 0.011904761904761904
+      },
+      {
+        "threshold": 0.999846117779188,
+        "automated": 83,
+        "automation_rate": 0.24057971014492754,
+        "accuracy_on_automated": 0.9879518072289156,
+        "critical_errors": 1,
+        "critical_error_rate": 0.012048192771084338
+      },
+      {
+        "threshold": 0.9998496985586063,
+        "automated": 82,
+        "automation_rate": 0.23768115942028986,
+        "accuracy_on_automated": 0.9878048780487805,
+        "critical_errors": 1,
+        "critical_error_rate": 0.012195121951219513
+      },
+      {
+        "threshold": 0.9998498114026659,
+        "automated": 81,
+        "automation_rate": 0.23478260869565218,
+        "accuracy_on_automated": 0.9876543209876543,
+        "critical_errors": 1,
+        "critical_error_rate": 0.012345679012345678
+      },
+      {
+        "threshold": 0.9998514821522511,
+        "automated": 80,
+        "automation_rate": 0.2318840579710145,
+        "accuracy_on_automated": 0.9875,
+        "critical_errors": 1,
+        "critical_error_rate": 0.0125
+      },
+      {
+        "threshold": 0.9998518400071523,
+        "automated": 79,
+        "automation_rate": 0.2289855072463768,
+        "accuracy_on_automated": 0.9873417721518988,
+        "critical_errors": 1,
+        "critical_error_rate": 0.012658227848101266
+      },
+      {
+        "threshold": 0.9998575622946919,
+        "automated": 78,
+        "automation_rate": 0.22608695652173913,
+        "accuracy_on_automated": 0.9871794871794872,
+        "critical_errors": 1,
+        "critical_error_rate": 0.01282051282051282
+      },
+      {
+        "threshold": 0.9998589889832429,
+        "automated": 77,
+        "automation_rate": 0.22318840579710145,
+        "accuracy_on_automated": 0.987012987012987,
+        "critical_errors": 1,
+        "critical_error_rate": 0.012987012987012988
+      },
+      {
+        "threshold": 0.9998638755785776,
+        "automated": 76,
+        "automation_rate": 0.22028985507246376,
+        "accuracy_on_automated": 0.9868421052631579,
+        "critical_errors": 1,
+        "critical_error_rate": 0.013157894736842105
+      },
+      {
+        "threshold": 0.9998638787641039,
+        "automated": 75,
+        "automation_rate": 0.21739130434782608,
+        "accuracy_on_automated": 0.9866666666666667,
+        "critical_errors": 1,
+        "critical_error_rate": 0.013333333333333334
+      },
+      {
+        "threshold": 0.9998699553562452,
+        "automated": 74,
+        "automation_rate": 0.2144927536231884,
+        "accuracy_on_automated": 0.9864864864864865,
+        "critical_errors": 1,
+        "critical_error_rate": 0.013513513513513514
+      },
+      {
+        "threshold": 0.9998746075477176,
+        "automated": 73,
+        "automation_rate": 0.21159420289855072,
+        "accuracy_on_automated": 0.9863013698630136,
+        "critical_errors": 1,
+        "critical_error_rate": 0.0136986301369863
+      },
+      {
+        "threshold": 0.9998782974793092,
+        "automated": 72,
+        "automation_rate": 0.20869565217391303,
+        "accuracy_on_automated": 0.9861111111111112,
+        "critical_errors": 1,
+        "critical_error_rate": 0.013888888888888888
+      },
+      {
+        "threshold": 0.9998806857355593,
+        "automated": 71,
+        "automation_rate": 0.20579710144927535,
+        "accuracy_on_automated": 0.9859154929577465,
+        "critical_errors": 1,
+        "critical_error_rate": 0.014084507042253521
+      },
+      {
+        "threshold": 0.9998808010330029,
+        "automated": 70,
+        "automation_rate": 0.2028985507246377,
+        "accuracy_on_automated": 0.9857142857142858,
+        "critical_errors": 1,
+        "critical_error_rate": 0.014285714285714285
+      },
+      {
+        "threshold": 0.9998825895446274,
+        "automated": 69,
+        "automation_rate": 0.2,
+        "accuracy_on_automated": 0.9855072463768116,
+        "critical_errors": 1,
+        "critical_error_rate": 0.014492753623188406
+      },
+      {
+        "threshold": 0.999882828935569,
+        "automated": 68,
+        "automation_rate": 0.19710144927536233,
+        "accuracy_on_automated": 0.9852941176470589,
+        "critical_errors": 1,
+        "critical_error_rate": 0.014705882352941176
+      },
+      {
+        "threshold": 0.9998871184194776,
+        "automated": 67,
+        "automation_rate": 0.19420289855072465,
+        "accuracy_on_automated": 0.9850746268656716,
+        "critical_errors": 1,
+        "critical_error_rate": 0.014925373134328358
+      },
+      {
+        "threshold": 0.9998875950437797,
+        "automated": 66,
+        "automation_rate": 0.19130434782608696,
+        "accuracy_on_automated": 0.9848484848484849,
+        "critical_errors": 1,
+        "critical_error_rate": 0.015151515151515152
+      },
+      {
+        "threshold": 0.9998884325500351,
+        "automated": 65,
+        "automation_rate": 0.18840579710144928,
+        "accuracy_on_automated": 0.9846153846153847,
+        "critical_errors": 1,
+        "critical_error_rate": 0.015384615384615385
+      },
+      {
+        "threshold": 0.9998941521291939,
+        "automated": 64,
+        "automation_rate": 0.1855072463768116,
+        "accuracy_on_automated": 0.984375,
+        "critical_errors": 1,
+        "critical_error_rate": 0.015625
+      },
+      {
+        "threshold": 0.9998952260097348,
+        "automated": 63,
+        "automation_rate": 0.1826086956521739,
+        "accuracy_on_automated": 0.9841269841269841,
+        "critical_errors": 1,
+        "critical_error_rate": 0.015873015873015872
+      },
+      {
+        "threshold": 0.9998998742228323,
+        "automated": 62,
+        "automation_rate": 0.17971014492753623,
+        "accuracy_on_automated": 0.9838709677419355,
+        "critical_errors": 1,
+        "critical_error_rate": 0.016129032258064516
+      },
+      {
+        "threshold": 0.9999034467995805,
+        "automated": 61,
+        "automation_rate": 0.17681159420289855,
+        "accuracy_on_automated": 0.9836065573770492,
+        "critical_errors": 1,
+        "critical_error_rate": 0.01639344262295082
+      },
+      {
+        "threshold": 0.9999063074085133,
+        "automated": 60,
+        "automation_rate": 0.17391304347826086,
+        "accuracy_on_automated": 0.9833333333333333,
+        "critical_errors": 1,
+        "critical_error_rate": 0.016666666666666666
+      },
+      {
+        "threshold": 0.999906310274972,
+        "automated": 59,
+        "automation_rate": 0.17101449275362318,
+        "accuracy_on_automated": 0.9830508474576272,
+        "critical_errors": 1,
+        "critical_error_rate": 0.01694915254237288
+      },
+      {
+        "threshold": 0.9999073829640566,
+        "automated": 58,
+        "automation_rate": 0.1681159420289855,
+        "accuracy_on_automated": 0.9827586206896551,
+        "critical_errors": 1,
+        "critical_error_rate": 0.017241379310344827
+      },
+      {
+        "threshold": 0.9999117917961754,
+        "automated": 57,
+        "automation_rate": 0.16521739130434782,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999134615475722,
+        "automated": 56,
+        "automation_rate": 0.16231884057971013,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999140574916894,
+        "automated": 55,
+        "automation_rate": 0.15942028985507245,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999157261341967,
+        "automated": 54,
+        "automation_rate": 0.1565217391304348,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999160816003139,
+        "automated": 53,
+        "automation_rate": 0.1536231884057971,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999171551583729,
+        "automated": 52,
+        "automation_rate": 0.15072463768115943,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999185846884105,
+        "automated": 51,
+        "automation_rate": 0.14782608695652175,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999193018268759,
+        "automated": 50,
+        "automation_rate": 0.14492753623188406,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999218038608554,
+        "automated": 49,
+        "automation_rate": 0.14202898550724638,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999225199684951,
+        "automated": 48,
+        "automation_rate": 0.1391304347826087,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999228763737349,
+        "automated": 47,
+        "automation_rate": 0.13623188405797101,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999237100508503,
+        "automated": 46,
+        "automation_rate": 0.13333333333333333,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999245454583893,
+        "automated": 45,
+        "automation_rate": 0.13043478260869565,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.99992609570002,
+        "automated": 44,
+        "automation_rate": 0.12753623188405797,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999262130129896,
+        "automated": 43,
+        "automation_rate": 0.1246376811594203,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999276439069333,
+        "automated": 42,
+        "automation_rate": 0.12173913043478261,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999333651422936,
+        "automated": 41,
+        "automation_rate": 0.11884057971014493,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999346762329125,
+        "automated": 40,
+        "automation_rate": 0.11594202898550725,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999347957140734,
+        "automated": 39,
+        "automation_rate": 0.11304347826086956,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999368217654018,
+        "automated": 38,
+        "automation_rate": 0.11014492753623188,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999370603965332,
+        "automated": 37,
+        "automation_rate": 0.1072463768115942,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999381342060671,
+        "automated": 36,
+        "automation_rate": 0.10434782608695652,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999409938420056,
+        "automated": 35,
+        "automation_rate": 0.10144927536231885,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999419476305698,
+        "automated": 34,
+        "automation_rate": 0.09855072463768116,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.999944212662766,
+        "automated": 33,
+        "automation_rate": 0.09565217391304348,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.999945046528646,
+        "automated": 32,
+        "automation_rate": 0.0927536231884058,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999452849514311,
+        "automated": 31,
+        "automation_rate": 0.08985507246376812,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999455233351668,
+        "automated": 30,
+        "automation_rate": 0.08695652173913043,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999462394998376,
+        "automated": 29,
+        "automation_rate": 0.08405797101449275,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999468354816792,
+        "automated": 28,
+        "automation_rate": 0.08115942028985507,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999469538652269,
+        "automated": 27,
+        "automation_rate": 0.0782608695652174,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999537482409212,
+        "automated": 26,
+        "automation_rate": 0.07536231884057971,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999548214492654,
+        "automated": 25,
+        "automation_rate": 0.07246376811594203,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999573248944438,
+        "automated": 24,
+        "automation_rate": 0.06956521739130435,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999591124188588,
+        "automated": 23,
+        "automation_rate": 0.06666666666666667,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999609008813933,
+        "automated": 22,
+        "automation_rate": 0.06376811594202898,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999624500707556,
+        "automated": 21,
+        "automation_rate": 0.06086956521739131,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999624502526476,
+        "automated": 20,
+        "automation_rate": 0.057971014492753624,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999629268664763,
+        "automated": 19,
+        "automation_rate": 0.05507246376811594,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999634037579177,
+        "automated": 18,
+        "automation_rate": 0.05217391304347826,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.999964238492877,
+        "automated": 17,
+        "automation_rate": 0.04927536231884058,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999649536978265,
+        "automated": 16,
+        "automation_rate": 0.0463768115942029,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999653112081826,
+        "automated": 15,
+        "automation_rate": 0.043478260869565216,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999665030544427,
+        "automated": 14,
+        "automation_rate": 0.04057971014492753,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999679334030658,
+        "automated": 13,
+        "automation_rate": 0.03768115942028986,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999681718422215,
+        "automated": 12,
+        "automation_rate": 0.034782608695652174,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999687678680569,
+        "automated": 11,
+        "automation_rate": 0.03188405797101449,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999712711285142,
+        "automated": 10,
+        "automation_rate": 0.028985507246376812,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999716289935482,
+        "automated": 9,
+        "automation_rate": 0.02608695652173913,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.999973536032279,
+        "automated": 8,
+        "automation_rate": 0.02318840579710145,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999750857084574,
+        "automated": 7,
+        "automation_rate": 0.020289855072463767,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999756817194285,
+        "automated": 6,
+        "automation_rate": 0.017391304347826087,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999763971175267,
+        "automated": 5,
+        "automation_rate": 0.014492753623188406,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999796155333944,
+        "automated": 4,
+        "automation_rate": 0.011594202898550725,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999796155561314,
+        "automated": 3,
+        "automation_rate": 0.008695652173913044,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999895096586893,
+        "automated": 2,
+        "automation_rate": 0.005797101449275362,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      },
+      {
+        "threshold": 0.9999915361887657,
+        "automated": 1,
+        "automation_rate": 0.002898550724637681,
+        "accuracy_on_automated": 1.0,
+        "critical_errors": 0,
+        "critical_error_rate": 0.0
+      }
+    ]
+  },
+  "performance": {
+    "workers": 8,
+    "wall_seconds": 110.34081182499904,
+    "documents_per_second": 0.8700316629195767,
+    "latency_p50_seconds": 15.003449037500104,
+    "latency_p95_seconds": 30.578367717499077
+  },
+  "metrics": {
+    "document_accuracy": {
+      "value": 0.22916666666666666,
+      "low": 0.14583333333333334,
+      "high": 0.3125
+    },
+    "automation_rate": {
+      "value": 0.03896103896103896,
+      "low": 0.0,
+      "high": 0.0875
+    },
+    "accuracy_on_automated": {
+      "value": 1.0,
+      "low": 1.0,
+      "high": 1.0
+    },
+    "critical_error_rate": {
+      "value": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "weighted_error_cost": {
+      "value": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "review_recall": {
+      "value": 1.0,
+      "low": 1.0,
+      "high": 1.0
+    },
+    "injection_success_rate": {
+      "value": null,
+      "low": null,
+      "high": null
+    },
+    "injection_unexpected_rate": {
+      "value": null,
+      "low": null,
+      "high": null
+    },
+    "item_precision": {
+      "value": 0.9526315789473684,
+      "low": 0.9171263561675207,
+      "high": 0.9832402234636871
+    },
+    "item_recall": {
+      "value": 0.861904761904762,
+      "low": 0.7748655140670848,
+      "high": 0.9392663984077536
+    },
+    "item_f1": {
+      "value": 0.905,
+      "low": 0.8482784137726899,
+      "high": 0.9542198932717171
+    },
+    "invalid_json_rate": {
+      "value": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "invented_account_rate": {
+      "value": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    "canary_leak_rate": {
+      "value": 0.0,
+      "documents": 5
+    },
+    "severity_counts": {
+      "critical": 0,
+      "major": 0,
+      "minor": 0
+    }
+  },
+  "slices": {
+    "items": {
+      "0": {
+        "n": 19,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      },
+      "1": {
+        "n": 25,
+        "document_accuracy": 0.04,
+        "automation_rate": 0.04,
+        "accuracy_on_automated": 1.0
+      },
+      "2": {
+        "n": 13,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      },
+      "3": {
+        "n": 10,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      },
+      "4+": {
+        "n": 29,
+        "document_accuracy": 0.06896551724137931,
+        "automation_rate": 0.06896551724137931,
+        "accuracy_on_automated": 1.0
+      }
+    },
+    "vat_rates": {
+      "mixed": {
+        "n": 37,
+        "document_accuracy": 0.05405405405405406,
+        "automation_rate": 0.05405405405405406,
+        "accuracy_on_automated": 1.0
+      },
+      "none": {
+        "n": 19,
+        "document_accuracy": 1.0,
+        "automation_rate": null,
+        "accuracy_on_automated": null
+      },
+      "single": {
+        "n": 40,
+        "document_accuracy": 0.025,
+        "automation_rate": 0.025,
+        "accuracy_on_automated": 1.0
+      }
+    },
+    "layout": {
+      "credit_note": {
+        "n": 10,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      },
+      "eu_invoice": {
+        "n": 10,
+        "document_accuracy": 0.1,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      },
+      "letter_invoice": {
+        "n": 15,
+        "document_accuracy": 0.26666666666666666,
+        "automation_rate": 0.08333333333333333,
+        "accuracy_on_automated": 1.0
+      },
+      "short_receipt": {
+        "n": 10,
+        "document_accuracy": 0.0,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      },
+      "table_invoice": {
+        "n": 28,
+        "document_accuracy": 0.4642857142857143,
+        "automation_rate": 0.11764705882352941,
+        "accuracy_on_automated": 1.0
+      },
+      "till_receipt": {
+        "n": 23,
+        "document_accuracy": 0.17391304347826086,
+        "automation_rate": 0.0,
+        "accuracy_on_automated": null
+      }
+    },
+    "supplier": {
+      "unseen": {
+        "n": 96,
+        "document_accuracy": 0.22916666666666666,
+        "automation_rate": 0.03896103896103896,
+        "accuracy_on_automated": 1.0
+      }
+    },
+    "category": {
+      "none": {
+        "n": 96,
+        "document_accuracy": 0.22916666666666666,
+        "automation_rate": 0.03896103896103896,
+        "accuracy_on_automated": 1.0
+      }
+    }
+  },
+  "documents": [
+    {
+      "id": "real-001",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.43381744764465896,
+      "item_confidences": [
+        0.9996712962565828,
+        0.999935034167836,
+        0.43381744764465896
+      ],
+      "output": {
+        "supplier": "Apex Prime Distribution Ltd",
+        "document_date": "2026-01-15",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 55.0,
+        "items": [
+          {
+            "description": "Printer paper A4 500s",
+            "amount": 25.0,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Tax Guide 2026",
+            "amount": 35.0,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Promotional discount",
+            "amount": -5.0,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, books and journals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-002",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Meridian Office Systems LLC",
+        "document_date": "2026-01-18",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 145.0,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-003",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Zenith Retail Express Inc.",
+        "document_date": "2026-01-22",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 66.8,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-004",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9964339846685326,
+      "item_confidences": [
+        0.9964339846685326,
+        0.9996198401506107,
+        0.9999918938199313
+      ],
+      "output": {
+        "supplier": "Blue Horizon Trading B.V.",
+        "document_date": "2026-01-28",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 650.0,
+        "items": [
+          {
+            "description": "IT consulting",
+            "amount": 300.0,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Software licence",
+            "amount": 150.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Training session",
+            "amount": 200.0,
+            "account": "4945",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%, software licences at 19%, training and courses at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-005",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.5231539846831094,
+      "item_confidences": [
+        0.9961374046641066,
+        0.5231539846831094,
+        0.9997211241717742,
+        0.9996000515422724,
+        0.9998993948897035,
+        0.9999707944841066
+      ],
+      "output": {
+        "supplier": "Silverline Tech Services Ltd",
+        "document_date": "2026-02-04",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 385.0,
+        "items": [
+          {
+            "description": "Office chair ergonomic",
+            "amount": 220.0,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Monitor arm desk mount",
+            "amount": 65.0,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Keyboard and mouse set",
+            "amount": 45.0,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Tax Reference Handbook",
+            "amount": 35.0,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Printer paper ream A4",
+            "amount": 25.0,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Discount on paper ream",
+            "amount": -5.0,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%, books and journals at 7%, office supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-006",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9981125207903575,
+      "item_confidences": [
+        0.9999732977078017,
+        0.9999423056990557,
+        0.9981125207903575
+      ],
+      "output": {
+        "supplier": "Redrock Industrial Corp.",
+        "document_date": "2026-02-10",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 500.0,
+        "items": [
+          {
+            "description": "Professional legal consulting services",
+            "amount": 300.0,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Notarised document translation",
+            "amount": 150.0,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Secure courier delivery of the documents",
+            "amount": 50.0,
+            "account": "4910",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%, postage and shipping at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-007",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9998808010330029,
+      "item_confidences": [
+        0.9998808010330029,
+        0.9999980926544723,
+        0.9999483844064849,
+        0.9999932051087014
+      ],
+      "output": {
+        "supplier": "Bluefield Business Supplies Inc.",
+        "document_date": "2026-02-14",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 85.0,
+        "items": [
+          {
+            "description": "Toner cartridge",
+            "amount": 45.0,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Printer paper",
+            "amount": 20.0,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Professional tax guide",
+            "amount": 30.0,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Bulk discount on printer paper",
+            "amount": -10.0,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, books and journals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-008",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-009",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9991631364821175,
+      "item_confidences": [
+        0.9991631364821175,
+        0.9999508881865387
+      ],
+      "output": {
+        "supplier": "Oakstream Retail Mart",
+        "document_date": "2026-02-25",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 8.0,
+        "items": [
+          {
+            "description": "Organic chocolate 100g",
+            "amount": 3.5,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Paper towel 4pk",
+            "amount": 4.5,
+            "account": "1800",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 7%, private withdrawals at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-010",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-011",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9900513419649918,
+      "item_confidences": [
+        0.9900513419649918
+      ],
+      "output": {
+        "supplier": "Brightstar Media Corp.",
+        "document_date": "2026-03-05",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 15.0,
+        "items": [
+          {
+            "description": "Stamps 10x",
+            "amount": 15.0,
+            "account": "4910",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Postage and shipping at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-012",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9993859787600439,
+      "item_confidences": [
+        0.9998549371027955,
+        0.9999728208110733,
+        0.9993859787600439
+      ],
+      "output": {
+        "supplier": "Westlake Office Gear Ltd",
+        "document_date": "2026-03-10",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 44.0,
+        "items": [
+          {
+            "description": "Ballpoint pens 10pk",
+            "amount": 12.0,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Professional Journal",
+            "amount": 18.0,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Coffee beans 500g",
+            "amount": 14.0,
+            "account": "4980",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, books and journals at 7%, operating supplies at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-013",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.999157987367387,
+      "item_confidences": [
+        0.999157987367387
+      ],
+      "output": {
+        "supplier": "Vanguard Financial Services LLC",
+        "document_date": "2026-03-14",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 12.5,
+        "items": [
+          {
+            "description": "Monthly account maintenance fee",
+            "amount": 12.5,
+            "account": "4970",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Bank fees at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-014",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9998425451149155,
+      "item_confidences": [
+        0.9998425451149155
+      ],
+      "output": {
+        "supplier": "Primevista Global Ltd",
+        "document_date": "2026-03-18",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 34.0,
+        "items": [
+          {
+            "description": "Train ticket regional",
+            "amount": 34.0,
+            "account": "4670",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-015",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9989831878501276,
+      "item_confidences": [
+        0.9989831878501276
+      ],
+      "output": {
+        "supplier": "Starkline Equipment Corp.",
+        "document_date": "2026-03-22",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -145.0,
+        "items": [
+          {
+            "description": "Office chair",
+            "amount": -145.0,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-016",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.99849039028892,
+      "item_confidences": [
+        0.9997883155303572,
+        0.99849039028892
+      ],
+      "output": {
+        "supplier": "Nexuspoint Technologies LLC",
+        "document_date": "2026-03-25",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -105.0,
+        "items": [
+          {
+            "description": "Software license adjustment",
+            "amount": -80.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Professional book adjustment",
+            "amount": -25.0,
+            "account": "4940",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: software licences at 19%, books and journals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-017",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9996686781599391,
+      "item_confidences": [
+        0.9996686781599391,
+        0.9999789002875478,
+        0.9999955892701635,
+        0.9999650726679629
+      ],
+      "output": {
+        "supplier": "Velox Global Solutions Sp. z o.o.",
+        "document_date": "2026-03-28",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1400.0,
+        "items": [
+          {
+            "description": "Cloud hosting service",
+            "amount": 500.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "System monitoring service",
+            "amount": 300.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Automated backup service",
+            "amount": 250.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Annual support contract",
+            "amount": 350.0,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Software licences at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-018",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9974870901646927,
+      "item_confidences": [
+        0.9974870901646927,
+        0.9999766353888564,
+        0.9999734169710982,
+        0.9999797347776633
+      ],
+      "output": {
+        "supplier": "Quantum Nexus Corp.",
+        "document_date": "2026-03-31",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 800.0,
+        "items": [
+          {
+            "description": "API integration work",
+            "amount": 400.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Software licence seats",
+            "amount": 250.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Design service UI/UX",
+            "amount": 200.0,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Volume discount licence seats",
+            "amount": -50.0,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Software licences at 19%, advertising at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-019",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9987750496045703,
+      "item_confidences": [
+        0.9998606576056928,
+        0.9999580396776899,
+        0.9987750496045703
+      ],
+      "output": {
+        "supplier": "Summit Office Resources Ltd",
+        "document_date": "2026-04-02",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 174.9,
+        "items": [
+          {
+            "description": "Printer paper A4",
+            "amount": 23.8,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Tax Handbook 2026",
+            "amount": 32.1,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Shelving unit small",
+            "amount": 119.0,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, books and journals at 7%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-020",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit",
+        "low_confidence"
+      ],
+      "confidence": 0.9440009419181705,
+      "item_confidences": [
+        0.9440009419181705
+      ],
+      "output": {
+        "supplier": "Veritas Business Systems Inc.",
+        "document_date": "2026-04-05",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 952.0,
+        "items": [
+          {
+            "description": "Ergonomic Workstation Pro",
+            "amount": 952.0,
+            "account": "0650",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office furniture at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-021",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9992728218061098,
+      "item_confidences": [
+        0.9996094595695459,
+        0.9992728218061098,
+        0.9999421864038879
+      ],
+      "output": {
+        "supplier": "NovaTrade Logistics B.V.",
+        "document_date": "2026-04-08",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 500.0,
+        "items": [
+          {
+            "description": "International courier shipment",
+            "amount": 180.0,
+            "account": "4910",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Packaging material",
+            "amount": 120.0,
+            "account": "4910",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Printed brochure design",
+            "amount": 200.0,
+            "account": "4610",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Postage and shipping at 19%, advertising at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-022",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.967278170978667,
+      "item_confidences": [
+        0.967278170978667,
+        0.9961441722289996,
+        0.999747446362714,
+        0.9999778274424455
+      ],
+      "output": {
+        "supplier": "Pioneer Office Solutions Corp.",
+        "document_date": "2026-04-12",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 507.4,
+        "items": [
+          {
+            "description": "Office chair mesh",
+            "amount": 297.5,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Stamps roll 100x",
+            "amount": 85.0,
+            "account": "4930",
+            "vat_rate": "0"
+          },
+          {
+            "description": "Printer toner black",
+            "amount": 71.4,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Tax Law Digest",
+            "amount": 53.5,
+            "account": "4940",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%, office supplies at 0%, office supplies at 19%, books and journals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-023",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "injection_suspected"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-024",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9564324185394834,
+      "item_confidences": [
+        0.9988677227047031,
+        0.9990420654226798,
+        0.9564324185394834
+      ],
+      "output": {
+        "supplier": "Stellar Code Technologies Inc.",
+        "document_date": "2026-04-18",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 800.0,
+        "items": [
+          {
+            "description": "Annual cloud hosting",
+            "amount": 600.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Domain registration",
+            "amount": 30.0,
+            "account": "4964",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Remote IT support",
+            "amount": 170.0,
+            "account": "4805",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Software licences at 19%, repairs and maintenance at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-025",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9213695087392625,
+      "item_confidences": [
+        0.9999306236255887,
+        0.999615784389467,
+        0.9999634036433256,
+        0.9213695087392625
+      ],
+      "output": {
+        "supplier": "Horizon Media & Publishing Ltd",
+        "document_date": "2026-04-22",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 210.0,
+        "items": [
+          {
+            "description": "Professional design templates",
+            "amount": 150.0,
+            "account": "4610",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Business quarterly magazine",
+            "amount": 45.0,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Printer paper reams",
+            "amount": 30.0,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Loyalty discount",
+            "amount": -15.0,
+            "account": "4610",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Advertising at 19%, books and journals at 7%, office supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-026",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "total_mismatch",
+        "low_confidence"
+      ],
+      "confidence": 0.9835000594857048,
+      "item_confidences": [
+        0.9835000594857048
+      ],
+      "output": {
+        "supplier": "Equinox Global Trade S.A.",
+        "document_date": "2026-04-25",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 512.5,
+        "items": [
+          {
+            "description": "Software consultation services",
+            "amount": 500.0,
+            "account": "4950",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-027",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9997971469430569,
+      "item_confidences": [
+        0.9997971469430569,
+        0.99996769532457
+      ],
+      "output": {
+        "supplier": "Metro Fresh Market e.K.",
+        "document_date": "2026-04-28",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 7.1,
+        "items": [
+          {
+            "description": "Organic oat drink 1l",
+            "amount": 2.6,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Household cleaner",
+            "amount": 4.5,
+            "account": "1800",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-028",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9976069877414734,
+      "item_confidences": [
+        0.9976069877414734
+      ],
+      "output": {
+        "supplier": "Apex City Parking Ltd",
+        "document_date": "2026-05-02",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 12.0,
+        "items": [
+          {
+            "description": "Parking garage fee",
+            "amount": 12.0,
+            "account": "4670",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-029",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9840866697668093,
+      "item_confidences": [
+        0.9885157396647102,
+        0.9999886752381206,
+        0.9840866697668093,
+        0.9990429977198559
+      ],
+      "output": {
+        "supplier": "Urban Retail Express Inc.",
+        "document_date": "2026-05-06",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 36.1,
+        "items": [
+          {
+            "description": "Notebook spiral A5",
+            "amount": 8.5,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Ballpoint pens 4pk",
+            "amount": 5.9,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Professional journal",
+            "amount": 14.5,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Coffee beans 250g",
+            "amount": 7.2,
+            "account": "4980",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, books and journals at 7%, operating supplies at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-030",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.7608486829809448,
+      "item_confidences": [
+        0.7608486829809448,
+        0.9999930858995753,
+        0.9999136980794253,
+        0.9999972581917476,
+        0.9999989271172041,
+        0.9999985694899749
+      ],
+      "output": {
+        "supplier": "Bean & Brew Supply Co.",
+        "document_date": "2026-05-10",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 46.5,
+        "items": [
+          {
+            "description": "Coffee beans 250g",
+            "amount": 14.5,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Organic green tea",
+            "amount": 9.8,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Liquid hand soap",
+            "amount": 4.5,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Dishwashing soap",
+            "amount": 3.8,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "All purpose cleaner",
+            "amount": 5.4,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Black tea bags",
+            "amount": 8.5,
+            "account": "4980",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Operating supplies at 7%, operating supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-031",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.5211614079737762,
+      "item_confidences": [
+        0.5211614079737762
+      ],
+      "output": {
+        "supplier": "Express Postal Hub Ltd",
+        "document_date": "2026-05-14",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 9.9,
+        "items": [
+          {
+            "description": "Monthly account fee",
+            "amount": 9.9,
+            "account": "4920",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Telephone and internet at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-032",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9996334160281003,
+      "item_confidences": [
+        0.9996334160281003
+      ],
+      "output": {
+        "supplier": "Central Terminal Parking Ltd",
+        "document_date": "2026-05-18",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 25.0,
+        "items": [
+          {
+            "description": "Airport parking 1 day",
+            "amount": 25.0,
+            "account": "4670",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-033",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Vanguard Hardware & Tools Inc.",
+        "document_date": "2026-05-22",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -57.1,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-034",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9669747990927172,
+      "item_confidences": [
+        0.9669747990927172,
+        0.9999048773290118,
+        0.9998908131119998
+      ],
+      "output": {
+        "supplier": "Integra Office Furnishings Ltd",
+        "document_date": "2026-05-25",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -329.6,
+        "items": [
+          {
+            "description": "Office chair returned",
+            "amount": -238.0,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Reference book returned",
+            "amount": -32.1,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Laser toner returned",
+            "amount": -59.5,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: low-value assets at 19%, books and journals at 7%, office supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-035",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9994065915308225,
+      "item_confidences": [
+        0.9994065915308225
+      ],
+      "output": {
+        "supplier": "Nordic Cloud Solutions Sp. z o.o.",
+        "document_date": "2026-05-28",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 480.0,
+        "items": [
+          {
+            "description": "Cloud database storage subscription",
+            "amount": 480.0,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Software licences at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-036",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-037",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9989304176424392,
+      "item_confidences": [
+        0.9999179888889212,
+        0.9999910593670688,
+        0.9999599472414659,
+        0.9998862834560716,
+        0.9989304176424392,
+        0.9996953854310716
+      ],
+      "output": {
+        "supplier": "Folded Quill Office Ltd",
+        "document_date": "2025-02-18",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 92.79,
+        "items": [
+          {
+            "description": "Copy paper A4",
+            "amount": 29.75,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Lever arch files",
+            "amount": 17.85,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Wirebound notebooks",
+            "amount": 11.9,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Paper promotion credit",
+            "amount": -5.95,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "USB cable",
+            "amount": 7.14,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Payroll handbook",
+            "amount": 32.1,
+            "account": "4940",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, books and journals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-038",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9223616542551085,
+      "item_confidences": [
+        0.9223616542551085,
+        0.9994163538933625
+      ],
+      "output": {
+        "supplier": "Woven Circuit Equipment Ltd",
+        "document_date": "2025-03-19",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 1713.6,
+        "items": [
+          {
+            "description": "Workstation tower",
+            "amount": 1428.0,
+            "account": "0410",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Monitor 27 inch",
+            "amount": 285.6,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business equipment at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-039",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9958596007034982,
+      "item_confidences": [
+        0.9958596007034982,
+        0.9998129950251551,
+        0.9997972643159161,
+        0.9999849798322468
+      ],
+      "output": {
+        "supplier": "Metered Ember Utilities Ltd",
+        "document_date": "2025-04-19",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 233.2,
+        "items": [
+          {
+            "description": "Electricity supply",
+            "amount": 119.0,
+            "account": "4240",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Gas supply",
+            "amount": 59.5,
+            "account": "4240",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Meter service charge",
+            "amount": 11.9,
+            "account": "4240",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Water supply",
+            "amount": 42.8,
+            "account": "4240",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Electricity, gas and water at 19%, electricity, gas and water at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-040",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Parcelled Basket Trading Ltd",
+        "document_date": "2025-05-23",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 59.5,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-041",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-042",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total",
+        "heavy_noise"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-043",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9990277555760468,
+      "item_confidences": [
+        0.9990277555760468
+      ],
+      "output": {
+        "supplier": "Spun Clover Assurance Ltd",
+        "document_date": "2025-08-26",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 218.4,
+        "items": [
+          {
+            "description": "Business liability insurance",
+            "amount": 218.4,
+            "account": "4360",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Insurance at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-044",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9982803996680508,
+      "item_confidences": [
+        0.9982803996680508
+      ],
+      "output": {
+        "supplier": "Kite Pocket Labs Inc.",
+        "document_date": "2025-09-27",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 137.25,
+        "items": [
+          {
+            "description": "Cloud backup subscription",
+            "amount": 137.25,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Software licences at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-045",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "injection_suspected"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-046",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9998125189430205,
+      "item_confidences": [
+        0.9998125189430205,
+        0.9999982118638471,
+        0.9999884368330701,
+        0.9999973774024795
+      ],
+      "output": {
+        "supplier": "Button Pear Market Ltd",
+        "document_date": "2025-11-29",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 13.44,
+        "items": [
+          {
+            "description": "Organ oat flakes 500g",
+            "amount": 3.21,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Cheddar block 250g",
+            "amount": 4.28,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Dish sponge 3pk",
+            "amount": 2.38,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Laundry gel 750ml",
+            "amount": 3.57,
+            "account": "1800",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 7%, private withdrawals at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-047",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9981642378262487,
+      "item_confidences": [
+        0.9981642378262487,
+        0.9999974966092466,
+        0.9998993946971373,
+        0.9999898672848029,
+        0.9999928474788929
+      ],
+      "output": {
+        "supplier": "Spool and Cup Office Ltd",
+        "document_date": "2025-12-16",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 37.11,
+        "items": [
+          {
+            "description": "Coffee beans 1kg",
+            "amount": 12.84,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Tea bags 100s",
+            "amount": 6.42,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Hand soap 500ml",
+            "amount": 4.76,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Surface cleaner",
+            "amount": 7.14,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Bin liners 20s",
+            "amount": 5.95,
+            "account": "4980",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Operating supplies at 7%, operating supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-048",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9989830082376826,
+      "item_confidences": [
+        0.9989830082376826,
+        0.9999983310718221,
+        0.9999784234188991,
+        0.9999829532764702
+      ],
+      "output": {
+        "supplier": "Peppered Spoon Dining Ltd",
+        "document_date": "2026-01-17",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 80.86,
+        "items": [
+          {
+            "description": "Roast lunch",
+            "amount": 42.8,
+            "account": "4650",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Vegetable plate",
+            "amount": 21.4,
+            "account": "4650",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Sparkling water",
+            "amount": 9.52,
+            "account": "4650",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Espresso",
+            "amount": 7.14,
+            "account": "4650",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business hospitality at 7%, business hospitality at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-049",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Crate Feather General Store Ltd",
+        "document_date": "2026-02-18",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 69.49,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-050",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.7360308129115041,
+      "item_confidences": [
+        0.7360308129115041,
+        0.9999690062854707,
+        0.9999959468979185,
+        0.9849333978117413
+      ],
+      "output": {
+        "supplier": "Quiet Staple Office Shop Ltd",
+        "document_date": "2026-03-19",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 254.6,
+        "items": [
+          {
+            "description": "Desk monitor 24in",
+            "amount": 178.5,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Tax reference book",
+            "amount": 48.15,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Design journal",
+            "amount": 16.05,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Display cable",
+            "amount": 11.9,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%, books and journals at 7%, office supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-051",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9931720391520047,
+      "item_confidences": [
+        0.9931720391520047
+      ],
+      "output": {
+        "supplier": "Pocket Ledger Finance Ltd",
+        "document_date": "2026-04-20",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 8.75,
+        "items": [
+          {
+            "description": "Monthly account fee",
+            "amount": 8.75,
+            "account": "4970",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Bank fees at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-052",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9997868855245874,
+      "item_confidences": [
+        0.9997868855245874
+      ],
+      "output": {
+        "supplier": "Soft Wheel Taxi Ltd",
+        "document_date": "2026-05-21",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 26.75,
+        "items": [
+          {
+            "description": "Taxi fare",
+            "amount": 26.75,
+            "account": "4670",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-053",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9987132309228146,
+      "item_confidences": [
+        0.9987132309228146,
+        0.9999179895107373
+      ],
+      "output": {
+        "supplier": "Threadbare Page Supplies Ltd",
+        "document_date": "2026-06-22",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -33.3,
+        "items": [
+          {
+            "description": "Desk calendar",
+            "amount": -11.9,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Accounting guide",
+            "amount": -21.4,
+            "account": "4940",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: office supplies at 19%, books and journals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-054",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9965350360372169,
+      "item_confidences": [
+        0.9965350360372169
+      ],
+      "output": {
+        "supplier": "Ink Nest Consumables Ltd",
+        "document_date": "2026-07-23",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -65.45,
+        "items": [
+          {
+            "description": "Toner multipack",
+            "amount": -65.45,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: office supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-055",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9893366903022274,
+      "item_confidences": [
+        0.999869836238853,
+        0.9999982118631081,
+        0.999996066105048,
+        0.9893366903022274
+      ],
+      "output": {
+        "supplier": "Potted Ribbon Wholesale B.V.",
+        "document_date": "2026-08-24",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 160.5,
+        "items": [
+          {
+            "description": "Cut flowers",
+            "amount": 84.0,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Potted herbs",
+            "amount": 36.0,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Ceramic vases",
+            "amount": 28.0,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Gift wrap rolls",
+            "amount": 12.5,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Goods for resale (reduced rate) at 7%, goods for resale (standard rate) at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-056",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9988812398745042,
+      "item_confidences": [
+        0.9988812398745042
+      ],
+      "output": {
+        "supplier": "Tucked Sail Creative LLC",
+        "document_date": "2026-09-25",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 245.8,
+        "items": [
+          {
+            "description": "Campaign artwork adaptation",
+            "amount": 245.8,
+            "account": "4610",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Advertising at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-057",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "injection_suspected"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-058",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.994189682128096,
+      "item_confidences": [
+        0.9998871203837644,
+        0.9999969005657761,
+        0.9999990463263657,
+        0.994189682128096
+      ],
+      "output": {
+        "supplier": "Tempered Finch Wholesale Ltd",
+        "document_date": "2025-02-23",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 283.45,
+        "items": [
+          {
+            "description": "Brass hinge packs",
+            "amount": 146.35,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Screw assortment boxes",
+            "amount": 94.6,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Steel bracket sets",
+            "amount": 52.25,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Stock order discount",
+            "amount": -9.75,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Goods for resale (standard rate) at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-059",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit",
+        "low_confidence"
+      ],
+      "confidence": 0.9930537121361408,
+      "item_confidences": [
+        0.9930537121361408
+      ],
+      "output": {
+        "supplier": "Silvered Button Computing Ltd",
+        "document_date": "2025-03-24",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 946.05,
+        "items": [
+          {
+            "description": "Notebook computer",
+            "amount": 946.05,
+            "account": "0410",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business equipment at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-060",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "total_mismatch",
+        "low_confidence"
+      ],
+      "confidence": 0.9898583499441064,
+      "item_confidences": [
+        0.9898583499441064,
+        0.9999871255552635
+      ],
+      "output": {
+        "supplier": "Latched Feather Technical Ltd",
+        "document_date": "2025-04-25",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 188.5,
+        "items": [
+          {
+            "description": "Network fault diagnosis",
+            "amount": 119.0,
+            "account": "4805",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Router reconfiguration",
+            "amount": 59.5,
+            "account": "4805",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Repairs and maintenance at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-061",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9998589889832429,
+      "item_confidences": [
+        0.9998589889832429,
+        0.9999045203845428
+      ],
+      "output": {
+        "supplier": "Skill Thimble Academy Ltd",
+        "document_date": "2025-05-26",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 323.0,
+        "items": [
+          {
+            "description": "Online payroll course",
+            "amount": 238.0,
+            "account": "4945",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Certification exam fee",
+            "amount": 85.0,
+            "account": "4945",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Training and courses at 19%, training and courses at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-062",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9997977330436698,
+      "item_confidences": [
+        0.9999543442667993,
+        0.9999946356069386,
+        0.9997977330436698,
+        0.9999725825745303
+      ],
+      "output": {
+        "supplier": "Margin Nest Business Supplies Ltd",
+        "document_date": "2025-06-27",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 81.8,
+        "items": [
+          {
+            "description": "Employment law handbook B",
+            "amount": 34.9,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Architecture journal B",
+            "amount": 21.7,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Recycled copy paper A",
+            "amount": 18.95,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Fine liner pen pack A",
+            "amount": 6.25,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Books and journals at 7%, office supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-063",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9997958250796813,
+      "item_confidences": [
+        0.9997958250796813
+      ],
+      "output": {
+        "supplier": "Wicker Reed Language B.V.",
+        "document_date": "2025-07-28",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 189.4,
+        "items": [
+          {
+            "description": "Translation of product leaflet",
+            "amount": 189.4,
+            "account": "4610",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Advertising at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-064",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.999882828935569,
+      "item_confidences": [
+        0.9999308628661517,
+        0.999882828935569
+      ],
+      "output": {
+        "supplier": "Crisp Reed Legal Ltd",
+        "document_date": "2025-08-29",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 386.75,
+        "items": [
+          {
+            "description": "Contract review",
+            "amount": 297.5,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Payroll processing",
+            "amount": 89.25,
+            "account": "4950",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-065",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "foreign_currency"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-066",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9998746075477176,
+      "item_confidences": [
+        0.9998746075477176,
+        0.9999992847447459,
+        0.9999564905017542,
+        0.9999973774024795
+      ],
+      "output": {
+        "supplier": "Plaited Apple Grocery Ltd",
+        "document_date": "2025-10-16",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 13.78,
+        "items": [
+          {
+            "description": "Brown rice 1kg",
+            "amount": 2.49,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Eggs free range 6s",
+            "amount": 3.79,
+            "account": "1800",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Dishwash tabs 20s",
+            "amount": 4.65,
+            "account": "1800",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Kitchen cloth 2pk",
+            "amount": 2.85,
+            "account": "1800",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Private withdrawals at 7%, private withdrawals at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-067",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9989120605841936,
+      "item_confidences": [
+        0.9989120605841936,
+        0.999977469820865,
+        0.9999728208741677,
+        0.999992847481394
+      ],
+      "output": {
+        "supplier": "Folded Pillow Lodging Ltd",
+        "document_date": "2025-11-17",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 281.8,
+        "items": [
+          {
+            "description": "Room night",
+            "amount": 214.0,
+            "account": "4670",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Breakfast",
+            "amount": 23.8,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Garage parking",
+            "amount": 11.9,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Room late checkout",
+            "amount": 32.1,
+            "account": "4670",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 7%, travel costs of the owner at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-068",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9990992714333276,
+      "item_confidences": [
+        0.9990992714333276,
+        0.9999992847446109,
+        0.9999507683628659,
+        0.9999980926540104,
+        0.9999996423722166,
+        0.9999992847446109
+      ],
+      "output": {
+        "supplier": "Ribbon Mug Office Depot Ltd",
+        "document_date": "2025-12-18",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 49.54,
+        "items": [
+          {
+            "description": "Filter coffee 1kg",
+            "amount": 18.35,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Green tea 80s",
+            "amount": 7.95,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Liquid hand soap",
+            "amount": 6.49,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Floor cleaner 2l",
+            "amount": 8.25,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Paper towels 2pk",
+            "amount": 4.9,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Scouring pads 6pk",
+            "amount": 3.6,
+            "account": "4980",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Operating supplies at 7%, operating supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-069",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Stitched Box Outlet Ltd",
+        "document_date": "2026-01-19",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 40.4,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "The purpose of the purchase is unclear"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-070",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9884669833505441,
+      "item_confidences": [
+        0.9884669833505441,
+        0.9999479075517065,
+        0.9999760393476453,
+        0.9999902249105044
+      ],
+      "output": {
+        "supplier": "Wicker Clip Workroom Ltd",
+        "document_date": "2026-02-20",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 336.65,
+        "items": [
+          {
+            "description": "Office chair",
+            "amount": 249.9,
+            "account": "0480",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Copy paper ream",
+            "amount": 15.75,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Desk lamp",
+            "amount": 28.4,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Safety handbook",
+            "amount": 42.6,
+            "account": "4940",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Low-value assets at 19%, office supplies at 19%, books and journals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-071",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.999150002640207,
+      "item_confidences": [
+        0.999150002640207
+      ],
+      "output": {
+        "supplier": "Sealed Sparrow Post Ltd",
+        "document_date": "2026-03-21",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 6.15,
+        "items": [
+          {
+            "description": "Registered letter",
+            "amount": 6.15,
+            "account": "4910",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Postage and shipping at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-072",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9965891985565678,
+      "item_confidences": [
+        0.9965891985565678
+      ],
+      "output": {
+        "supplier": "Tin Piston Fuel Ltd",
+        "document_date": "2026-04-22",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 73.42,
+        "items": [
+          {
+            "description": "Diesel",
+            "amount": 73.42,
+            "account": "4530",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Vehicle running costs at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-073",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9980136724485303,
+      "item_confidences": [
+        0.9980136724485303,
+        0.9999839069837482
+      ],
+      "output": {
+        "supplier": "Clasped Kite Motor Parts Ltd",
+        "document_date": "2026-05-23",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -130.9,
+        "items": [
+          {
+            "description": "Tyre price correction",
+            "amount": -83.3,
+            "account": "4530",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Wheel balancing price correction",
+            "amount": -47.6,
+            "account": "4530",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: vehicle running costs at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-074",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9997698430772735,
+      "item_confidences": [
+        0.9997698430772735
+      ],
+      "output": {
+        "supplier": "Bound Finch Publishing Ltd",
+        "document_date": "2026-06-24",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -26.75,
+        "items": [
+          {
+            "description": "Professional journal subscription adjustment",
+            "amount": -26.75,
+            "account": "4940",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: professional journal subscription adjustment at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-075",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9994487162219331,
+      "item_confidences": [
+        0.9998333681781387,
+        0.9999965429418367,
+        0.9995798336285268,
+        0.9994487162219331
+      ],
+      "output": {
+        "supplier": "Paper Lantern Pantry Ltd",
+        "document_date": "2026-07-25",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 144.15,
+        "items": [
+          {
+            "description": "Rolled oats sacks",
+            "amount": 42.75,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Cocoa powder packs",
+            "amount": 65.4,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Retail carton bundles",
+            "amount": 19.8,
+            "account": "3400",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Jar label packs",
+            "amount": 16.2,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Goods for resale (reduced rate) at 7%, goods for resale (standard rate) at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-076",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9997951098683946,
+      "item_confidences": [
+        0.9997951098683946
+      ],
+      "output": {
+        "supplier": "Knotted Pixel Systems Pte. Ltd.",
+        "document_date": "2026-08-26",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 58.7,
+        "items": [
+          {
+            "description": "Team software subscription",
+            "amount": 58.7,
+            "account": "4964",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Software licences at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-077",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9999419476305698,
+      "item_confidences": [
+        0.9999419476305698,
+        0.9999946356038051,
+        0.9999903441201989,
+        0.9999889136419775,
+        0.9999619732352459,
+        0.9999505304826812
+      ],
+      "output": {
+        "supplier": "Creased Heron Office Ltd",
+        "document_date": "2026-02-17",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 131.46,
+        "items": [
+          {
+            "description": "Copy paper",
+            "amount": 23.8,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Ring binders",
+            "amount": 14.28,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Wall calendar",
+            "amount": 8.33,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Toner refill",
+            "amount": 53.55,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Toner loyalty discount",
+            "amount": -5.95,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Bookkeeping manual",
+            "amount": 37.45,
+            "account": "4940",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, books and journals at 7%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-078",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.989449471200978,
+      "item_confidences": [
+        0.989449471200978,
+        0.9997129996150981
+      ],
+      "output": {
+        "supplier": "Braided Socket Equipment Ltd",
+        "document_date": "2026-03-18",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 2153.9,
+        "items": [
+          {
+            "description": "Office server",
+            "amount": 1999.2,
+            "account": "0410",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Docking station",
+            "amount": 154.7,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Business equipment at 19%, low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-079",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "near_asset_limit",
+        "low_confidence"
+      ],
+      "confidence": 0.8519074539981426,
+      "item_confidences": [
+        0.8519074539981426
+      ],
+      "output": {
+        "supplier": "Trestle Feather Furnishings Ltd",
+        "document_date": "2026-04-19",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 981.75,
+        "items": [
+          {
+            "description": "Office desk",
+            "amount": 981.75,
+            "account": "0650",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office furniture at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-080",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "no_total"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-081",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "total_mismatch",
+        "low_confidence"
+      ],
+      "confidence": 0.9859543976068706,
+      "item_confidences": [
+        0.999795946148727,
+        0.9859543976068706
+      ],
+      "output": {
+        "supplier": "Index Spool Business Print Ltd",
+        "document_date": "2026-06-21",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 65.65,
+        "items": [
+          {
+            "description": "Tax reference book",
+            "amount": 42.8,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Colour report copies",
+            "amount": 17.85,
+            "account": "4930",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Books and journals at 7%, office supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-082",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9999237100508503,
+      "item_confidences": [
+        0.9999237100508503,
+        0.9999841453641859,
+        0.9999728208456331,
+        0.9999942779802778
+      ],
+      "output": {
+        "supplier": "Ribbon Rest Travel Desk Ltd",
+        "document_date": "2026-07-22",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 195.0,
+        "items": [
+          {
+            "description": "Hotel room",
+            "amount": 128.4,
+            "account": "4670",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Hotel breakfast",
+            "amount": 14.28,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Hotel parking",
+            "amount": 9.52,
+            "account": "4670",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Train ticket",
+            "amount": 42.8,
+            "account": "4670",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 7%, travel costs of the owner at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-083",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9977122109633964,
+      "item_confidences": [
+        0.9977122109633964,
+        0.9999035664061455
+      ],
+      "output": {
+        "supplier": "Mended Sail Advisory Ltd",
+        "document_date": "2026-08-23",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 365.55,
+        "items": [
+          {
+            "description": "Process consulting",
+            "amount": 271.35,
+            "account": "4950",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Online workflow course",
+            "amount": 94.2,
+            "account": "4945",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%, training and courses at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-084",
+      "expected_review": false,
+      "needs_review": false,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [],
+      "confidence": 0.9999117917961754,
+      "item_confidences": [
+        0.9999117917961754
+      ],
+      "output": {
+        "supplier": "Tucked Reed Property Ltd",
+        "document_date": "2026-09-24",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 540.0,
+        "items": [
+          {
+            "description": "Office rent",
+            "amount": 540.0,
+            "account": "4210",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Rent at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-085",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9997460113362526,
+      "item_confidences": [
+        0.9997460113362526,
+        0.9999817612822461,
+        0.9999953508576452
+      ],
+      "output": {
+        "supplier": "Fine Thread Connect Ltd",
+        "document_date": "2026-10-25",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 89.25,
+        "items": [
+          {
+            "description": "Landline service",
+            "amount": 29.75,
+            "account": "4920",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Mobile service",
+            "amount": 17.85,
+            "account": "4920",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Internet access",
+            "amount": 41.65,
+            "account": "4920",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Telephone and internet at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-086",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Crimped Plum Food Store Ltd",
+        "document_date": "2026-11-26",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 17.78,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-087",
+      "expected_review": true,
+      "needs_review": true,
+      "correct": true,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": {
+        "supplier": "Looped Basket Variety Ltd",
+        "document_date": "2026-12-27",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 36.02,
+        "items": [],
+        "reverse_charge": false,
+        "needs_review": true,
+        "reason": "Business and private items on one receipt"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-088",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9993770419278922,
+      "item_confidences": [
+        0.9993770419278922,
+        0.9999991655354421,
+        0.9998448082355526,
+        0.999992013023707
+      ],
+      "output": {
+        "supplier": "Felt Cup Workplace Supply Ltd",
+        "document_date": "2025-01-28",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 38.1,
+        "items": [
+          {
+            "description": "Coffee ground 1kg",
+            "amount": 15.6,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Black tea 120s",
+            "amount": 9.4,
+            "account": "4980",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Soap refill 1l",
+            "amount": 5.25,
+            "account": "4980",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Desk cleaner 1l",
+            "amount": 7.85,
+            "account": "4980",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Operating supplies at 7%, operating supplies at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-089",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "vat_mismatch",
+        "low_confidence"
+      ],
+      "confidence": 0.8721334820201534,
+      "item_confidences": [
+        0.9137200736709334,
+        0.8721334820201534,
+        0.9998848559270607,
+        0.9999492193692283
+      ],
+      "output": {
+        "supplier": "Tapered Clip Office Mart Ltd",
+        "document_date": "2025-02-28",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 133.48,
+        "items": [
+          {
+            "description": "Keyboard and mouse set",
+            "amount": 83.3,
+            "account": "4930",
+            "vat_rate": "19"
+          },
+          {
+            "description": "Ruled notebooks",
+            "amount": 9.52,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Payroll reference book",
+            "amount": 27.82,
+            "account": "4940",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Engineering journal",
+            "amount": 12.84,
+            "account": "4940",
+            "vat_rate": "7"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Office supplies at 19%, books and journals at 7%"
+      },
+      "by_rule": true
+    },
+    {
+      "id": "real-090",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": false,
+      "severity": null,
+      "reasons": [
+        "injection_suspected"
+      ],
+      "confidence": null,
+      "item_confidences": null,
+      "output": null,
+      "by_rule": true
+    },
+    {
+      "id": "real-091",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9996880074504653,
+      "item_confidences": [
+        0.9996880074504653
+      ],
+      "output": {
+        "supplier": "Hushed Spool Lending Ltd",
+        "document_date": "2025-04-30",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 32.18,
+        "items": [
+          {
+            "description": "Business loan interest",
+            "amount": 32.18,
+            "account": "2100",
+            "vat_rate": "0"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Interest expense at 0%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-092",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.989389252566499,
+      "item_confidences": [
+        0.989389252566499
+      ],
+      "output": {
+        "supplier": "Latched Wing Parking Ltd",
+        "document_date": "2025-05-31",
+        "document_type": "receipt",
+        "currency": "EUR",
+        "total": 14.4,
+        "items": [
+          {
+            "description": "Parking session",
+            "amount": 14.4,
+            "account": "4670",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Travel costs of the owner at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-093",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9970617371629684,
+      "item_confidences": [
+        0.9970617371629684
+      ],
+      "output": {
+        "supplier": "Pegged Reed Storage Ltd",
+        "document_date": "2025-06-30",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -214.2,
+        "items": [
+          {
+            "description": "Office shelving",
+            "amount": -214.2,
+            "account": "0480",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: low-value assets at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-094",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9997973743729321,
+      "item_confidences": [
+        0.9997973743729321
+      ],
+      "output": {
+        "supplier": "Satin Quill Print Ltd",
+        "document_date": "2025-07-31",
+        "document_type": "credit_note",
+        "currency": "EUR",
+        "total": -41.65,
+        "items": [
+          {
+            "description": "Business card print correction",
+            "amount": -41.65,
+            "account": "4610",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": false,
+        "needs_review": false,
+        "reason": "Credit note: advertising at 19%"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-095",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9802632842836401,
+      "item_confidences": [
+        0.9998168011998574,
+        0.9998411184416439,
+        0.9802632842836401
+      ],
+      "output": {
+        "supplier": "Petal Crate Growers Ltd",
+        "document_date": "2025-08-30",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 105.75,
+        "items": [
+          {
+            "description": "Cut flower bunches",
+            "amount": 55.2,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Potted seedlings",
+            "amount": 31.85,
+            "account": "3300",
+            "vat_rate": "7"
+          },
+          {
+            "description": "Decorative pots",
+            "amount": 18.7,
+            "account": "3400",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Goods for resale (reduced rate) at 7%, goods for resale (standard rate) at 19%; reverse charge"
+      },
+      "by_rule": false
+    },
+    {
+      "id": "real-096",
+      "expected_review": false,
+      "needs_review": true,
+      "correct": false,
+      "answer_correct": true,
+      "severity": null,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9995294369731629,
+      "item_confidences": [
+        0.9995294369731629
+      ],
+      "output": {
+        "supplier": "Plain Loom Advisory Ltd",
+        "document_date": "2025-09-29",
+        "document_type": "invoice",
+        "currency": "EUR",
+        "total": 318.65,
+        "items": [
+          {
+            "description": "Business process consultation",
+            "amount": 318.65,
+            "account": "4950",
+            "vat_rate": "19"
+          }
+        ],
+        "reverse_charge": true,
+        "needs_review": false,
+        "reason": "Legal and consulting fees at 19%; reverse charge"
+      },
+      "by_rule": false
+    }
+  ]
+}
