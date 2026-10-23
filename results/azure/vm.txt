@@ -1,0 +1,38 @@
+date: 2026-10-23T20:36:52Z
+vm size: Standard_NC4as_T4_v3, region: germanywestcentral (from the portal)
+
+Ubuntu 22.04.5 LTS
+6.8.0-1070-azure
+
+Fri Oct 23 20:36:52 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.99.02              Driver Version: 595.99.02      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla T4                       Off |   00000001:00:00.0 Off |                  Off |
+| N/A   31C    P0             28W /   70W |   14079MiB /  16384MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            7708      C   VLLM::EngineCore                      14076MiB |
++-----------------------------------------------------------------------------------------+
+
+Docker version 29.9.2, build a82e528
+Docker Compose version v5.6.1
+vllm: 0.30.0
+
+NAME                IMAGE                                                                     COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+booking-gateway-1   sha256:eda5f9fc47555af73844d9d9f35214d451f75d0242c83d8402f28ece34113fda   "python -m adapt.gat…"   gateway   29 minutes ago   Up 23 minutes (healthy)   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+booking-vllm-1      vllm/vllm-openai:v0.30.0                                                  "vllm serve Qwen/Qwe…"   vllm      30 minutes ago   Up 29 minutes (healthy)   
+
+commit: c4d1212c164bc68baa9a4f1affd7b95dc14f3f0f
+ M src/adapt/eval/runner.py
+?? results/azure/
