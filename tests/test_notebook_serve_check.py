@@ -73,7 +73,7 @@ def test_the_repository_is_the_one_of_the_other_notebooks(code):
 def test_the_make_target_passes_its_variables_on():
     def planned(*variables):
         return subprocess.run(
-            ["make", "--dry-run", "serve-check", *variables],
+            ["make", "--dry-run", "--no-print-directory", "serve-check", *variables],
             cwd=ROOT,
             capture_output=True,
             text=True,
