@@ -1,5 +1,7 @@
 # Open-source LLM Adaptation
 
+[![CI](https://github.com/mgetech/open-llm-adaptation/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mgetech/open-llm-adaptation/actions/workflows/ci.yml)
+
 I fine-tune a small open-weight LLM (Qwen3-4B, QLoRA) to turn the text of an invoice or receipt into booking lines, and to flag anything uncertain for review instead of guessing. I evaluate it against a few-shot baseline and serve it with vLLM on GPUs I control.
 
 ## What it is for
@@ -85,6 +87,7 @@ The last command prints the validation table from the saved results. It needs no
 - `docs/results.md`: the results, the rounds and the post-hoc re-scoring.
 - `docs/gpu-sizing.md`: memory, training on one or two GPUs and capacity on a T4.
 - `docs/model-card.md`: the card of the adapter, with its files, training and limits.
+- `docs/compliance.md`: secrecy, personal data, audit log, isolation and supply chain, and where each control lives.
 - `results/README.md`: the layout of `results/` and the commands that write each file.
 
 ## Licence
