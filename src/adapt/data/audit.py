@@ -1,6 +1,6 @@
 """Three jobs for a second, independent author, and a comparison of its labels with ours.
 
-`export` writes one folder: new evaluation records to write, the documents of the hand-written
+`export` writes one folder: new evaluation records to write, the documents of the evaluation
 sets to label (without their labels, under new ids in a mixed order), more training documents to
 rewrite, a guide and check programs. `compare` reads the labels and lists where they differ from
 ours, so a wrong label or a document that can be read two ways can be found before the sets are
@@ -79,8 +79,8 @@ def export(
 ) -> dict[str, Any]:
     """Write the folder (and a zip) for the second labeller, and the key that maps new ids to ours.
 
-    The folder has three jobs: new evaluation records to write (A), the hand-written documents
-    to label (B), and the weak-category training documents the main rewrite left out (C)."""
+    The folder has three jobs: new evaluation records to write (A), the documents of the evaluation
+    sets to label (B), and the weak-category training documents the main rewrite left out (C)."""
     records = [(name, r) for name in SETS for r in read_set(platform, name)]
     random.Random(f"{seed}/audit").shuffle(records)
     if out.exists():
@@ -222,7 +222,7 @@ def compare(platform: str, key_path: Path, answers_path: Path, report_path: Path
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Independent labels for the hand-written sets.")
+    parser = argparse.ArgumentParser(description="Independent labels for the evaluation sets.")
     sub = parser.add_subparsers(dest="command", required=True)
     one = sub.add_parser("export", help="write the folder for the labeller")
     one.add_argument("--platform", default="tax-booking")

@@ -148,7 +148,7 @@ def problems_after(examples, validator, platform, change, index=0):
     return check_record(record, validator, platform)
 
 
-# The hand-written documents cover the six layouts that existed when they were written.
+# The gold documents cover the six layouts that existed when they were made.
 GOLD_LAYOUTS = {
     "table_invoice",
     "till_receipt",

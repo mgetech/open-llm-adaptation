@@ -1,4 +1,4 @@
-"""Check the hand-written evaluation files.
+"""Check the evaluation files that are generated separately from the training generator.
 
 Run with `make validate-gold`. These labels are not computed by code, so these checks are the
 only guard on them. There are three files: `gold.jsonl`, `gold_v2.jsonl` with the documents
@@ -266,7 +266,7 @@ def validate_gold(path: Path, platform: Platform) -> list[str]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Check the hand-written evaluation files.")
+    parser = argparse.ArgumentParser(description="Check the separately generated evaluation files.")
     parser.add_argument("--platform", default="tax-booking")
     parser.add_argument(
         "--details", action="store_true", help="print the problems of gold_v3 in full"

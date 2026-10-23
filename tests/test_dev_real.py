@@ -1,4 +1,5 @@
-"""The dev_real split: realistic documents written by hand, used to choose a configuration."""
+"""The dev_real split: realistic documents generated separately from the training generator, used
+to choose a configuration."""
 
 import json
 import shutil
@@ -82,7 +83,7 @@ def test_dev_real_is_a_split_for_selection_and_not_for_the_gate_or_a_report():
     assert DEV_REAL not in GATE_SPLITS and DEV_REAL not in REPORT_SPLITS
 
 
-def test_it_is_in_the_folder_of_the_other_hand_written_files():
+def test_it_is_in_the_folder_of_the_other_evaluation_files():
     assert gold_path("tax-booking", name=DEV_REAL).name == "dev_real.jsonl"
     assert gold_path("tax-booking", name=DEV_REAL).parent == gold_path("tax-booking").parent
 

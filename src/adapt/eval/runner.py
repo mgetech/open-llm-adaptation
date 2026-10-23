@@ -58,10 +58,10 @@ DATA_DIR = ROOT / "data"
 RESULTS_DIR = eval_dir()  # the results of the current round
 RESULTS_ROOT = ROOT / "results"
 SPLITS = ("dev", "test_iid", "test_ood", "edge", "gold")
-# gold_v2 is written by hand after the first round. It is reported next to gold, and the gate
-# does not read it. dev_real is written by hand too. It is used to choose a configuration and
-# is never part of the gate or of a report.
-HAND_WRITTEN_SPLITS = ("gold", "gold_v2", "dev_real")
+# gold_v2 was generated separately from the training generator after the first round. It is
+# reported next to gold, and the gate does not read it. dev_real is a separate set too. It is used
+# to choose a configuration and is never part of the gate or of a report.
+FIXED_SPLITS = ("gold", "gold_v2", "dev_real")
 ALL_SPLITS = (*SPLITS, "gold_v2", "dev_real")
 # The files that make an adapter. A folder with more files (a readme, a tokenizer) has the same
 # adapter, so the final claim hashes only these.
@@ -95,9 +95,9 @@ def default_splits(platform: str, root: Path = PLATFORMS_DIR) -> tuple[str, ...]
 def split_path(
     platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
 ) -> Path:
-    """The file of a split. The hand-written sets do not depend on the round. `data_round` None
-    is the current round."""
-    if split in HAND_WRITTEN_SPLITS:
+    """The file of a split. The evaluation sets of `FIXED_SPLITS` do not depend on the round.
+    `data_round` None is the current round."""
+    if split in FIXED_SPLITS:
         return gold_path(platform, data_dir.parent / "platforms", split)
     return round_folder(platform, data_round, data_dir) / f"{split}.jsonl"
 
@@ -105,12 +105,13 @@ def split_path(
 def load_documents(
     platform: str, split: str, data_dir: Path = DATA_DIR, data_round: int | None = None
 ) -> list[EvalDocument]:
-    """The documents of one split. Hand-written documents (gold, gold_v2 and dev_real) have no
-    category or noise level, except that the supplier is compared with the training names."""
+    """The documents of one split. The documents of the fixed sets (gold, gold_v2 and dev_real)
+    have no category or noise level, except that the supplier is compared with the training
+    names."""
     if split not in ALL_SPLITS:
         raise ValueError(f"unknown split {split!r}, expected one of {', '.join(ALL_SPLITS)}")
     records = _read_lines(split_path(platform, split, data_dir, data_round))
-    if split not in HAND_WRITTEN_SPLITS:
+    if split not in FIXED_SPLITS:
         return [
             EvalDocument(
                 r["id"],

@@ -64,6 +64,25 @@ def test_every_diagram_is_closed_and_the_readme_has_one():
     assert len(diagrams(ARCHITECTURE.read_text(encoding="utf-8"))) == 2
 
 
+def test_no_file_says_the_evaluation_sets_were_written_by_hand_or_taken_from_real_invoices():
+    phrases = [
+        "hand" + "-written",
+        "hand" + "written",
+        "written by " + "hand",
+        "real " + "invoices",
+    ]
+    skipped = {".venv", ".git", ".idea", "data", "node_modules", "__pycache__", ".ruff_cache"}
+    suffixes = {".py", ".md", ".yaml", ".yml", ".txt", ".toml", ".ipynb"}
+    found = []
+    for path in ROOT.rglob("*"):
+        parts = set(path.relative_to(ROOT).parts)
+        if not path.is_file() or parts & skipped or path.suffix not in suffixes:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace").lower()
+        found += [f"{path.relative_to(ROOT)}: {phrase}" for phrase in phrases if phrase in text]
+    assert found == []
+
+
 def test_the_files_the_readme_and_the_document_name_exist():
     pattern = re.compile(r"`((?:docs|deploy|platforms|src|results)/[\w./-]+)`")
     for path in (README, ARCHITECTURE):

@@ -32,7 +32,7 @@ def good_record():
 
 
 @pytest.mark.parametrize("name", SETS)
-def test_every_record_of_the_hand_written_sets_passes(name):
+def test_every_record_of_the_evaluation_sets_passes(name):
     for record in read_set("tax-booking", name):
         assert record_problems(record, ACCOUNTS) == [], record["id"]
 
