@@ -9,6 +9,8 @@ results/
   post_hoc/
     round3_rescored.json                    post-hoc re-scoring of the round 3 claim run, not a claim
     gold_rescored.json                      post-hoc re-scoring of the shipped configuration on gold and gold_v2, not a claim
+  serving/
+    smoke-test.json                         the serving smoke test on a Kaggle T4 (`make serve-check`), not a measurement of the model
   round1/
     eval/<platform>/<system>/<split>.json    metrics, confidence intervals, slices and one row per document
     runs/<platform>-<model>-<seed>.json      manifest of one training run
@@ -33,9 +35,9 @@ The gold files are the same for all rounds: `gold.jsonl` is the original set, an
 
 ### Round 3
 
-One system was trained for round 3: Qwen3-4B, seed 0. It trained for all 375 steps. I chose its checkpoint among steps 150, 225, 300 and 375 on `dev_real`, with the whole pipeline: the lowest critical-error rate, then the highest document accuracy. The scores of each checkpoint are in `qwen3-4b-sft-r3-0-ckpt<step>`, and the choice is in the run manifest.
+Qwen3-4B, seed 0, was the first system trained for round 3. It trained for all 375 steps. I chose its checkpoint among steps 150, 225, 300 and 375 on `dev_real`, with the whole pipeline: the lowest critical-error rate, then the highest document accuracy. The scores of each checkpoint are in `qwen3-4b-sft-r3-0-ckpt<step>`, and the choice is in the run manifest.
 
-It did not pass the gate. As run, accuracy on automated documents, the critical-error rate and prompt-injection success were over their limits (`make gate`, command below). I changed how prompt-injection success is counted after this result (see the changes below), so the injection figure in the round 3 files is the old one. Qwen3-1.7B and more seeds were not trained, since 4B failed.
+It did not pass the gate. As run, accuracy on automated documents, the critical-error rate and prompt-injection success were over their limits (`make gate`, command below). I changed how prompt-injection success is counted after this result (see the changes below), so the injection figure in the round 3 files is the old one. I trained Qwen3-1.7B on the same data afterwards (see below), and more seeds were not trained.
 
 An earlier 4B run of round 3 stopped training early on the `dev_real` loss and gave a much worse model. I dropped that rule. The results of that run are not kept here.
 
@@ -59,6 +61,12 @@ The margin is not met: `dev_real` accuracy on automated documents is 0.908, agai
 Training longer made the model more sure of its wrong answers. On `dev_real` four wrong account and VAT answers that no rule catches sit at a confidence of 0.9993 to 0.9998, so no threshold separates them from the right ones: raising it to 0.99 still leaves 1 critical error in 54 automated documents. The wrong answers are the same kind each time: neighbouring accounts (4805 and 4964 for a maintenance or support contract, 4945 and 4950 for consulting work) and food against non-food VAT on a receipt with no printed cue.
 
 I first scored this run before the VAT check read the "incl." lines of a receipt. A critical error on dev passed that check, and the threshold had to go to 0.9999, which left an automation rate of 0.20 on dev and 0.04 on `dev_real`. The numbers above use the check after the fix, and the one-epoch model is the same under both.
+
+### The 1.7B on round 3
+
+I trained Qwen3-1.7B on the round 3 data for one epoch (375 steps, seed 0, run `qwen3-1.7b-r3-0`, about 45 minutes on two T4 GPUs) after the 4B had failed, so that both sizes have a round 3 result. It ran on dev and `dev_real` only (`FINAL = False`), so it has no test-split result and no gate. I scored steps 150, 225, 300 and 375 on `dev_real` and kept step 300 (critical-error rate 0.143, document accuracy 0.656; step 375 had 0.157 and 0.646).
+
+It is far behind the 4B. Without a confidence threshold, 38 of 265 automated dev documents and 10 of 70 on `dev_real` have a critical error (0.143 on both), against 1 of 205 and 0 of 50 for the 4B at its threshold. The threshold chosen on dev and `dev_real` together is 0.9997, and it leaves an automation rate of 0.049 on dev and 0.052 on `dev_real`, against the limit of 0.6 (`make stage-gate SYSTEM=qwen3-1.7b-sft-r3-0 ROUND=3 OUT_DIR=results/round3/rescored`). The other checks pass only because almost nothing is automated.
 
 ### Post-hoc re-scoring of round 3
 
@@ -86,6 +94,8 @@ I first scored this run before the VAT check read the "incl." lines of a receipt
 ### The gold_v3 seal
 
 `final.lock.json` records the SHA-256 of `gold_v3.jsonl` and the date I sealed it, 2026-10-22, before the decisions that followed. The first hash I recorded (`02152f1ca6396e98cd544af0d66d256a52e73eca75104fcf2b0aaf286c9c6df6`) was computed over a copy with Windows line endings, but git stores the file with Unix line endings (`.gitattributes`), so no other checkout could reproduce it. CI found this. The content is the same: with the line endings converted, the file hashes to `cf07dbdaa76632d42e607ebefa75d22b0349d0b03bf7cef07be8f314f21d371c`, which is also the hash of the file in the commit that added it, before any decision that followed. The lock now holds that hash, `make seal` and `make declare-claim STATUS=1` hash a file with Unix line endings, and a test checks that the committed file still matches.
+
+The validator for `gold_v3` (`make validate-gold`) then found one problem: the `reason` of `gold3-016` held a leftover drafting note and was over the length limit. I replaced that one string and changed nothing else in the file, and I sealed the file again. No result on `gold_v3` existed, so no decision depended on it. The hash before the correction was `cf07dbdaa76632d42e607ebefa75d22b0349d0b03bf7cef07be8f314f21d371c`; it is now `08d92575c8ad5586ed6364aaec695567dfe48d6a9a169ec91c6c94e7c42eff24`.
 
 ## Reading a round
 

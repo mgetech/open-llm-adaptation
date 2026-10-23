@@ -1,0 +1,68 @@
+# vLLM and the gateway. Only the gateway is reachable from outside: vLLM sits on a network that has
+# no route out and no published port.
+#
+#   make compose-env                      # writes deploy/vllm.env from configs/serve.yaml
+#   make fetch-weights WEIGHTS_DIR=weights
+#   make fetch-adapters
+#   make gateway-key ID=name              # add the line it prints to configs/keys.yaml
+#   make compose-up
+#
+# Paths are relative to this file. Set WEIGHTS_DIR and ADAPTERS_DIR to use other folders.
+
+name: booking
+
+services:
+  vllm:
+    image: vllm/vllm-openai:v0.30.0
+    entrypoint: ["vllm", "serve"]
+    command: ${VLLM_ARGS:?run make compose-env first}
+    env_file:
+      - vllm.env
+    networks:
+      - backend
+    volumes:
+      - ${WEIGHTS_DIR:-../weights}:/root/.cache/huggingface:ro
+      - ${ADAPTERS_DIR:-../adapters}:/adapters:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 600s
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: deploy/gateway.Dockerfile
+    depends_on:
+      vllm:
+        condition: service_healthy
+    environment:
+      VLLM_URL: http://vllm:8000/v1
+    networks:
+      - backend
+      - frontend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../configs/keys.yaml:/app/configs/keys.yaml:ro
+      - ${ADAPTERS_DIR:-../adapters}:/app/adapters:ro
+      - ../logs:/app/logs
+    restart: unless-stopped
+
+networks:
+  backend:
+    internal: true
+  frontend: {}

@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc post-hoc-gold gate seal declare-claim lint format test requirements
+.PHONY: help setup install-vllm fetch-weights fetch-adapters serve-local serve-check gateway-key compose-env compose-config compose-up data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc post-hoc-gold gate seal declare-claim lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -15,6 +15,30 @@ setup:  ## Create the virtual environment and install dependencies
 
 install-vllm:  ## Install the vLLM version pinned in configs/models.yaml (Linux GPU machines)
 	uv pip install --python .venv/bin/python "vllm==$$(uv run python -m adapt.models --vllm-version)"
+
+fetch-weights:  ## Download the base model of configs/serve.yaml once, so that serving is offline (optional WEIGHTS_DIR=weights for the containers)
+	uv run python -m adapt.serve --fetch-weights $(if $(WEIGHTS_DIR),--weights-dir $(WEIGHTS_DIR))
+
+fetch-adapters:  ## Download the adapters of configs/serve.yaml from the Hub at the pinned revision and check their hash (needs HF_TOKEN in the environment or in .env; optional ADAPTERS_DIR=adapters)
+	uv run python -m adapt.serve --fetch-adapters $(if $(ADAPTERS_DIR),--adapters-dir $(ADAPTERS_DIR))
+
+serve-local:  ## Start vLLM and the gateway from configs/serve.yaml and configs/keys.yaml (optional PRINT=1 shows the commands only, NO_GATEWAY=1 starts vLLM alone)
+	uv run python -m adapt.serve $(if $(PRINT),--print) $(if $(NO_GATEWAY),--no-gateway)
+
+serve-check:  ## Smoke test of a stack that serve-local started (PREPARE=1 writes the two keys of the test first; optional DOCUMENTS=6, WAIT=1500 seconds, OUT=file)
+	uv run python -m adapt.serve_check $(if $(PREPARE),--prepare) $(if $(DOCUMENTS),--documents $(DOCUMENTS)) $(if $(WAIT),--wait $(WAIT)) $(if $(OUT),--out $(OUT))
+
+compose-env:  ## Write deploy/vllm.env, the arguments and environment of the vLLM container, from configs/serve.yaml
+	uv run python -m adapt.serve --compose-env deploy/vllm.env
+
+compose-config:  ## Check deploy/compose.yaml and print it with its values filled in
+	docker compose --env-file deploy/vllm.env -f deploy/compose.yaml config
+
+compose-up:  ## Build the gateway image and start vLLM and the gateway (needs a GPU, the weights, the adapter and configs/keys.yaml)
+	docker compose --env-file deploy/vllm.env -f deploy/compose.yaml up --build -d
+
+gateway-key:  ## Make an API key and print the lines to add to configs/keys.yaml (ID=name; optional KEY_PLATFORMS="tax-booking")
+	uv run python -m adapt.gateway.keys --id $(ID) $(if $(KEY_PLATFORMS),--platforms $(KEY_PLATFORMS))
 
 data:  ## Generate the data splits and the manifest (PLATFORM=, SEED=, optional TRAIN_SIZE=, REWRITES=folder)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --seed $(SEED) $(if $(TRAIN_SIZE),--train-size $(TRAIN_SIZE)) $(if $(REWRITES),--rewrites $(REWRITES))
@@ -34,8 +58,8 @@ rewrite-check:  ## Check the replies of the rewriter and write accepted.jsonl (o
 keep-round:  ## Copy the current data to round<N>/ and record it in the manifest (ROUND=, optional NOTE=)
 	uv run python -m adapt.data.split --platform $(PLATFORM) --keep-round $(ROUND) $(if $(NOTE),--note "$(NOTE)")
 
-validate-gold:  ## Check the gold and dev_real files: schema, amounts, accounts (PLATFORM=)
-	uv run python -m adapt.data.gold --platform $(PLATFORM)
+validate-gold:  ## Check the gold, gold_v2, gold_v3 and dev_real files: schema, amounts, accounts (PLATFORM=; optional DETAILS=1 shows the problems of gold_v3 in full)
+	uv run python -m adapt.data.gold --platform $(PLATFORM) $(if $(DETAILS),--details)
 
 models-check:  ## Check the model gates and compare the pinned revisions with the Hub (OFFLINE=1, PIN=1)
 	uv run python -m adapt.models $(if $(OFFLINE),--offline) $(if $(PIN),--pin)

@@ -34,7 +34,7 @@
   "sealed": {
     "gold_v3": {
       "file": "platforms/tax-booking/evals/gold_v3.jsonl",
-      "sha256": "cf07dbdaa76632d42e607ebefa75d22b0349d0b03bf7cef07be8f314f21d371c",
+      "sha256": "08d92575c8ad5586ed6364aaec695567dfe48d6a9a169ec91c6c94e7c42eff24",
       "sealed": "2026-10-22"
     }
   }

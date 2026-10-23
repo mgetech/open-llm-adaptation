@@ -1,0 +1,9 @@
+# The format of configs/keys.yaml, which git ignores. A key is stored as its SHA-256 and the
+# platforms it may use, never as the key itself. `make gateway-key ID=name` makes a key and
+# prints the lines to add here.
+#
+# The key below is "example-key-do-not-use". Do not use it anywhere.
+keys:
+  - id: example
+    sha256: 239d610c3cb3891b136e406ed6352e180f4764d2aa4e6b7753b18985d93b1636
+    platforms: [tax-booking]

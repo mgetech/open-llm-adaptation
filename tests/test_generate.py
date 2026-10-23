@@ -46,7 +46,7 @@ def test_some_names_are_plain_words_and_some_are_made_up(rules, suppliers):
     assert 0.1 * len(suppliers) < len(from_words) < 0.5 * len(suppliers)
 
 
-def test_supplier_names_never_equal_a_hand_written_supplier(rules):
+def test_supplier_names_never_equal_an_evaluation_supplier(rules):
     written = set()
     for name in ("gold", "gold_v2", "dev_real"):
         path = PLATFORMS_DIR / "tax-booking" / "evals" / f"{name}.jsonl"

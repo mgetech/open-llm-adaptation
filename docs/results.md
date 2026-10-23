@@ -66,6 +66,7 @@ The fixes after round 3 (below) pass every check on validation. A fresh held-out
 | round 1 | first generator, seed 0 | both sizes failed the gate; I read the errors on dev and test, so those test splits could no longer count as unseen |
 | round 2 | changed generator, seed 1, `gold_v2` written before any result | both sizes failed; the generalisation gap and review recall also failed for the 4B |
 | round 3 | model-rewritten wording for part of every split, `dev_real`, checkpoint chosen on `dev_real` | the 4B failed accuracy on automated documents, the critical-error rate and injection |
+| round 3, 1.7B | same data, one epoch, dev and `dev_real` only | critical errors on 14% of automated documents without a threshold; at a safe threshold automation is 0.05; not shipped |
 | round 3, two epochs | same data, 750 steps | better on dev, worse on `dev_real`: accuracy on automated 0.908 against 0.960, with confident wrong answers; not shipped |
 
 After the round 3 failure I found three causes and fixed them:
@@ -77,7 +78,7 @@ The round 3 claim and its lock are unchanged, and the round 3 test sets and `gol
 
 ## Model selection
 
-I fine-tuned both sizes. The 1.7B failed the gate in round 1 (5 checks failed) and round 2 (4 failed), and I did not train it on the round 3 data. The 4B failed 3 checks in round 3. Nothing passed on held-out data, so the rule for that case applies: the configuration with the fewest failed checks ships, which is the 4B (the rounds do not use the same data, so this is a rough comparison). I did not try a pair of two adapters.
+I fine-tuned both sizes in every round. The 1.7B failed the gate in round 1 (5 checks failed) and round 2 (4 failed). On the round 3 data I ran it for one epoch on dev and `dev_real` only, and it is far behind the 4B there: critical errors on 14% of automated documents without a threshold, and an automation rate of 0.05 at the threshold that keeps them out (the 4B: 0.76 and 0.65). The 4B failed 3 checks on held-out data in round 3. Nothing passed on held-out data, so the rule for that case applies: the configuration with the fewest failed checks ships, which is the 4B (the rounds do not use the same data, so this is a rough comparison). I did not try a pair of two adapters.
 
 ## Future work
 

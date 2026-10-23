@@ -15,6 +15,18 @@ The shipped configuration is Qwen3-4B fine-tuned for one epoch on the round 3 da
 
 `docs/results.md` has the tables, the results of every round and what each one taught me.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    caller[Caller] -->|API key| gw[Gateway]
+    gw --> pipe[Fail-closed pipeline<br/>checks, model, rules, confidence]
+    pipe --> vllm[vLLM<br/>Qwen3-4B and a LoRA adapter]
+    pipe --> out[Booking lines<br/>or review with reasons]
+```
+
+The model copies the amounts and picks accounts; code does the arithmetic and the checks. Anything uncertain, or any failure, goes to review. `docs/architecture.md` has the pipeline step by step, the gateway API and the deployment.
+
 ## Quickstart
 
 ```
@@ -42,5 +54,12 @@ The last command prints the validation table from the saved results. It needs no
 
 ## Documents
 
+- `docs/architecture.md`: the components, the pipeline, the gateway API and the deployment.
+- `docs/adr/`: the nine decisions behind them, one short file each.
 - `docs/results.md`: the results, the rounds and the post-hoc re-scoring.
+- `docs/model-card.md`: the card of the adapter, with its files, training and limits.
 - `results/README.md`: the layout of `results/` and the commands that write each file.
+
+## Licence
+
+The code is under Apache 2.0. The published adapter weights are under CC BY-NC 4.0, for research and demonstration only (`docs/model-card.md`).
