@@ -2,7 +2,7 @@
 
 How I run the stack of `deploy/compose.yaml` on one NVIDIA T4 in Azure, check that it answers, and check that it gives the same results as on Kaggle. The VM is a `Standard_NC4as_T4_v3` (4 vCPUs and one T4 with 16 GB, the same GPU as Kaggle) in Germany West Central, with Ubuntu 22.04 and a 128 GB disk. Check the size on Azure's size page and the quota of your subscription before you start.
 
-Status: I wrote these steps before the first run on a VM. The files in `results/azure/` record what I ran, and I change this file when a step fails.
+Status: I ran these steps once on a VM, and the files in `results/azure/` record that run. I created the VM in the portal with the same size, image and disk instead of with the commands of step 1. The one step that failed was the comparison of step 5, because the evaluation hashed the download notes in the adapter folder; that is fixed in the code.
 
 The VM is billed while it is allocated. Stopping the machine from inside does not stop the billing: deallocate it, and delete the resource group when you are done (step 6).
 
@@ -75,6 +75,8 @@ make serve-check NO_VLLM=1 OUT=results/azure/smoke-test.json
 ```
 
 vLLM is on a network without a route out, so the check cannot reach it directly, and `NO_VLLM=1` skips the two direct checks. `/readyz` still checks that vLLM serves the base model and the adapter, and `docker compose ... exec vllm vllm --version` shows the version.
+
+To send a document yourself, open a tunnel to port 8080 (`ssh -N -L 8080:localhost:8080 azureuser@<public ip>`), set the variable `key` of `deploy/gateway.postman_collection.json` to the plain text key in `logs/serve-check-keys.json`, and send one of its requests.
 
 ## 5. Evaluate dev and dev_real, and compare with Kaggle
 
