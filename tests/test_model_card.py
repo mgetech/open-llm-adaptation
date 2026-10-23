@@ -53,19 +53,31 @@ def test_the_access_box_shows_the_terms_and_asks_for_a_tick(front_matter):
     }
 
 
-def test_the_card_is_published_after_the_checks_and_only_from_main():
-    flow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
-    job = flow["jobs"]["publish-model-card"]
-    assert job["needs"] == "check"
-    assert job["if"] == "github.ref == 'refs/heads/main' && github.event_name != 'pull_request'"
-    assert "secrets" not in yaml.dump(flow["jobs"]["check"])
+ONLY_MAIN = "github.ref == 'refs/heads/main' && github.event_name != 'pull_request'"
 
 
-def test_only_the_card_and_the_note_are_uploaded_with_the_token_from_the_secret():
+def test_there_is_one_job_and_the_card_goes_up_after_lint_and_the_tests():
     flow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
-    steps = flow["jobs"]["publish-model-card"]["steps"]
+    assert list(flow["jobs"]) == ["check"]
+    steps = flow["jobs"]["check"]["steps"]
+    runs = [step.get("run", "") for step in steps]
+    upload = [i for i, run in enumerate(runs) if "hf upload" in run]
+    assert len(upload) == 2
+    assert runs.index("make lint") < runs.index("make test") < min(upload)
+    assert upload == list(range(upload[0], len(steps)))  # nothing but uploads comes after
+
+
+def test_only_main_gets_the_secret_and_only_the_upload_steps_have_it():
+    flow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    steps = flow["jobs"]["check"]["steps"]
     uploads = [step for step in steps if "hf upload" in step.get("run", "")]
+    assert [step["if"] for step in uploads] == [ONLY_MAIN] * 2
     assert [step["env"]["HF_TOKEN"] for step in uploads] == ["${{ secrets.HF_TOKEN }}"] * 2
+    others = [step for step in steps if step not in uploads]
+    assert "secrets" not in yaml.dump(others) and "secrets" not in yaml.dump(
+        flow["jobs"]["check"]["env"]
+    )
+    assert "pull_request" in flow[True]  # the checks still run on pull requests
     commands = " ".join(step["run"] for step in uploads)
     assert "docs/model-card.md README.md" in commands
     assert "docs/adapter-license.txt LICENSE" in commands
