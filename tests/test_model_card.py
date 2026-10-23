@@ -11,6 +11,7 @@ from adapt.models import load_registry
 from adapt.serve import adapter_path, load_serve_config
 
 CARD = ROOT / "docs" / "model-card.md"
+LICENSE_NOTE = ROOT / "docs" / "adapter-license.txt"
 MANIFEST = ROOT / "results" / "round3" / "runs" / "tax-booking-qwen3-4b-r3-0.json"
 
 
@@ -30,11 +31,25 @@ def manifest():
     return json.loads(MANIFEST.read_text(encoding="utf-8"))
 
 
-def test_the_header_names_the_base_model_and_its_licence(front_matter):
+def test_the_header_names_the_base_model(front_matter):
     entry = load_registry().models[load_serve_config().model]
     assert front_matter["base_model"] == entry.hf_id
-    assert front_matter["license"] == entry.licence
     assert front_matter["library_name"] == "peft"
+
+
+def test_the_adapter_is_non_commercial_and_the_base_model_keeps_its_licence(card, front_matter):
+    entry = load_registry().models[load_serve_config().model]
+    assert front_matter["license"] == "cc-by-nc-4.0"
+    assert entry.licence == "apache-2.0" and "licensed under Apache 2.0" in card
+    assert "CC BY-NC 4.0" in card and "Not for commercial use." in card
+    assert "For research and demonstration only." in card
+
+
+def test_the_license_file_for_the_hub_says_the_same():
+    text = LICENSE_NOTE.read_text(encoding="utf-8")
+    assert "CC BY-NC 4.0" in text and "Not for commercial use." in text
+    assert "creativecommons.org/licenses/by-nc/4.0" in text
+    assert "Apache 2.0" in text
 
 
 def test_the_card_gives_the_pinned_revision_and_the_serving_flags(card):

@@ -2,7 +2,7 @@
 base_model: Qwen/Qwen3-4B
 library_name: peft
 pipeline_tag: text-generation
-license: apache-2.0
+license: cc-by-nc-4.0
 language:
   - en
 tags:
@@ -23,8 +23,10 @@ The adapter is one part of a system. The numbers below are for the adapter toget
 
 ## Intended use
 
-- Booking suggestions for a bookkeeping tool, where a person approves what the system flags and the system never books a flagged document by itself.
-- A worked example of fine-tuning a small open-weight model for a structured task, and of checking it with a gate.
+For research and demonstration only. Not for commercial use.
+
+- A demonstration of a fine-tuning and evaluation pipeline: a small open-weight model fine-tuned for a structured task and checked with a gate.
+- The booking behaviour it demonstrates: suggestions that a person approves when the system flags them, and the system never books a flagged document by itself.
 
 Not for:
 
@@ -34,7 +36,9 @@ Not for:
 
 ## Base model and licence
 
-The base model is Qwen/Qwen3-4B at revision `1cfa9a7208912126459214e8b04321603b3df60c`, licensed under Apache 2.0. The adapter is licensed under Apache 2.0 as well. The adapter was trained with `enable_thinking` off, and serving must use the same chat template setting.
+The base model is Qwen/Qwen3-4B at revision `1cfa9a7208912126459214e8b04321603b3df60c`, licensed under Apache 2.0. That licence is the base model's. The adapter weights (`adapter_model.safetensors` and `adapter_config.json`) are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/): you may share and adapt them with credit and for non-commercial purposes. The code of the repository stays under Apache 2.0.
+
+The adapter was trained with `enable_thinking` off, and serving must use the same chat template setting.
 
 ## Files and checksum
 

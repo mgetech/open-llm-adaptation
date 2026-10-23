@@ -1,0 +1,18 @@
+License of the adapter weights
+
+The files adapter_model.safetensors and adapter_config.json in this repository are licensed under the
+Creative Commons Attribution-NonCommercial 4.0 International license (CC BY-NC 4.0):
+
+    https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+For research and demonstration only. Not for commercial use.
+
+What this covers
+- The CC BY-NC 4.0 license applies to the adapter weights, and to nothing else.
+- The base model, Qwen/Qwen3-4B, is not part of this repository. It is licensed under Apache 2.0 by its
+  authors, and that license stays as it is.
+- The code that trained, checked and served the adapter is in the open-llm-adaptation repository on
+  GitHub (https://github.com/mgetech/open-llm-adaptation) and is licensed under Apache 2.0.
+
+The adapter comes without warranty of any kind. It was trained on synthetic data and has not passed
+its own held-out check (see the model card).
