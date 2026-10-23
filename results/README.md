@@ -11,6 +11,7 @@ results/
     gold_rescored.json                      post-hoc re-scoring of the shipped configuration on gold and gold_v2, not a claim
   serving/
     smoke-test.json                         the serving smoke test on a Kaggle T4 (`make serve-check`), not a measurement of the model
+    vllm-memory.txt                         the memory lines of the vLLM start-up log of that smoke test, for `docs/gpu-sizing.md`
   azure/
     README.md, smoke-test.json, vm.txt      the serving smoke test and the dev and dev_real runs on an Azure T4, with the comparison to Kaggle
     eval/<platform>/<system>/<split>.json   the Azure evaluation results, as in round 1

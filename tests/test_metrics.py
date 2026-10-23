@@ -52,7 +52,7 @@ def case(
     )
 
 
-# Ten documents with known outcomes. The numbers below come from counting by hand.
+# Ten documents with known outcomes. The numbers below come from counting them one by one.
 #  1 correct
 #  2 correct, amount one cent off
 #  3 critical: wrong VAT rate
