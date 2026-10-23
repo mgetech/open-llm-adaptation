@@ -43,4 +43,5 @@ The last command prints the validation table from the saved results. It needs no
 ## Documents
 
 - `docs/results.md`: the results, the rounds and the post-hoc re-scoring.
+- `docs/model-card.md`: the card of the adapter, with its files, training and limits.
 - `results/README.md`: the layout of `results/` and the commands that write each file.
