@@ -3,6 +3,7 @@ name: ci
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,3 +17,32 @@ jobs:
       - run: uv sync --locked
       - run: make lint
       - run: make test
+
+  # The model card is edited in this repository and nowhere else: an upload overwrites the card on
+  # the Hub. Only the card and the license note go up, never the weights. A push that changes
+  # neither file uploads nothing, because the Hub skips a commit without changes.
+  publish-model-card:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: publish-model-card
+      cancel-in-progress: false
+    env:
+      HF_REPO: mgetech/qwen3-4b-tax-booking
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - name: Upload the model card
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: >
+          uv run hf upload "$HF_REPO" docs/model-card.md README.md
+          --commit-message "Update model card from ${GITHUB_SHA::7}"
+      - name: Upload the license note
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: >
+          uv run hf upload "$HF_REPO" docs/adapter-license.txt LICENSE
+          --commit-message "Update license note from ${GITHUB_SHA::7}"

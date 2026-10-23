@@ -12,6 +12,7 @@ from adapt.serve import adapter_path, load_serve_config
 
 CARD = ROOT / "docs" / "model-card.md"
 LICENSE_NOTE = ROOT / "docs" / "adapter-license.txt"
+WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 MANIFEST = ROOT / "results" / "round3" / "runs" / "tax-booking-qwen3-4b-r3-0.json"
 
 
@@ -50,6 +51,27 @@ def test_the_access_box_shows_the_terms_and_asks_for_a_tick(front_matter):
     assert front_matter["extra_gated_fields"] == {
         "I will not use this adapter commercially": "checkbox"
     }
+
+
+def test_the_card_is_published_after_the_checks_and_only_from_main():
+    flow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    job = flow["jobs"]["publish-model-card"]
+    assert job["needs"] == "check"
+    assert job["if"] == "github.ref == 'refs/heads/main' && github.event_name != 'pull_request'"
+    assert "secrets" not in yaml.dump(flow["jobs"]["check"])
+
+
+def test_only_the_card_and_the_note_are_uploaded_with_the_token_from_the_secret():
+    flow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    steps = flow["jobs"]["publish-model-card"]["steps"]
+    uploads = [step for step in steps if "hf upload" in step.get("run", "")]
+    assert [step["env"]["HF_TOKEN"] for step in uploads] == ["${{ secrets.HF_TOKEN }}"] * 2
+    commands = " ".join(step["run"] for step in uploads)
+    assert "docs/model-card.md README.md" in commands
+    assert "docs/adapter-license.txt LICENSE" in commands
+    text = WORKFLOW.read_text(encoding="utf-8")
+    assert "safetensors" not in text and "hf_" not in text
+    assert text.count("secrets.HF_TOKEN") == 2
 
 
 def test_the_license_file_for_the_hub_says_the_same():
