@@ -85,7 +85,8 @@ What I have and have not run:
 | `docker compose config` | validated |
 | `make fetch-adapters`: download from the Hub, hash matches | run |
 | The smoke test (`make serve-check`, `notebooks/kaggle_serve_check.ipynb`) against the gateway and a fake model server | run on a laptop |
-| vLLM with the adapter through `make serve-local` or the compose file | not run |
+| vLLM 0.30.0 with the adapter and the gateway through `make serve-local`, on one Kaggle T4 (`results/serving/smoke-test.json`) | run: 10 of 10 checks passed |
+| The compose file with the vLLM image and a GPU | not run |
 | The Azure VM | not run |
 
-Until the vLLM steps have run, the serving flags are checked by tests only, not by a server that started.
+The smoke test shows that the stack starts and answers: vLLM was ready after 291 seconds, it served `qwen3-4b` and `tax-booking`, the gateway returned 401 and 403 where it should, six dev documents got an answer, and the audit log held a record for every request with the adapter hash and the base revision. It is not a measurement of the model, and the documents are too few for a rate. Each answer took 7 to 20 seconds, one request at a time on the T4, and the first ones include kernel compilation, so this says nothing about capacity. The load benchmark is future work.

@@ -13,6 +13,7 @@ from adapt.gateway.app import create_app
 from adapt.gateway.audit import AuditLog
 from adapt.gateway.keys import load_keys
 from adapt.models import load_registry
+from adapt.serve import load_serve_config
 from adapt.serve_check import (
     OTHER_KEY,
     OWN_KEY,
@@ -25,6 +26,15 @@ from fake_model import Model
 from test_gateway_health import adapter_folder, serve  # noqa: F401  (fixtures)
 
 PINNED = load_registry().gates.vllm.version
+ROW_FIELDS = {
+    "id",
+    "status",
+    "expected_review",
+    "needs_review",
+    "reasons",
+    "confidence",
+    "latency_ms",
+}
 
 
 @pytest.fixture(scope="module")
@@ -129,6 +139,20 @@ def test_an_audit_log_with_text_in_it_fails(stack):
         passed(second)["the audit log has a record for every request, with hashes and no text"]
         is False
     )
+
+
+def test_the_committed_result_is_of_the_shipped_stack_and_holds_no_text():
+    path = serve_check.RESULT_FILE
+    report = json.loads(path.read_text(encoding="utf-8"))
+    (adapter,) = load_serve_config().adapters
+    assert report["kind"] == "serving smoke test" and report["passed"] is True
+    assert all(check["passed"] for check in report["checks"])
+    assert report["adapter_sha256"] == adapter.sha256
+    assert report["vllm"]["version"] == report["vllm"]["pinned"] == PINNED
+    assert report["base_revision"] == load_registry().models[load_serve_config().model].revision
+    assert report["gpu"] and report["git_dirty"] is False
+    assert {"document_text", "text", "key"}.isdisjoint(report)
+    assert all(set(row) <= ROW_FIELDS for row in report["documents"])
 
 
 def test_the_keys_of_the_test_are_written_once(tmp_path):

@@ -9,6 +9,8 @@ results/
   post_hoc/
     round3_rescored.json                    post-hoc re-scoring of the round 3 claim run, not a claim
     gold_rescored.json                      post-hoc re-scoring of the shipped configuration on gold and gold_v2, not a claim
+  serving/
+    smoke-test.json                         the serving smoke test on a Kaggle T4 (`make serve-check`), not a measurement of the model
   round1/
     eval/<platform>/<system>/<split>.json    metrics, confidence intervals, slices and one row per document
     runs/<platform>-<model>-<seed>.json      manifest of one training run

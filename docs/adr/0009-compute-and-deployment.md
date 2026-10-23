@@ -8,4 +8,4 @@ Decision: Kaggle (two T4) is where I develop: baselines, training, and evaluatio
 
 Alternatives: A hosted model API, which breaks professional secrecy. Kubernetes, which is too much for one GPU.
 
-Consequences: Training and evaluation are reproducible on a free GPU. The VM run, which should match Kaggle within the confidence intervals, is future work, and so is the serving benchmark.
+Consequences: Training and evaluation are reproducible on a free GPU, and the served stack started on a Kaggle T4 in a smoke test. The compose file has not run on a GPU. The VM run, which should match Kaggle within the confidence intervals, is future work, and so is the serving benchmark.
