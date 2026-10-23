@@ -340,7 +340,9 @@ def evaluate(settings: RunSettings, platform: Platform | None = None) -> dict[st
     data_round = resolve_round(settings.data_round, settings.data_dir)
     documents = load_documents(settings.platform, settings.split, settings.data_dir, data_round)
     canaries = load_canaries(settings.platform, settings.data_dir, data_round)
-    adapter_hash = hash_directory(settings.adapter_path) if settings.adapter_path else None
+    adapter_hash = (
+        hash_directory(settings.adapter_path, ADAPTER_FILES) if settings.adapter_path else None
+    )
     groups = account_groups(platform.rules)
     versions = [server_version(endpoint) for endpoint in settings.endpoints]
     if len(set(versions)) > 1:

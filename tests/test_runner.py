@@ -25,6 +25,7 @@ from adapt.eval.metrics import (
     weighted_error_cost,
 )
 from adapt.eval.runner import (
+    ADAPTER_FILES,
     DATA_DIR,
     ROOT,
     RunSettings,
@@ -433,11 +434,18 @@ def test_the_hash_of_a_folder_does_not_depend_on_the_system(tmp_path: Path):
     assert hash_directory(tmp_path) == digest.hexdigest()
 
 
-def test_an_adapter_folder_is_hashed_into_the_manifest(server, tmp_path):
-    (tmp_path / "adapter_model.bin").write_bytes(b"weights")
+def test_an_adapter_folder_is_hashed_into_the_manifest_by_its_two_files(server, tmp_path):
+    (tmp_path / "adapter_model.safetensors").write_bytes(b"weights")
+    (tmp_path / "adapter_config.json").write_bytes(b"config")
     results = run(server, "edge", settings={"adapter_path": tmp_path, "model_revision": "abc123"})
-    assert results["manifest"]["adapter_hash"] == hash_directory(tmp_path)
+    expected = results["manifest"]["adapter_hash"]
+    assert expected == hash_directory(tmp_path, ADAPTER_FILES)
     assert results["manifest"]["model_revision"] == "abc123"
+    # the download tool leaves its own notes next to the files; they are not the adapter
+    (tmp_path / ".cache" / "huggingface").mkdir(parents=True)
+    (tmp_path / ".cache" / "huggingface" / "adapter_config.json.metadata").write_bytes(b"x")
+    results = run(server, "edge", settings={"adapter_path": tmp_path, "model_revision": "abc123"})
+    assert results["manifest"]["adapter_hash"] == expected
 
 
 def test_on_dev_the_threshold_is_tuned_and_stored_with_a_coverage_table(server):
