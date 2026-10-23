@@ -3,6 +3,10 @@ base_model: Qwen/Qwen3-4B
 library_name: peft
 pipeline_tag: text-generation
 license: cc-by-nc-4.0
+extra_gated_prompt: >-
+  This adapter is for research and demonstration only. Not for commercial use.
+extra_gated_fields:
+  I will not use this adapter commercially: checkbox
 language:
   - en
 tags:

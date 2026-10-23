@@ -45,6 +45,13 @@ def test_the_adapter_is_non_commercial_and_the_base_model_keeps_its_licence(card
     assert "For research and demonstration only." in card
 
 
+def test_the_access_box_shows_the_terms_and_asks_for_a_tick(front_matter):
+    assert "Not for commercial use." in front_matter["extra_gated_prompt"]
+    assert front_matter["extra_gated_fields"] == {
+        "I will not use this adapter commercially": "checkbox"
+    }
+
+
 def test_the_license_file_for_the_hub_says_the_same():
     text = LICENSE_NOTE.read_text(encoding="utf-8")
     assert "CC BY-NC 4.0" in text and "Not for commercial use." in text
