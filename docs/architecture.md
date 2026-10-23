@@ -84,6 +84,7 @@ What I have and have not run:
 | Gateway image: build, start, `/healthz` 200, `/readyz` 503 without vLLM | run on a laptop |
 | `docker compose config` | validated |
 | `make fetch-adapters`: download from the Hub, hash matches | run |
+| The smoke test (`make serve-check`, `notebooks/kaggle_serve_check.ipynb`) against the gateway and a fake model server | run on a laptop |
 | vLLM with the adapter through `make serve-local` or the compose file | not run |
 | The Azure VM | not run |
 

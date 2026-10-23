@@ -5,7 +5,7 @@ NUM_GPUS ?= 1
 SPLIT ?= dev
 ENDPOINTS ?= http://localhost:8000/v1
 
-.PHONY: help setup install-vllm fetch-weights fetch-adapters serve-local gateway-key compose-env compose-config compose-up data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc post-hoc-gold gate seal declare-claim lint format test requirements
+.PHONY: help setup install-vllm fetch-weights fetch-adapters serve-local serve-check gateway-key compose-env compose-config compose-up data rewrite-export rewrite-check audit-export audit-compare keep-round validate-gold models-check baseline train select eval-sft eval pair rescore threshold-report stage-gate post-hoc post-hoc-gold gate seal declare-claim lint format test requirements
 
 help:  ## Show the available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -24,6 +24,9 @@ fetch-adapters:  ## Download the adapters of configs/serve.yaml from the Hub at 
 
 serve-local:  ## Start vLLM and the gateway from configs/serve.yaml and configs/keys.yaml (optional PRINT=1 shows the commands only, NO_GATEWAY=1 starts vLLM alone)
 	uv run python -m adapt.serve $(if $(PRINT),--print) $(if $(NO_GATEWAY),--no-gateway)
+
+serve-check:  ## Smoke test of a stack that serve-local started (PREPARE=1 writes the two keys of the test first; optional DOCUMENTS=6, WAIT=1500 seconds, OUT=file)
+	uv run python -m adapt.serve_check $(if $(PREPARE),--prepare) $(if $(DOCUMENTS),--documents $(DOCUMENTS)) $(if $(WAIT),--wait $(WAIT)) $(if $(OUT),--out $(OUT))
 
 compose-env:  ## Write deploy/vllm.env, the arguments and environment of the vLLM container, from configs/serve.yaml
 	uv run python -m adapt.serve --compose-env deploy/vllm.env
