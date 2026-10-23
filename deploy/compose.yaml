@@ -3,6 +3,7 @@
 #
 #   make compose-env                      # writes deploy/vllm.env from configs/serve.yaml
 #   make fetch-weights WEIGHTS_DIR=weights
+#   make fetch-adapters
 #   make gateway-key ID=name              # add the line it prints to configs/keys.yaml
 #   make compose-up
 #

@@ -206,6 +206,166 @@ def test_the_weights_can_go_into_the_folder_the_containers_mount(registry, monke
     assert calls[0]["cache_dir"] == tmp_path / "weights" / "hub"
 
 
+HUB = {"repo": "someone/an-adapter", "revision": "a" * 40}
+FILES = {"adapter_config.json": b'{"r": 16}', "adapter_model.safetensors": b"weights"}
+
+
+def adapter_dict(path, files=FILES, hub=HUB):
+    """An adapter whose expected hash is that of `files`."""
+    folder = path.parent / "expected"
+    folder.mkdir(exist_ok=True)
+    for name, data in files.items():
+        (folder / name).write_bytes(data)
+    expected = hash_directory(folder, ADAPTER_FILES)
+    adapter = {"name": "tax-booking", "path": path, "sha256": expected, "threshold": 0.5}
+    return adapter if hub is None else {**adapter, "hub": hub}
+
+
+@pytest.fixture
+def downloads(monkeypatch):
+    """Replaces the download: it writes `files` into the target folder and notes the call."""
+    calls = []
+    state = {"files": FILES, "error": None}
+
+    def fake_download(repo_id, **kwargs):
+        calls.append((repo_id, kwargs))
+        if state["error"]:
+            raise state["error"]
+        target = kwargs["local_dir"]
+        target.mkdir(parents=True, exist_ok=True)
+        for name, data in state["files"].items():
+            (target / name).write_bytes(data)
+        return str(target)
+
+    monkeypatch.setattr("huggingface_hub.snapshot_download", fake_download)
+    return calls, state
+
+
+def test_the_committed_adapter_comes_from_a_pinned_commit_on_the_hub():
+    (adapter,) = load_serve_config().adapters
+    assert adapter.hub is not None
+    assert adapter.hub.repo == "mgetech/qwen3-4b-tax-booking"
+    assert len(adapter.hub.revision) == 40
+
+
+def test_a_hub_revision_must_be_a_commit_and_not_a_branch(raw):
+    raw["adapters"][0]["hub"]["revision"] = "main"
+    with pytest.raises(ValueError):
+        config_with(raw)
+
+
+def test_the_adapter_is_fetched_at_the_pinned_commit_and_its_hash_is_checked(
+    raw, tmp_path, downloads
+):
+    calls, _ = downloads
+    target = tmp_path / "adapter"
+    config = config_with(raw, adapters=[adapter_dict(target)])
+    assert serve.fetch_adapters(config, token="secret") == [target]
+    assert calls == [
+        (
+            "someone/an-adapter",
+            {
+                "revision": "a" * 40,
+                "allow_patterns": list(ADAPTER_FILES),
+                "local_dir": target,
+                "token": "secret",
+            },
+        )
+    ]
+    check_adapters(config)
+
+
+def test_other_weights_from_the_hub_are_refused(raw, tmp_path, downloads):
+    _, state = downloads
+    state["files"] = {**FILES, "adapter_model.safetensors": b"changed"}
+    config = config_with(raw, adapters=[adapter_dict(tmp_path / "adapter")])
+    with pytest.raises(ValueError, match="has hash .* the file expects"):
+        serve.fetch_adapters(config)
+
+
+def test_an_adapter_that_is_there_with_the_right_hash_is_not_downloaded_again(
+    raw, tmp_path, downloads
+):
+    calls, _ = downloads
+    target = tmp_path / "adapter"
+    config = config_with(raw, adapters=[adapter_dict(target)])
+    serve.fetch_adapters(config)
+    serve.fetch_adapters(config)
+    assert len(calls) == 1
+
+
+def test_an_adapter_with_other_weights_on_disk_is_downloaded_again(raw, tmp_path, downloads):
+    calls, _ = downloads
+    target = tmp_path / "adapter"
+    config = config_with(raw, adapters=[adapter_dict(target)])
+    serve.fetch_adapters(config)
+    (target / "adapter_model.safetensors").write_bytes(b"edited")
+    serve.fetch_adapters(config)
+    assert len(calls) == 2
+    check_adapters(config)
+
+
+def test_the_adapters_can_go_below_another_folder_than_adapters(raw, tmp_path, downloads):
+    calls, _ = downloads
+    adapter = adapter_dict(tmp_path / "unused") | {"path": "adapters/tax-booking/qwen3-4b-r3-0"}
+    config = config_with(raw, adapters=[adapter])
+    (folder,) = serve.fetch_adapters(config, tmp_path / "elsewhere")
+    assert folder == tmp_path / "elsewhere" / "tax-booking" / "qwen3-4b-r3-0"
+    assert calls[0][1]["local_dir"] == folder
+
+
+def test_a_folder_outside_adapters_cannot_be_moved(raw, tmp_path):
+    config = config_with(raw, adapters=[adapter_dict(tmp_path / "adapter")])
+    with pytest.raises(ValueError, match="is not in the adapters folder"):
+        serve.fetch_adapters(config, tmp_path / "elsewhere")
+
+
+def test_an_adapter_without_a_hub_entry_is_refused(raw, tmp_path, downloads):
+    calls, _ = downloads
+    config = config_with(raw, adapters=[adapter_dict(tmp_path / "adapter", hub=None)])
+    with pytest.raises(ValueError, match="no hub entry"):
+        serve.fetch_adapters(config)
+    assert calls == []
+
+
+def test_a_refusal_by_the_hub_says_the_repo_is_gated_and_where_the_token_goes(
+    raw, tmp_path, downloads
+):
+    import httpx
+    from huggingface_hub.errors import GatedRepoError
+
+    _, state = downloads
+    response = httpx.Response(403, request=httpx.Request("GET", "https://huggingface.co/x"))
+    state["error"] = GatedRepoError("403 Forbidden", response=response)
+    config = config_with(raw, adapters=[adapter_dict(tmp_path / "adapter")])
+    with pytest.raises(ValueError, match="gated.*HF_TOKEN.*\\.env"):
+        serve.fetch_adapters(config)
+
+
+def test_the_token_comes_from_the_environment_first_then_from_the_env_file(tmp_path):
+    file = tmp_path / ".env"
+    file.write_text('OTHER=1\r\nHF_TOKEN = "from-file"\r\n', encoding="utf-8")
+    assert serve.hub_token({"HF_TOKEN": " from-env "}, file) == "from-env"
+    assert serve.hub_token({}, file) == "from-file"
+    file.write_text("HF_TOKEN=\n", encoding="utf-8")
+    assert serve.hub_token({}, file) is None
+    assert serve.hub_token({}, tmp_path / "none") is None
+
+
+def test_fetch_adapters_prints_the_folder_and_asks_for_the_token_of_the_file(
+    raw, tmp_path, downloads, monkeypatch, capsys
+):
+    calls, _ = downloads
+    target = tmp_path / "adapter"
+    path = tmp_path / "serve.yaml"
+    raw["adapters"][0] = adapter_dict(target) | {"path": str(target)}
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    monkeypatch.setattr(serve, "hub_token", lambda: "from-the-file")
+    assert main(["--file", str(path), "--fetch-adapters"]) == 0
+    assert calls[0][1]["token"] == "from-the-file"
+    assert str(target) in capsys.readouterr().out
+
+
 def test_print_shows_the_command_and_starts_nothing(monkeypatch, capsys):
     def started(*args, **kwargs):
         raise AssertionError("vLLM must not start")
@@ -308,6 +468,9 @@ def test_the_make_targets_call_the_launcher():
         return result.stdout
 
     assert "-m adapt.serve --fetch-weights" in planned("fetch-weights")
+    assert "-m adapt.serve --fetch-adapters" in planned("fetch-adapters")
+    assert "--adapters-dir" not in planned("fetch-adapters")
+    assert "--adapters-dir elsewhere" in planned("fetch-adapters", "ADAPTERS_DIR=elsewhere")
     assert "-m adapt.serve" in planned("serve-local")
     assert "--print" in planned("serve-local", "PRINT=1")
     assert "--print" not in planned("serve-local")

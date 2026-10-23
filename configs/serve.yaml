@@ -18,12 +18,17 @@ lora:
 # Adapters by the name a request uses; the gateway serves the platform of the same name with the
 # adapter. `sha256` is the hash over adapter_config.json and adapter_model.safetensors; the
 # launcher refuses an adapter whose files do not match it. `threshold` is the confidence limit
-# of the pipeline, chosen on dev and dev_real.
+# of the pipeline, chosen on dev and dev_real. `hub` is where `make fetch-adapters` downloads the
+# adapter from: the repo and the commit that holds the files. The download is checked against
+# `sha256`, so a later commit on the Hub (a new model card, say) changes nothing here.
 adapters:
   - name: tax-booking
     path: adapters/tax-booking/qwen3-4b-r3-0
     sha256: 2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c
     threshold: 0.9817172787547637
+    hub:
+      repo: mgetech/qwen3-4b-tax-booking
+      revision: f8fbfc59db03ecd1cfe1892d2a4fccc9335ed48f
 
 # Serving is offline: `make fetch-weights` downloads the base model once.
 environment:

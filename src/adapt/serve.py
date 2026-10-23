@@ -7,7 +7,9 @@ shows the commands and the environment without starting anything, and `--no-gate
 alone.
 
 `make fetch-weights` downloads the base model once, so that serving needs no network. With
-`WEIGHTS_DIR=weights` it downloads into the folder the containers mount. `make compose-env`
+`WEIGHTS_DIR=weights` it downloads into the folder the containers mount. `make fetch-adapters`
+downloads the adapters from the Hub at the revision in the file and checks their hash. The repo is
+gated, so it needs a token: `HF_TOKEN` in the environment or in the `.env` file. `make compose-env`
 writes `deploy/vllm.env`, the arguments and environment of the vLLM container, from the same file.
 """
 
@@ -41,11 +43,17 @@ class Lora(_Model):
     max_lora_rank: int = Field(ge=1)
 
 
+class Hub(_Model):
+    repo: str = Field(pattern=r"^[\w.-]+/[\w.-]+$")
+    revision: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+
 class Adapter(_Model):
     name: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$")
     path: Path
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     threshold: float = Field(ge=0, le=1)
+    hub: Hub | None = None
 
 
 class ServeConfig(_Model):
@@ -92,6 +100,74 @@ def check_adapters(config: ServeConfig) -> None:
                 f"adapter {adapter.name} in {path} has hash {found}, "
                 f"the file expects {adapter.sha256}"
             )
+
+
+def adapter_target(adapter: Adapter, adapters_dir: Path | None = None) -> Path:
+    """Where `fetch_adapters` puts an adapter: its path in the file, or the same path below
+    `adapters_dir` in place of the `adapters` folder."""
+    if adapters_dir is None:
+        return adapter_path(adapter)
+    if adapter.path.is_absolute() or adapter.path.parts[0] != "adapters":
+        raise ValueError(f"adapter {adapter.name} is not in the adapters folder: {adapter.path}")
+    return adapters_dir.joinpath(*adapter.path.parts[1:])
+
+
+def _hash_if_there(path: Path) -> str | None:
+    if not all((path / name).is_file() for name in ADAPTER_FILES):
+        return None
+    return hash_directory(path, ADAPTER_FILES)
+
+
+def hub_token(environ: Mapping[str, str] | None = None, file: Path = ROOT / ".env") -> str | None:
+    """The token for the Hub: `HF_TOKEN` of the environment, or else the line `HF_TOKEN=...` of
+    the `.env` file. Without either, the login of the Hub library applies."""
+    token = (os.environ if environ is None else environ).get("HF_TOKEN", "").strip()
+    if token:
+        return token
+    if file.is_file():
+        for line in file.read_text(encoding="utf-8").splitlines():
+            name, _, value = line.partition("=")
+            if name.strip() == "HF_TOKEN" and value.strip().strip("'\""):
+                return value.strip().strip("'\"")
+    return None
+
+
+def fetch_adapters(
+    config: ServeConfig, adapters_dir: Path | None = None, token: str | None = None
+) -> list[Path]:
+    """Download each adapter from the Hub at the revision in the file and check its hash. An
+    adapter that is already there with the right hash is not downloaded again."""
+    from huggingface_hub import snapshot_download
+    from huggingface_hub.errors import HfHubHTTPError
+
+    folders = []
+    for adapter in config.adapters:
+        if adapter.hub is None:
+            raise ValueError(f"adapter {adapter.name} has no hub entry in the serve file")
+        target = adapter_target(adapter, adapters_dir)
+        if _hash_if_there(target) != adapter.sha256:
+            try:
+                snapshot_download(
+                    adapter.hub.repo,
+                    revision=adapter.hub.revision,
+                    allow_patterns=list(ADAPTER_FILES),
+                    local_dir=target,
+                    token=token,
+                )
+            except HfHubHTTPError as error:
+                raise ValueError(
+                    f"cannot download {adapter.hub.repo} at {adapter.hub.revision}: {error}. "
+                    "The repo is gated: accept its terms with the account of the token, and "
+                    "set HF_TOKEN or put it in the .env file."
+                ) from error
+            found = _hash_if_there(target)
+            if found != adapter.sha256:
+                raise ValueError(
+                    f"adapter {adapter.name} from {adapter.hub.repo} has hash {found}, "
+                    f"the file expects {adapter.sha256}; check the files in {target}"
+                )
+        folders.append(target)
+    return folders
 
 
 def vllm_arguments(
@@ -224,6 +300,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--gateway-port", type=int, default=8080)
     parser.add_argument("--fetch-weights", action="store_true", help="download the base model")
     parser.add_argument("--weights-dir", type=Path, help="download into this folder's hub folder")
+    parser.add_argument("--fetch-adapters", action="store_true", help="download the adapters")
+    parser.add_argument("--adapters-dir", type=Path, help="download into this folder, not adapters")
     parser.add_argument("--compose-env", type=Path, help="write the vLLM container's env file")
     args = parser.parse_args(argv)
     try:
@@ -232,6 +310,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.fetch_weights:
             weights = fetch_weights(registry, config.model, args.weights_dir)
             print(f"base model {config.model}: {weights}")
+            return 0
+        if args.fetch_adapters:
+            folders = fetch_adapters(config, args.adapters_dir, hub_token())
+            for adapter, folder in zip(config.adapters, folders, strict=True):
+                print(f"adapter {adapter.name}: {folder} (hash {adapter.sha256[:12]}... matches)")
             return 0
         if args.compose_env:
             text = container_environment(config, registry)
