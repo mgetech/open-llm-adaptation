@@ -6,6 +6,10 @@ answers to a missing key, a wrong key and a key without the platform, sends a fe
 the dev split, and reads the metrics and the audit log. The result goes to a JSON file with no
 document text in it. It shows that the stack starts and answers. It does not measure the model.
 
+With `--no-vllm` it skips the two direct checks of vLLM, for a stack in which vLLM sits on an
+internal network that this machine cannot reach. `/readyz` still checks that vLLM serves the base
+model and the adapter.
+
 `--prepare` makes the two keys of the test first: it writes `configs/keys.yaml` and keeps the
 keys themselves in `logs/`, which git ignores. It refuses to replace a key file.
 """
@@ -276,6 +280,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--vllm-url", help="default: the port of configs/serve.yaml on this machine"
     )
+    parser.add_argument(
+        "--no-vllm",
+        action="store_true",
+        help="skip the direct checks of vLLM (it is not reachable)",
+    )
     parser.add_argument("--audit-log", type=Path, default=AUDIT_LOG)
     parser.add_argument("--wait", type=float, default=1500.0, help="seconds to wait for /readyz")
     parser.add_argument("--documents", type=int, default=DOCUMENTS)
@@ -299,7 +308,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     ):
         report = run_checks(
             gateway,
-            vllm,
+            None if args.no_vllm else vllm,
             keys,
             serve,
             registry,

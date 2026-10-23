@@ -11,6 +11,10 @@ results/
     gold_rescored.json                      post-hoc re-scoring of the shipped configuration on gold and gold_v2, not a claim
   serving/
     smoke-test.json                         the serving smoke test on a Kaggle T4 (`make serve-check`), not a measurement of the model
+  azure/
+    README.md, smoke-test.json, vm.txt      the serving smoke test and the dev and dev_real runs on an Azure T4, with the comparison to Kaggle
+    eval/<platform>/<system>/<split>.json   the Azure evaluation results, as in round 1
+    compare-<split>.json, screenshots/      the comparison with the Kaggle results (`make compare`) and the portal and request screenshots
   round1/
     eval/<platform>/<system>/<split>.json    metrics, confidence intervals, slices and one row per document
     runs/<platform>-<model>-<seed>.json      manifest of one training run

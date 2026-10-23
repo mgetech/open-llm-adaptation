@@ -1,0 +1,120 @@
+{
+  "kind": "serving smoke test",
+  "note": "Shows that the stack starts and answers. It is not a measurement of the model.",
+  "date": "2026-10-23T20:15:02+00:00",
+  "git_commit": "c4d1212c164bc68baa9a4f1affd7b95dc14f3f0f",
+  "git_dirty": false,
+  "gpu": "Tesla T4",
+  "vllm": {
+    "pinned": "0.30.0"
+  },
+  "base_model": "qwen3-4b",
+  "base_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+  "adapter": "tax-booking",
+  "adapter_sha256": "2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c",
+  "ready_after_seconds": 0,
+  "passed": true,
+  "checks": [
+    {
+      "name": "the gateway is ready",
+      "passed": true,
+      "detail": "0 s, {'ready': True, 'problems': []}"
+    },
+    {
+      "name": "no key gives 401",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "a wrong key gives 401",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "a key without the platform gives 403",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "the documents of the dev split are answered",
+      "passed": true,
+      "detail": "6 of 6 answered with 200"
+    },
+    {
+      "name": "a document without a total goes to review",
+      "passed": true,
+      "detail": "['no_total']"
+    },
+    {
+      "name": "the metrics count the requests",
+      "passed": true,
+      "detail": "automated, review, unauthorized, forbidden"
+    },
+    {
+      "name": "the audit log has a record for every request, with hashes and no text",
+      "passed": true,
+      "detail": "10 records"
+    }
+  ],
+  "documents": [
+    {
+      "id": "dev-00000",
+      "status": 200,
+      "expected_review": false,
+      "needs_review": false,
+      "reasons": [],
+      "confidence": 0.9958740940761391,
+      "latency_ms": 14307
+    },
+    {
+      "id": "dev-00001",
+      "status": 200,
+      "expected_review": false,
+      "needs_review": false,
+      "reasons": [],
+      "confidence": 0.9992194312778974,
+      "latency_ms": 10147
+    },
+    {
+      "id": "dev-00002",
+      "status": 200,
+      "expected_review": false,
+      "needs_review": false,
+      "reasons": [],
+      "confidence": 0.9994274081769091,
+      "latency_ms": 7710
+    },
+    {
+      "id": "dev-00003",
+      "status": 200,
+      "expected_review": false,
+      "needs_review": false,
+      "reasons": [],
+      "confidence": 0.9996475783193918,
+      "latency_ms": 10632
+    },
+    {
+      "id": "dev-00004",
+      "status": 200,
+      "expected_review": true,
+      "needs_review": true,
+      "reasons": [
+        "model_flagged"
+      ],
+      "confidence": null,
+      "latency_ms": 5576
+    },
+    {
+      "id": "dev-00005",
+      "status": 200,
+      "expected_review": false,
+      "needs_review": true,
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.9761171599623808,
+      "latency_ms": 10436
+    }
+  ],
+  "review_decision_matches_label": 5
+}

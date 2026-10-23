@@ -7,7 +7,8 @@
 #   make gateway-key ID=name              # add the line it prints to configs/keys.yaml
 #   make compose-up
 #
-# Paths are relative to this file. Set WEIGHTS_DIR and ADAPTERS_DIR to use other folders.
+# The gateway runs as user 10001 and writes its audit log to logs/, so that folder must be writable
+# for it (chmod a+rwx logs). Paths are relative to this file. Set WEIGHTS_DIR and ADAPTERS_DIR to use other folders.
 
 name: booking
 

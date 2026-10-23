@@ -6,6 +6,7 @@ from typing import get_args
 import pytest
 
 from adapt.eval.runner import ROOT
+from adapt.models import load_registry
 from adapt.pipeline import ReviewReason
 from adapt.serve import load_serve_config
 
@@ -88,3 +89,48 @@ def test_the_files_the_readme_and_the_document_name_exist():
     for path in (README, ARCHITECTURE):
         for name in pattern.findall(path.read_text(encoding="utf-8")):
             assert (ROOT / name).exists(), f"{path.name} names {name}"
+
+
+RUNBOOK = ROOT / "deploy" / "README.md"
+
+
+def test_the_runbook_only_uses_make_targets_that_exist():
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    targets = set(re.findall(r"^([a-z-]+):", makefile, re.MULTILINE))
+    blocks = re.findall(r"```\n(.*?)```", RUNBOOK.read_text(encoding="utf-8"), re.DOTALL)
+    used = set(re.findall(r"^make ([a-z-]+)", "\n".join(blocks), re.MULTILINE))
+    assert {
+        "setup",
+        "fetch-weights",
+        "fetch-adapters",
+        "compose-up",
+        "serve-check",
+        "compare",
+    } <= used
+    assert used <= targets
+
+
+def test_the_runbook_evaluates_the_adapter_and_the_revision_of_the_serve_file():
+    text = RUNBOOK.read_text(encoding="utf-8")
+    config = load_serve_config()
+    (adapter,) = config.adapters
+    assert f"--threshold {adapter.threshold}" in text
+    assert f"--adapter-path {adapter.path.as_posix()}" in text
+    assert f"--model-revision {load_registry().models[config.model].revision}" in text
+    assert f"--model {adapter.name}" in text and f"http://vllm:{config.port}/v1" in text
+
+
+def test_the_runbook_names_the_kaggle_files_it_compares_with_and_they_exist():
+    text = RUNBOOK.read_text(encoding="utf-8")
+    names = re.findall(r"FIRST=(\S+)", text)
+    assert len(names) == 2
+    for name in names:
+        assert (ROOT / name).is_file(), name
+
+
+def test_the_runbook_runs_in_the_planned_region_on_the_planned_size():
+    text = RUNBOOK.read_text(encoding="utf-8")
+    assert "germanywestcentral" in text and "Standard_NC4as_T4_v3" in text
+    assert "NO_VLLM=1" in text and "chmod a+rwx logs" in text
+    assert text.index("chmod a+rwx logs") < text.index("make compose-up")
+    assert text.index("make serve-check PREPARE=1") < text.index("make compose-up")

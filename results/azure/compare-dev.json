@@ -1,0 +1,99 @@
+{
+  "split": "dev",
+  "same_split": true,
+  "same_documents": true,
+  "documents": 300,
+  "identical_outputs": 299,
+  "same_review_decision": 300,
+  "largest_confidence_difference": 0.010575171947754924,
+  "manifest": {
+    "model_revision": {
+      "first": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "second": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "same": true
+    },
+    "adapter_hash": {
+      "first": "2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c",
+      "second": "2de6c7087c2b1abe1c48f21c14d247d24d9a752c06facb96130361f83194478c",
+      "same": true
+    },
+    "prompt_sha256": {
+      "first": "2f3789f30dd9234c912df016d6c5687b85920d701c0bdf5d4dffe1f1e13edcb7",
+      "second": "2f3789f30dd9234c912df016d6c5687b85920d701c0bdf5d4dffe1f1e13edcb7",
+      "same": true
+    },
+    "threshold": {
+      "first": 0.9817172787547637,
+      "second": 0.9817172787547637,
+      "same": true
+    },
+    "few_shot": {
+      "first": false,
+      "second": false,
+      "same": true
+    },
+    "gpu": {
+      "first": "Tesla T4",
+      "second": null,
+      "same": false
+    },
+    "vllm_version": {
+      "first": "0.30.0",
+      "second": "0.30.0",
+      "same": true
+    },
+    "git_commit": {
+      "first": "f54529de6e2cf13619d7e0daa1001a5fa4359b46",
+      "second": null,
+      "same": false
+    }
+  },
+  "metrics": {
+    "document_accuracy": {
+      "first": 0.7833333333333333,
+      "second": 0.7833333333333333,
+      "interval": [
+        0.7366666666666667,
+        0.83
+      ],
+      "inside": true
+    },
+    "automation_rate": {
+      "first": 0.7611940298507462,
+      "second": 0.7611940298507462,
+      "interval": [
+        0.7106203007518798,
+        0.8104089219330854
+      ],
+      "inside": true
+    },
+    "accuracy_on_automated": {
+      "first": 0.9951219512195122,
+      "second": 0.9951219512195122,
+      "interval": [
+        0.9846919152276296,
+        1.0
+      ],
+      "inside": true
+    },
+    "critical_error_rate": {
+      "first": 0.004878048780487805,
+      "second": 0.004878048780487805,
+      "interval": [
+        0.0,
+        0.015308084772370485
+      ],
+      "inside": true
+    },
+    "review_recall": {
+      "first": 0.96875,
+      "second": 0.96875,
+      "interval": [
+        0.8888888888888888,
+        1.0
+      ],
+      "inside": true
+    }
+  },
+  "passed": true
+}

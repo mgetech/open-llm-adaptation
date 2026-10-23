@@ -49,7 +49,7 @@ The last command prints the validation table from the saved results. It needs no
 - A fresh held-out run on newly generated test sets and the sealed `gold_v3`.
 - Training data aimed at the account pairs and the food against non-food VAT cases, and DPO on confident mistakes.
 - Two-seed agreement.
-- The serving benchmark on Kaggle and a run on Azure.
+- The serving benchmark: load and latency on a GPU machine.
 - A gold set built from real anonymised documents with a tax expert.
 
 ## Documents
