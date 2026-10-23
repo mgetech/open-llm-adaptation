@@ -1,0 +1,19 @@
+# The gateway image needs pyproject.toml, uv.lock, README.md, LICENSE, src, platforms and configs.
+.git
+.github
+.idea
+.venv
+.pytest_cache
+.ruff_cache
+**/__pycache__
+adapters
+weights
+logs
+data
+results
+notebooks
+tests
+docs
+deploy
+platforms/*/evals
+configs/keys.yaml

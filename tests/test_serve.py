@@ -186,9 +186,24 @@ def test_the_weights_are_fetched_at_the_pinned_revision(registry, monkeypatch, t
     monkeypatch.setattr("huggingface_hub.snapshot_download", fake_download)
     assert fetch_weights(registry, "qwen3-4b") == tmp_path
     entry = registry.models["qwen3-4b"]
-    assert calls == [
-        (entry.hf_id, {"revision": entry.revision, "allow_patterns": list(serve.WEIGHT_FILES)})
-    ]
+    expected = {
+        "revision": entry.revision,
+        "allow_patterns": list(serve.WEIGHT_FILES),
+        "cache_dir": None,
+    }
+    assert calls == [(entry.hf_id, expected)]
+
+
+def test_the_weights_can_go_into_the_folder_the_containers_mount(registry, monkeypatch, tmp_path):
+    calls = []
+
+    def fake_download(repo_id, **kwargs):
+        calls.append(kwargs)
+        return str(tmp_path)
+
+    monkeypatch.setattr("huggingface_hub.snapshot_download", fake_download)
+    fetch_weights(registry, "qwen3-4b", tmp_path / "weights")
+    assert calls[0]["cache_dir"] == tmp_path / "weights" / "hub"
 
 
 def test_print_shows_the_command_and_starts_nothing(monkeypatch, capsys):

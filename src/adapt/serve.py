@@ -6,11 +6,14 @@ and the gateway in front of it. Kaggle has no Docker, so this is how the two run
 shows the commands and the environment without starting anything, and `--no-gateway` starts vLLM
 alone.
 
-`make fetch-weights` downloads the base model once, so that serving needs no network.
+`make fetch-weights` downloads the base model once, so that serving needs no network. With
+`WEIGHTS_DIR=weights` it downloads into the folder the containers mount. `make compose-env`
+writes `deploy/vllm.env`, the arguments and environment of the vLLM container, from the same file.
 """
 
 import argparse
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -91,18 +94,16 @@ def check_adapters(config: ServeConfig) -> None:
             )
 
 
-def serve_command(config: ServeConfig, registry: Registry, python: str | None = None) -> list[str]:
-    """The vLLM command. It runs with the Python of this process, so it uses the vLLM installed
-    next to this project and never another `vllm` on the PATH."""
+def vllm_arguments(
+    config: ServeConfig, registry: Registry, adapter_paths: Mapping[str, str]
+) -> list[str]:
+    """What follows `vllm serve`: the model at its pinned revision, the flags of the file, and the
+    adapters at `adapter_paths` (name to the folder as the server sees it)."""
     if config.model not in registry.models:
         known = ", ".join(registry.models)
         raise ValueError(f"unknown model {config.model!r}, expected one of {known}")
     entry = registry.models[config.model]
-    command = [
-        python or sys.executable,
-        "-m",
-        "vllm.entrypoints.cli.main",
-        "serve",
+    arguments = [
         entry.hf_id,
         "--revision",
         entry.revision,
@@ -125,12 +126,42 @@ def serve_command(config: ServeConfig, registry: Registry, python: str | None = 
         str(config.lora.max_lora_rank),
     ]
     if config.prefix_caching:
-        command.append("--enable-prefix-caching")
-    command += [
+        arguments.append("--enable-prefix-caching")
+    return [
+        *arguments,
         "--lora-modules",
-        *(f"{adapter.name}={adapter_path(adapter).resolve()}" for adapter in config.adapters),
+        *(f"{adapter.name}={adapter_paths[adapter.name]}" for adapter in config.adapters),
     ]
-    return command
+
+
+def serve_command(config: ServeConfig, registry: Registry, python: str | None = None) -> list[str]:
+    """The vLLM command. It runs with the Python of this process, so it uses the vLLM installed
+    next to this project and never another `vllm` on the PATH."""
+    paths = {adapter.name: str(adapter_path(adapter).resolve()) for adapter in config.adapters}
+    return [
+        python or sys.executable,
+        "-m",
+        "vllm.entrypoints.cli.main",
+        "serve",
+        *vllm_arguments(config, registry, paths),
+    ]
+
+
+def container_paths(config: ServeConfig) -> dict[str, str]:
+    """Where each adapter is inside the vLLM container: the folder of the file, at the root."""
+    return {adapter.name: "/" + adapter.path.as_posix().lstrip("/") for adapter in config.adapters}
+
+
+def container_environment(config: ServeConfig, registry: Registry) -> str:
+    """The text of `deploy/vllm.env`: the arguments of the vLLM image and its environment, from the
+    same file as the local launcher uses."""
+    arguments = [*vllm_arguments(config, registry, container_paths(config)), "--host", "0.0.0.0"]
+    lines = [
+        "# Written by `make compose-env` from configs/serve.yaml. Do not edit it.",
+        f"VLLM_ARGS={shlex.join(arguments)}",
+        *(f"{name}={value}" for name, value in config.environment.items()),
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def gateway_command(file: Path, port: int, python: str | None = None) -> list[str]:
@@ -169,8 +200,9 @@ def run_together(commands: Sequence[tuple[Sequence[str], Mapping[str, str]]]) ->
             stop(process)
 
 
-def fetch_weights(registry: Registry, key: str) -> Path:
-    """Download the base model at its pinned revision into the Hugging Face cache."""
+def fetch_weights(registry: Registry, key: str, weights_dir: Path | None = None) -> Path:
+    """Download the base model at its pinned revision into the Hugging Face cache, or into the
+    `hub` folder of `weights_dir`, which is the cache folder a container mounts."""
     from huggingface_hub import snapshot_download
 
     entry = registry.models[key]
@@ -179,6 +211,7 @@ def fetch_weights(registry: Registry, key: str) -> Path:
             entry.hf_id,
             revision=entry.revision,
             allow_patterns=list(WEIGHT_FILES),
+            cache_dir=None if weights_dir is None else weights_dir / "hub",
         )
     )
 
@@ -190,12 +223,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--no-gateway", action="store_true", help="start vLLM alone")
     parser.add_argument("--gateway-port", type=int, default=8080)
     parser.add_argument("--fetch-weights", action="store_true", help="download the base model")
+    parser.add_argument("--weights-dir", type=Path, help="download into this folder's hub folder")
+    parser.add_argument("--compose-env", type=Path, help="write the vLLM container's env file")
     args = parser.parse_args(argv)
     try:
         config = load_serve_config(args.file)
         registry = load_registry()
         if args.fetch_weights:
-            print(f"base model {config.model}: {fetch_weights(registry, config.model)}")
+            weights = fetch_weights(registry, config.model, args.weights_dir)
+            print(f"base model {config.model}: {weights}")
+            return 0
+        if args.compose_env:
+            text = container_environment(config, registry)
+            args.compose_env.write_text(text, encoding="utf-8", newline="\n")
+            print(f"wrote {args.compose_env}")
             return 0
         commands = [(serve_command(config, registry), environment(config))]
         if not args.no_gateway:
