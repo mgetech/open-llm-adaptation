@@ -1,0 +1,6 @@
+# The price of the GPU machine, for the cost figure of `make report`. The figure comes from an
+# evaluation run, not from a load benchmark.
+gpu:
+  machine: Azure Standard_NC4as_T4_v3, on demand, Germany West Central
+  currency: USD
+  per_hour: 0.658  # 480.34 per month of 730 hours, the estimate the portal showed for the VM alone
