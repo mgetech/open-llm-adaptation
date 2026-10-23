@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "Booking gateway",
+    "description": "Requests for the gateway. It listens on port 8080 of the machine it runs on. When it runs on a VM, open a tunnel first and leave it open: ssh -i <key file> -N -L 8080:localhost:8080 azureuser@<public ip>. Set the variable `key` to a plain text key from logs/serve-check-keys.json (written by `make serve-check PREPARE=1`). Do not commit a real key.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{key}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "host", "value": "http://localhost:8080" },
+    { "key": "key", "value": "PASTE_THE_KEY_HERE" }
+  ],
+  "item": [
+    {
+      "name": "The gateway is up",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{host}}/healthz", "host": ["{{host}}"], "path": ["healthz"] }
+      }
+    },
+    {
+      "name": "The gateway, vLLM and the adapter are ready",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{host}}/readyz", "host": ["{{host}}"], "path": ["readyz"] }
+      }
+    },
+    {
+      "name": "An invoice (dev-00000): reverse charge, two lines",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document_text\": \"Pentu S.r.l. records invoice 8170 on 3September 2026: connector kits net 161.75 and cable assortment net 51.69. Total net EUR 213.44. Reverse charge supply, no VAT charged. Due date: 17 ' September 2026.\",\n  \"chart\": \"SKR03\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{host}}/v1/tax-booking/process",
+          "host": ["{{host}}"],
+          "path": ["v1", "tax-booking", "process"]
+        }
+      }
+    },
+    {
+      "name": "A till receipt (dev-00001)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document_text\": \"Till2 / 26 NOV 2026\\nDelpra Partners KG\\nLEMONADE ' BOTTLE 3,39 LEMONADE BOTTLE 2,10\\nTotal EUR 5,49\\nCASH 10,00 / CHANGE 4,51\\nSlip 7795\",\n  \"chart\": \"SKR03\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{host}}/v1/tax-booking/process",
+          "host": ["{{host}}"],
+          "path": ["v1", "tax-booking", "process"]
+        }
+      }
+    },
+    {
+      "name": "No key: 401",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document_text\": \"x\",\n  \"chart\": \"SKR03\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{host}}/v1/tax-booking/process",
+          "host": ["{{host}}"],
+          "path": ["v1", "tax-booking", "process"]
+        }
+      }
+    }
+  ]
+}
