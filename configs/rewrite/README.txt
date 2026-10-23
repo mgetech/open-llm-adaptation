@@ -31,7 +31,7 @@ How to do it
 
 If you have no tool that can work in a folder
 ---------------------------------------------
-You can do it by hand with a normal chat: run  python rewrite.py next  , paste work/current.jsonl and the text of RULES.md into the chat, save the answer in the file in out/ that the program names, and repeat. It takes many rounds.
+You can do it in a normal chat window: run  python rewrite.py next  , paste work/current.jsonl and the text of RULES.md into the chat, save the answer in the file in out/ that the program names, and repeat. It takes many rounds.
 
 Please
 ------
