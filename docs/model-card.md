@@ -35,7 +35,7 @@ For research and demonstration only. Not for commercial use.
 Not for:
 
 - Tax advice. The chart of accounts and the rules are an illustrative subset of SKR03, written for this project.
-- Documents of a real client without review. I tested on synthetic documents and on small sets I wrote myself, never on real client data.
+- Documents of a real client without review. I tested on synthetic documents and on small evaluation sets generated separately from the training generator, never on real client data.
 - Other charts of accounts, other countries' VAT, or languages other than English with German terms. The pipeline sends any other chart to review.
 
 ## Base model and licence
