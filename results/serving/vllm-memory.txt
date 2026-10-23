@@ -1,0 +1,9 @@
+# Lines of the vLLM 0.30.0 start-up log of the serving smoke test on a Kaggle T4 (2026-10-23), copied unchanged.
+# Server started with max_model_len 4096, gpu_memory_utilization 0.9, max_loras 2 and one adapter.
+(EngineCore pid=496) INFO 10-23 15:38:43 [default_loader.py:430] Loading weights took 8.94 seconds
+(EngineCore pid=496) INFO 10-23 15:38:44 [model_runner.py:428] Model loading took 7.7 GiB memory and 14.652962 seconds
+(EngineCore pid=496) INFO 10-23 15:41:04 [gpu_worker.py:640] Available KV cache memory: 3.4 GiB
+(EngineCore pid=496) INFO 10-23 15:41:04 [kv_cache_utils.py:2395] GPU KV cache size: 24,784 tokens, Maximum concurrency for 4,096 tokens per request: 6.05x
+(EngineCore pid=496) INFO 10-23 15:42:08 [gpu_worker.py:888] Free memory on device (14.46/14.56 GiB) on startup. Desired GPU memory utilization is (0.9, 13.11 GiB). Actual usage is 8.05 GiB for consumed memory (weights + non-torch), 1.65 GiB for peak activation, and 0.45 GiB for CUDAGraph memory. Replace gpu_memory_utilization config with `--kv-cache-memory=3011987149` (2.81 GiB) to fit into requested memory, or `--kv-cache-memory=4465621504` (4.16 GiB) to fully utilize gpu memory. Current kv cache memory in use is 3.4 GiB.
+(EngineCore pid=496) INFO 10-23 15:42:11 [core.py:372] init engine (profile, create kv cache, warmup model) took 206.63 s (compilation: 54.62 s)
+(APIServer pid=441) INFO 10-23 15:42:33 [loggers.py:315] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 11.6 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 2.7%, Prefix cache hit rate: 0.0%

@@ -83,6 +83,7 @@ The last command prints the validation table from the saved results. It needs no
 - `docs/architecture.md`: the components, the pipeline, the gateway API and the deployment.
 - `docs/adr/`: the nine decisions behind them, one short file each.
 - `docs/results.md`: the results, the rounds and the post-hoc re-scoring.
+- `docs/gpu-sizing.md`: memory, training on one or two GPUs and capacity on a T4.
 - `docs/model-card.md`: the card of the adapter, with its files, training and limits.
 - `results/README.md`: the layout of `results/` and the commands that write each file.
 
