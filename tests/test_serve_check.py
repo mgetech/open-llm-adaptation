@@ -104,6 +104,27 @@ def test_the_report_holds_no_document_text(stack):
     assert stack["keys"][OWN_KEY] not in text and stack["keys"][OTHER_KEY] not in text
 
 
+def test_without_vllm_the_two_direct_checks_are_skipped_and_the_rest_pass(stack):
+    report = check(stack, vllm=None)
+    names = [c["name"] for c in report["checks"]]
+    assert not [name for name in names if name.startswith("vLLM")]
+    assert report["passed"] is True and report["vllm"] == {"pinned": PINNED}
+
+
+def test_no_vllm_on_the_command_line_leaves_the_client_out(monkeypatch, tmp_path):
+    keys = tmp_path / "keys.json"
+    keys.write_text(json.dumps({OWN_KEY: "a", OTHER_KEY: "b"}), encoding="utf-8")
+    monkeypatch.setattr(serve_check, "KEY_SECRETS", keys)
+    calls = []
+    monkeypatch.setattr(
+        serve_check, "run_checks", lambda *a, **k: calls.append(a) or {"passed": True, "checks": []}
+    )
+    out = str(tmp_path / "o.json")
+    serve_check.main(["--out", out, "--no-vllm"])
+    serve_check.main(["--out", out])
+    assert calls[0][1] is None and calls[1][1] is not None
+
+
 def test_a_wrong_vllm_version_fails_only_that_check(stack, server):
     server.version = "0.0.1"
     report = check(stack)
