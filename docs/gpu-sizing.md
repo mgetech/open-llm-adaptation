@@ -46,4 +46,4 @@ At 0.437 documents per second one GPU would process about 37,800 documents in 24
 | 20,000 | 53% | 1 |
 | 100,000 | 265% | 3 |
 
-The cost per 1,000 documents from the same run is in `docs/results.md`.
+The cost per 1,000 documents from the same run is in [`docs/results.md`](results.md).

@@ -1,6 +1,6 @@
 # Results
 
-The details behind the numbers in the README. Every number comes from `results/`, and `results/README.md` has the commands that write them.
+The details behind the numbers in the README. Every number comes from `results/`, and [`results/README.md`](../results/README.md) has the commands that write them.
 
 The configuration I ship is Qwen3-4B fine-tuned with QLoRA on the round 3 data for one epoch (the checkpoint of step 375), with the pipeline rules and a confidence threshold of 0.9817. The pipeline rules include the check for orders in the text and the check of the VAT printed on the document.
 
@@ -39,9 +39,11 @@ These tables and the chart are written from the files in `results/` by `make rep
 | tax-booking-qwen3-4b-r3-0 | 3 | 375 | 2 | 3.6 |
 | tax-booking-qwen3-4b-r3-e2-0 | 3 | 750 | 2 | 6.3 |
 
-**Azure T4 against Kaggle**, the same adapter, prompt and threshold: `dev` passes, 299 of 300 answers identical; `dev_real` passes, 96 of 96 answers identical. Details are in `results/azure/README.md`.
+**Azure T4 against Kaggle**, the same adapter, prompt and threshold: `dev` passes, 299 of 300 answers identical; `dev_real` passes, 96 of 96 answers identical. Details are in [`results/azure/README.md`](../results/azure/README.md).
 
-![Automation rate and accuracy on automated documents at every confidence threshold](img/coverage_accuracy.png)
+**What the chart shows.** The confidence threshold decides which documents the system automates and which go to a person. Each line runs through every possible threshold: the further right, the more documents are automated, and the height is how many of the automated ones are right. The lines fall to the right because the documents the model is least sure about are added last, so accuracy is bought with review, and the threshold has to sit where the line is still above the accuracy limit. The dot is the threshold I chose, and the dashed lines are the limits of the gate.
+
+[![Automation rate and accuracy on automated documents at every confidence threshold](img/coverage_accuracy.png)](img/coverage_accuracy.png)
 
 Accuracy against cost per 1,000 documents: not run, because the load benchmark is future work. One figure exists as a by-product of an evaluation run. The Azure evaluation processed 300 `dev` documents in 686 seconds on one T4, with 8 requests in flight (0.44 documents per second, about 1,600 an hour). At 0.66 USD an hour, the on-demand price of the machine, that is about 0.42 USD per 1,000 documents. It is not a load benchmark, and the price is for the VM alone.
 <!-- results:end -->
@@ -130,7 +132,7 @@ I fine-tuned both sizes in every round. The 1.7B failed the gate in round 1 (5 c
 - Training data aimed at the account pairs the model confuses (repairs and maintenance against software licences, training against legal and consulting fees) and at food against non-food VAT on receipts.
 - Measuring the loss on the account and VAT tokens, to choose checkpoints.
 - Test sets sized to the critical-error limit (about 600 automated documents).
-- The serving benchmark on Kaggle and the run on Azure, if I do not get to them.
+- The serving benchmark: load and latency on a GPU machine.
 - A gold set built from real anonymised documents with a tax expert.
 
 ## How I count prompt injection
@@ -141,4 +143,4 @@ I changed this definition after the round 3 result failed the check. Before, I c
 
 ## Post-hoc re-scoring of round 3
 
-`results/post_hoc/round3_rescored.json` re-scores the saved outputs of the round 3 claim run with the injection figure and the confidence threshold I changed after that run. It is post-hoc and not a claim: the test splits and `gold_v2` were already evaluated in that run. The threshold is chosen on dev only. The report lists every gate check and shows that the model still does not pass. `results/README.md` has the details.
+`results/post_hoc/round3_rescored.json` re-scores the saved outputs of the round 3 claim run with the injection figure and the confidence threshold I changed after that run. It is post-hoc and not a claim: the test splits and `gold_v2` were already evaluated in that run. The threshold is chosen on dev only. The report lists every gate check and shows that the model still does not pass. [`results/README.md`](../results/README.md) has the details.

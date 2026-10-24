@@ -62,7 +62,7 @@ def test_the_training_hours_are_those_of_the_run_manifest():
 
 
 def test_the_readme_links_the_note_and_shows_the_badge_of_the_workflow_that_exists():
-    assert "`docs/compliance.md`" in README
+    assert "(docs/compliance.md)" in README
     badge = "actions/workflows/ci.yml/badge.svg?branch=main"
     assert badge in README and (ROOT / ".github" / "workflows" / "ci.yml").is_file()
-    assert README.index(badge) < README.index("## What it is for")
+    assert README.index(badge) < README.index("## Usecase")

@@ -215,7 +215,7 @@ def azure_section(azure: Path) -> list[str]:
     return [
         "**Azure T4 against Kaggle**, the same adapter, prompt and threshold: "
         + "; ".join(lines)
-        + ". Details are in `results/azure/README.md`."
+        + ". Details are in [`results/azure/README.md`](../results/azure/README.md)."
     ]
 
 
@@ -252,7 +252,7 @@ def build_blocks(
         validation_section(folder / "rescored", platform, system, gate),
         [
             "The held-out result, the post-hoc re-score, the training runs, the run on Azure and "
-            "the chart are in `docs/results.md`."
+            "the chart are in [`docs/results.md`](docs/results.md)."
         ],
     ]
     details = [
@@ -261,8 +261,18 @@ def build_blocks(
         training_section(results),
         azure_section(results / "azure"),
         [
-            "![Automation rate and accuracy on automated documents at every confidence "
-            f"threshold]({CHART.relative_to('docs').as_posix()})"
+            "**What the chart shows.** The confidence threshold decides which documents the "
+            "system automates and which go to a person. Each line runs through every possible "
+            "threshold: the further right, the more documents are automated, and the height is "
+            "how many of the automated ones are right. The lines fall to the right because the "
+            "documents the model is least sure about are added last, so accuracy is bought with "
+            "review, and the threshold has to sit where the line is still above the accuracy "
+            "limit. The dot is the threshold I chose, and the dashed lines are the limits of "
+            "the gate.",
+            "",
+            "[![Automation rate and accuracy on automated documents at every confidence "
+            f"threshold]({CHART.relative_to('docs').as_posix()})]"
+            f"({CHART.relative_to('docs').as_posix()})",
         ],
         cost_section(
             results_file(results / "azure" / "eval", platform, f"{system}-azure", "dev"),

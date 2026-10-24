@@ -23,7 +23,7 @@ tags:
 
 A LoRA adapter for [Qwen/Qwen3-4B](https://huggingface.co/Qwen/Qwen3-4B). It reads the text of an invoice, credit note or receipt and answers with one JSON object: supplier, date, total, and the booking lines (account of the SKR03 chart, VAT rate of 19, 7 or 0), and a flag that says the document needs a person to look at it. It is trained to set that flag when it is not sure instead of guessing.
 
-The adapter is one part of a system. The numbers below are for the adapter together with the pipeline rules and the confidence threshold of the repository [open-llm-adaptation](https://github.com/mgetech/open-llm-adaptation). The adapter alone does not reach them and I have not measured it alone.
+The adapter is one part of a system. The numbers below are for the adapter together with the pipeline rules and the confidence threshold of the repository [open-llm-adaptation](https://github.com/mgetech/open-llm-adaptation). I have not separated the adapter from the rest, and measuring it alone is a next step.
 
 ## Intended use
 
@@ -101,7 +101,7 @@ The labels are the same as in the repository's README. The pipeline rules includ
 | accuracy on automated documents | 1.000 | 0.938 |
 | critical errors | 0 of 40 automated | 1 of 16 automated |
 
-Details, the other rounds and the 1.7B and two-epoch runs are in the repository's `docs/results.md`.
+Details, the other rounds and the 1.7B and two-epoch runs are in the repository's [`docs/results.md`](https://github.com/mgetech/open-llm-adaptation/blob/main/docs/results.md).
 
 ## Limitations
 
