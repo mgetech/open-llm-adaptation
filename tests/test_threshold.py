@@ -28,7 +28,7 @@ def row(confidence, right, *, expected_review=False, reasons=(), severity=None):
 
 
 # Ten automatable documents. The confidences and the right and wrong answers are chosen so the
-# accuracy at each threshold can be counted by hand:
+# accuracy at each threshold can be counted from the rows:
 #   threshold  documents at or above  right  accuracy
 #   0.4        10                     5      0.500
 #   0.5        9                      5      0.556

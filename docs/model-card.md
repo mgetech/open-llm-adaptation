@@ -23,7 +23,7 @@ tags:
 
 A LoRA adapter for [Qwen/Qwen3-4B](https://huggingface.co/Qwen/Qwen3-4B). It reads the text of an invoice, credit note or receipt and answers with one JSON object: supplier, date, total, and the booking lines (account of the SKR03 chart, VAT rate of 19, 7 or 0), and a flag that says the document needs a person to look at it. It is trained to set that flag when it is not sure instead of guessing.
 
-The adapter is one part of a system. The numbers below are for the adapter together with the pipeline rules and the confidence threshold of the repository [open-llm-adaptation](https://github.com/mgetech/open-llm-adaptation). The adapter alone does not reach them and I have not measured it alone.
+The adapter is one part of a system. The numbers below are for the adapter together with the pipeline rules and the confidence threshold of the repository [open-llm-adaptation](https://github.com/mgetech/open-llm-adaptation). I have not separated the adapter from the rest, and measuring it alone is a next step.
 
 ## Intended use
 
@@ -91,7 +91,7 @@ The labels are the same as in the repository's README. The pipeline rules includ
 | accuracy on automated documents (>= 0.95) | 0.995 | 0.960 |
 | critical-error rate (<= 0.005) | 0.0049 (1 of 205 automated) | 0.000 (0 of 50) |
 
-**Held-out: it did not pass the gate.** In the round 3 run, on the round 3 test sets and `gold_v2`, it passed 7 of 10 checks. It beat the few-shot baseline of the same size (p < 0.001) and the generalisation gap was 0.027 (limit 0.05). It failed accuracy on automated documents (0.938 against 0.95), the critical-error rate (0.043 against 0.005) and prompt-injection success. I found the causes afterwards (documents with orders in them, a VAT reader that handled one of four receipt formats, and a threshold chosen on regular synthetic text) and fixed them in the pipeline. The adapter did not change. I have not run a fresh held-out test of the fixed configuration, so I do not claim that it passes.
+**Held-out: it did not pass the gate.** In the round 3 run, on the round 3 test sets, it passed 7 of 10 checks with `gold` and 7 of 10 with `gold_v2`. It beat the few-shot baseline of the same size (p < 0.001) and the generalisation gap was 0.027 (limit 0.05). It failed accuracy on automated documents (0.938 against 0.95 with `gold`, 0.933 with `gold_v2`), the critical-error rate (0.043 with `gold`, 0.051 with `gold_v2`, against 0.005) and prompt-injection success. I found the causes afterwards (documents with orders in them, a VAT reader that handled one of four receipt formats, and a threshold chosen on regular synthetic text) and fixed them in the pipeline. The adapter did not change. I have not run a fresh held-out test of the fixed configuration, so I do not claim that it passes.
 
 **Post-hoc, on previously used sets, not held out.** Scoring the saved outputs again with all current checks:
 
@@ -101,7 +101,7 @@ The labels are the same as in the repository's README. The pipeline rules includ
 | accuracy on automated documents | 1.000 | 0.938 |
 | critical errors | 0 of 40 automated | 1 of 16 automated |
 
-Details, the other rounds and the 1.7B and two-epoch runs are in the repository's `docs/results.md`.
+Details, the other rounds and the 1.7B and two-epoch runs are in the repository's [`docs/results.md`](https://github.com/mgetech/open-llm-adaptation/blob/main/docs/results.md).
 
 ## Limitations
 

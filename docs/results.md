@@ -1,8 +1,52 @@
 # Results
 
-The details behind the numbers in the README. Every number comes from `results/`, and `results/README.md` has the commands that write them.
+The details behind the numbers in the README. Every number comes from `results/`, and [`results/README.md`](../results/README.md) has the commands that write them.
 
 The configuration I ship is Qwen3-4B fine-tuned with QLoRA on the round 3 data for one epoch (the checkpoint of step 375), with the pipeline rules and a confidence threshold of 0.9817. The pipeline rules include the check for orders in the text and the check of the VAT printed on the document.
+
+## From the saved results
+
+These tables and the chart are written from the files in `results/` by `make report SYSTEM=qwen3-4b-sft-r3-0 BASELINE=qwen3-4b-fewshot-r3 ROUND=3`. The sections after them explain the numbers.
+
+<!-- results:start -->
+**Held out: the claim run on the round 3 test sets.** The gate passed with `gold` 7 of 10 checks; with `gold_v2` 7 of 10 checks. It did not pass the gate.
+
+| failed check | limit | gate with `gold` | gate with `gold_v2` |
+|---|---|---|---|
+| accuracy on automated documents | >= 0.95 | 0.9385 FAIL | 0.9327 FAIL |
+| critical-error rate | <= 0.005 | 0.0431 FAIL | 0.0505 FAIL |
+| prompt-injection success | <= 0 | no value, saved with the old definition FAIL | no value, saved with the old definition FAIL |
+
+**Post hoc, on sets that were used before, not held out.** The saved outputs of the same configuration scored again with every check of today.
+
+|  | gold | gold_v2 |
+|---|---|---|
+| documents | 80 | 44 |
+| automation rate | 0.625 | 0.471 |
+| accuracy on automated documents | 1.000 | 0.938 |
+| critical errors | 0 of 40 automated | 1 of 16 automated |
+| review recall | 1.000 | 1.000 |
+
+**Training runs**, with the number of GPUs each one used.
+
+| run | round | steps | GPUs | GPU hours |
+|---|---|---|---|---|
+| tax-booking-qwen3-1.7b-0 | 1 | 376 | not stated | 1.3 |
+| tax-booking-qwen3-4b-0 | 1 | 376 | 2 | 3.4 |
+| tax-booking-qwen3-1.7b-r2-0 | 2 | 376 | 2 | 1.4 |
+| tax-booking-qwen3-4b-r2-0 | 2 | 376 | 2 | 3.3 |
+| tax-booking-qwen3-1.7b-r3-0 | 3 | 375 | 2 | 1.5 |
+| tax-booking-qwen3-4b-r3-0 | 3 | 375 | 2 | 3.6 |
+| tax-booking-qwen3-4b-r3-e2-0 | 3 | 750 | 2 | 6.3 |
+
+**Azure T4 against Kaggle**, the same adapter, prompt and threshold: `dev` passes, 299 of 300 answers identical; `dev_real` passes, 96 of 96 answers identical. Details are in [`results/azure/README.md`](../results/azure/README.md).
+
+**What the chart shows.** The confidence threshold decides which documents the system automates and which go to a person. Each line runs through every possible threshold: the further right, the more documents are automated, and the height is how many of the automated ones are right. The lines fall to the right because the documents the model is least sure about are added last, so accuracy is bought with review, and the threshold has to sit where the line is still above the accuracy limit. The dot is the threshold I chose, and the dashed lines are the limits of the gate.
+
+[![Automation rate and accuracy on automated documents at every confidence threshold](img/coverage_accuracy.png)](img/coverage_accuracy.png)
+
+Accuracy against cost per 1,000 documents: not run, because the load benchmark is future work. One figure exists as a by-product of an evaluation run. The Azure evaluation processed 300 `dev` documents in 686 seconds on one T4, with 8 requests in flight (0.44 documents per second, about 1,600 an hour). At 0.66 USD an hour, the on-demand price of the machine, that is about 0.42 USD per 1,000 documents. It is not a load benchmark, and the price is for the VM alone.
+<!-- results:end -->
 
 ## Validation: dev and dev_real
 
@@ -40,7 +84,7 @@ On the round 3 test sets the fine-tuned model beat the few-shot baseline of the 
 
 ## Held-out result and the gate
 
-On the held-out data of the round 3 claim run (the round 3 test sets and `gold_v2`; 20 of the 44 `gold_v2` documents had already been evaluated in round 2) the model passed 7 of 10 checks. It beat few-shot (p < 0.001), the generalisation gap was 0.027, review recall was 0.964 and automation was 0.938. It failed three checks: accuracy on automated documents was 0.938 against 0.95, the critical-error rate was 0.043 against 0.005, and prompt-injection success was 0.167 against 0 (under the definition I used then, see below).
+On the held-out data of the round 3 claim run (the round 3 test sets and the gold sets; 20 of the 44 `gold_v2` documents had already been evaluated in round 2) the model passed 7 of 10 checks with `gold` and 7 of 10 with `gold_v2`. It beat few-shot (p < 0.001), the generalisation gap was 0.027 and review recall was 0.964. Automation was 0.938 with `gold` and 0.971 with `gold_v2`. It failed the same three checks with both: accuracy on automated documents was 0.938 against 0.95 with `gold` and 0.933 with `gold_v2`, the critical-error rate was 0.043 with `gold` and 0.051 with `gold_v2`, against 0.005, and prompt-injection success was 0.167 against 0 on `test_ood` (under the definition I used then, see below). The table below uses the gate with `gold`.
 
 I set the thresholds strict on purpose, before I trained anything. The critical-error limit also cannot be shown with a few hundred automated documents: zero errors in n documents only shows a rate below about 3/n at 95% confidence, so showing a rate of 0.5% or less needs about 600 automated documents. That is a lesson for sizing the next test sets.
 
@@ -88,7 +132,7 @@ I fine-tuned both sizes in every round. The 1.7B failed the gate in round 1 (5 c
 - Training data aimed at the account pairs the model confuses (repairs and maintenance against software licences, training against legal and consulting fees) and at food against non-food VAT on receipts.
 - Measuring the loss on the account and VAT tokens, to choose checkpoints.
 - Test sets sized to the critical-error limit (about 600 automated documents).
-- The serving benchmark on Kaggle and the run on Azure, if I do not get to them.
+- The serving benchmark: load and latency on a GPU machine.
 - A gold set built from real anonymised documents with a tax expert.
 
 ## How I count prompt injection
@@ -99,4 +143,4 @@ I changed this definition after the round 3 result failed the check. Before, I c
 
 ## Post-hoc re-scoring of round 3
 
-`results/post_hoc/round3_rescored.json` re-scores the saved outputs of the round 3 claim run with the injection figure and the confidence threshold I changed after that run. It is post-hoc and not a claim: the test splits and `gold_v2` were already evaluated in that run. The threshold is chosen on dev only. The report lists every gate check and shows that the model still does not pass. `results/README.md` has the details.
+`results/post_hoc/round3_rescored.json` re-scores the saved outputs of the round 3 claim run with the injection figure and the confidence threshold I changed after that run. It is post-hoc and not a claim: the test splits and `gold_v2` were already evaluated in that run. The threshold is chosen on dev only. The report lists every gate check and shows that the model still does not pass. [`results/README.md`](../results/README.md) has the details.

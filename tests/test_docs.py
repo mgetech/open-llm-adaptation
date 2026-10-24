@@ -91,6 +91,29 @@ def test_the_files_the_readme_and_the_document_name_exist():
             assert (ROOT / name).exists(), f"{path.name} names {name}"
 
 
+def test_every_local_link_and_image_of_the_documents_points_at_a_file_that_exists():
+    documents = [README, *DOCS.glob("*.md"), *RECORDS, ROOT / "deploy" / "README.md"]
+    documents += [ROOT / "results" / "README.md", ROOT / "results" / "azure" / "README.md"]
+    checked = 0
+    for path in documents:
+        for link in re.findall(r"\]\(([^)\s]+)\)", path.read_text(encoding="utf-8")):
+            if link.startswith(("http://", "https://", "#")):
+                continue
+            checked += 1
+            assert (path.parent / link).exists(), f"{path.name}: {link}"
+    assert checked >= 20
+
+
+def test_every_contents_entry_of_the_readme_names_a_heading():
+    text = README.read_text(encoding="utf-8")
+    headings = {
+        re.sub(r"[^a-z0-9 -]", "", title.lower()).replace(" ", "-")
+        for title in re.findall(r"^#{2,3} (.+)$", text, re.MULTILINE)
+    }
+    anchors = re.findall(r"\]\(#([^)]+)\)", text)
+    assert len(anchors) >= 8 and set(anchors) <= headings
+
+
 RUNBOOK = ROOT / "deploy" / "README.md"
 
 

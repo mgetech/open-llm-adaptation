@@ -1,6 +1,6 @@
 # Architecture
 
-The system turns the text of an invoice or receipt into booking lines, or says that a person has to look at it. One Qwen3-4B base model carries a LoRA adapter for the `tax-booking` platform. A pipeline of plain code surrounds the model, and a gateway is the only part that is exposed. The decisions behind this are in `docs/adr/`.
+The system turns the text of an invoice or receipt into booking lines, or says that a person has to look at it. One Qwen3-4B base model carries a LoRA adapter for the `tax-booking` platform. A pipeline of plain code surrounds the model, and a gateway is the only part that is exposed. The decisions behind this are in [`docs/adr/`](adr).
 
 ## Components and data flow
 
@@ -87,8 +87,8 @@ What I have and have not run:
 | The smoke test (`make serve-check`, `notebooks/kaggle_serve_check.ipynb`) against the gateway and a fake model server | run on a laptop |
 | vLLM 0.30.0 with the adapter and the gateway through `make serve-local`, on one Kaggle T4 (`results/serving/smoke-test.json`) | run: 10 of 10 checks passed |
 | The compose file with the vLLM image and a GPU, on an Azure T4 (`results/azure/smoke-test.json`) | run: 8 of 8 checks passed (the two direct calls to vLLM are skipped there) |
-| The Azure VM (runbook: `deploy/README.md`): `dev` and `dev_real` against the Kaggle results | run: both comparisons pass (`results/azure/`) |
+| The Azure VM (runbook: [`deploy/README.md`](../deploy/README.md)): `dev` and `dev_real` against the Kaggle results | run: both comparisons pass (`results/azure/`) |
 
 The smoke test shows that the stack starts and answers: vLLM was ready after 291 seconds, it served `qwen3-4b` and `tax-booking`, the gateway returned 401 and 403 where it should, six dev documents got an answer, and the audit log held a record for every request with the adapter hash and the base revision. It is not a measurement of the model, and the documents are too few for a rate. Each answer took 7 to 20 seconds, one request at a time on the T4, and the first ones include kernel compilation, so this says nothing about capacity. The load benchmark is future work.
 
-On the Azure T4 the same compose stack gave the same results as Kaggle. The adapter hash, the prompt and the threshold were the same, 299 of 300 answers on `dev` and all 96 on `dev_real` were identical, and every metric was equal to the Kaggle value. The first comparison failed because the evaluation hashed the download notes in the adapter folder as well as the two adapter files; I fixed that and ran it again (`results/azure/README.md`). The Azure run did not test the model on new data and it is not a benchmark.
+On the Azure T4 the same compose stack gave the same results as Kaggle. The adapter hash, the prompt and the threshold were the same, 299 of 300 answers on `dev` and all 96 on `dev_real` were identical, and every metric was equal to the Kaggle value. The first comparison failed because the evaluation hashed the download notes in the adapter folder as well as the two adapter files; I fixed that and ran it again ([`results/azure/README.md`](../results/azure/README.md)). The Azure run did not test the model on new data and it is not a benchmark.

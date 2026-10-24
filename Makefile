@@ -109,6 +109,9 @@ post-hoc-gold:  ## Re-score the shipped configuration on gold and gold_v2 from s
 compare:  ## Compare two results files of one split, the same adapter on another machine (FIRST=reference file, SECOND=new file; optional OUT=file)
 	uv run python -m adapt.eval.compare --first $(FIRST) --second $(SECOND) $(if $(OUT),--out $(OUT))
 
+report:  ## Write the results blocks of the README and docs/results.md and the chart from the saved results (SYSTEM=; optional BASELINE=, ROUND=, CHECK=1 writes nothing and fails if the README is out of date)
+	uv run python -m adapt.report --platform $(PLATFORM) --system $(SYSTEM) $(if $(BASELINE),--baseline $(BASELINE)) $(if $(ROUND),--round $(ROUND)) $(if $(CHECK),--check)
+
 stage-gate:  ## Gate checks on dev and dev_real of a system, a pass or fail for each, not the claim (SYSTEM=; optional ROUND=, OUT_DIR=, MARGIN=1)
 	uv run python -m adapt.eval.stage_gate --platform $(PLATFORM) --system $(SYSTEM) $(if $(ROUND),--round $(ROUND)) $(if $(OUT_DIR),--out-dir $(OUT_DIR)) $(if $(MARGIN),--margin)
 
